@@ -60,6 +60,13 @@ The endpoints and public client keys come from the open-source [py-uconnect](htt
 
 Your credentials are stored only in the iPhone Keychain (this device only) and are sent only to Fiat/Stellantis servers.
 
+## Design
+
+The app uses Torque's design system (`torque-ios`): the same tokens (`Ink`, `Type`, `Space`,
+`Radius`, `Elevation`), Geist, and the same components (Card, CardSection, PrimaryButton,
+SmallButton, DayPicker, NumberStepper, DayTag, SheetHeader, Toast). They are ported into
+`FiatPreheat/Design/`. When a token changes in Torque, copy it across so the two apps stay alike.
+
 ## Project layout
 
 ```
@@ -70,6 +77,8 @@ FiatPreheat/
   Scheduling/   PreheatSchedule, ScheduleCoordinator (notifications + background refresh)
   Intents/      App Intents for Siri & Shortcuts
   Views/        SwiftUI screens
+  Design/       Tokens and components ported from Torque
+  Resources/    Geist font files
   Support/      Keychain storage
 FiatPreheatTests/
 ```

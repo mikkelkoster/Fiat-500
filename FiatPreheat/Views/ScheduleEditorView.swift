@@ -5,8 +5,6 @@ struct ScheduleEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var schedule: PreheatSchedule
 
-    private let leadOptions = [10, 15, 20, 30, 45]
-
     init(schedule: PreheatSchedule) {
         _schedule = State(initialValue: schedule)
     }
@@ -23,51 +21,85 @@ struct ScheduleEditorView: View {
         }
     }
 
+    private var startText: String {
+        String(format: "%02d:%02d", schedule.start.hour, schedule.start.minute)
+    }
+
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    DatePicker("Warm by", selection: readyTime, displayedComponents: .hourAndMinute)
-                        .datePickerStyle(.wheel)
-                        .labelsHidden()
-                        .frame(maxWidth: .infinity)
-                }
+        VStack(spacing: 0) {
+            SheetHeader(
+                title: isNew ? "New schedule" : "Edit schedule",
+                subtitle: "The car starts preheating at \(startText)."
+            ) { dismiss() }
 
-                Section("Repeat") {
-                    WeekdayPicker(selection: $schedule.weekdays)
-                        .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
-                }
-
-                Section {
-                    Picker("Start", selection: $schedule.leadMinutes) {
-                        ForEach(leadOptions, id: \.self) { Text("\($0) min before").tag($0) }
+            ScrollView {
+                VStack(alignment: .leading, spacing: Space.formField) {
+                    field("Warm by") {
+                        DatePicker("Warm by", selection: readyTime, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(.wheel)
+                            .labelsHidden()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 150)
+                            .clipped()
+                            .cardSurface(corner: Radius.panel)
                     }
-                } footer: {
-                    Text("The car preheats to the temperature last set inside it. Preheating while plugged in saves range.")
-                }
 
-                if !isNew {
-                    Section {
-                        Button("Delete Schedule", role: .destructive) {
-                            model.schedules.removeAll { $0.id == schedule.id }
-                            dismiss()
+                    field("Repeat") {
+                        DayPicker(days: PreheatSchedule.weekOrder, selected: schedule.weekdays) { day in
+                            if schedule.weekdays.contains(day) {
+                                schedule.weekdays.remove(day)
+                            } else {
+                                schedule.weekdays.insert(day)
+                            }
                         }
                     }
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Start before").font(Type.emphasis).foregroundStyle(Ink.foreground)
+                            Text("15–20 min is usually enough").font(Type.footnote).foregroundStyle(Ink.muted)
+                        }
+                        Spacer()
+                        NumberStepper(
+                            value: "\(schedule.leadMinutes)",
+                            unit: "min",
+                            canDecrease: schedule.leadMinutes > 5,
+                            canIncrease: schedule.leadMinutes < 60,
+                            decrease: { schedule.leadMinutes -= 5 },
+                            increase: { schedule.leadMinutes += 5 }
+                        )
+                    }
+
+                    Text("It preheats to the temperature last set in the car. Preheating while plugged in saves range.")
+                        .font(Type.footnote).foregroundStyle(Ink.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, Space.gutter)
+                .padding(.bottom, 24)
+            }
+
+            VStack(spacing: 10) {
+                PrimaryButton(title: "Save") { save() }
+                    .disabled(schedule.weekdays.isEmpty)
+                if !isNew {
+                    PrimaryButton(title: "Delete schedule", outline: true, tint: Ink.redText) {
+                        model.schedules.removeAll { $0.id == schedule.id }
+                        dismiss()
+                    }
                 }
             }
-            .navigationTitle(isNew ? "New Schedule" : "Edit Schedule")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
-                        .disabled(schedule.weekdays.isEmpty)
-                }
-            }
+            .padding(.horizontal, Space.gutter)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
         }
-        .presentationDetents([.large])
+        .torqueSheet([.large])
+    }
+
+    private func field<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(label).eyebrowStyle()
+            content()
+        }
     }
 
     private func save() {
@@ -77,32 +109,8 @@ struct ScheduleEditorView: View {
             model.schedules.append(schedule)
         }
         model.schedules.sort { ($0.readyHour, $0.readyMinute) < ($1.readyHour, $1.readyMinute) }
+        Haptics.notify(.success)
         Task { await ScheduleCoordinator.shared.requestPermission() }
         dismiss()
-    }
-}
-
-private struct WeekdayPicker: View {
-    @Binding var selection: Set<Int>
-
-    var body: some View {
-        let symbols = Calendar.current.veryShortWeekdaySymbols
-        HStack(spacing: 6) {
-            ForEach(PreheatSchedule.weekOrder, id: \.self) { day in
-                let isOn = selection.contains(day)
-                Button {
-                    if isOn { selection.remove(day) } else { selection.insert(day) }
-                } label: {
-                    Text(symbols[day - 1])
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: 40)
-                        .foregroundStyle(isOn ? .white : .primary)
-                        .background(isOn ? Color.preheat : Color(.tertiarySystemFill), in: .circle)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Calendar.current.weekdaySymbols[day - 1])
-                .accessibilityAddTraits(isOn ? .isSelected : [])
-            }
-        }
     }
 }

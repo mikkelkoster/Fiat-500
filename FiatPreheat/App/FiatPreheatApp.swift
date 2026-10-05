@@ -8,6 +8,7 @@ struct FiatPreheatApp: App {
         WindowGroup {
             HomeView()
                 .environment(CarModel.shared)
+                .tint(Ink.accent)
         }
     }
 }

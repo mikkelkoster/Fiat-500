@@ -28,6 +28,7 @@ targets:
       path: FiatPreheat/Support/Info.plist
       properties:
         UIBackgroundModes: [fetch]
+        UIAppFonts: [Geist-Regular.ttf, Geist-Medium.ttf, Geist-SemiBold.ttf]
         BGTaskSchedulerPermittedIdentifiers: [dk.koster.FiatPreheat.schedule]
   FiatPreheatTests:
     type: bundle.unit-test

@@ -4,125 +4,257 @@ struct HomeView: View {
     @Environment(CarModel.self) private var model
     @State private var showSettings = false
     @State private var editing: PreheatSchedule?
+    @State private var toast: ToastMessage?
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    CarCard(plate: model.plate, status: model.status, error: model.statusError)
-                    PreheatButton()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                CardStack {
+                    BatteryCard(status: model.status, error: model.statusError)
+                    ClimateCard()
                     SchedulesSection(editing: $editing)
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 32)
-            }
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle("Fiat 500e")
-            .toolbar {
-                Button("Settings", systemImage: "gearshape") { showSettings = true }
-            }
-            .refreshable { await model.refreshStatus() }
-            .sheet(isPresented: $showSettings) { SettingsView() }
-            .sheet(item: $editing) { schedule in
-                ScheduleEditorView(schedule: schedule)
-            }
-            .task {
-                if model.hasAccount {
-                    await model.refreshStatus()
-                } else {
-                    showSettings = true
-                }
+                .padding(.horizontal, Space.gutter)
+                .padding(.top, Space.firstCard)
+                .padding(.bottom, 96)
             }
         }
-        .tint(.preheat)
+        .background(Ink.background.ignoresSafeArea())
+        .refreshable { await model.refreshStatus() }
+        .overlay(alignment: .bottom) {
+            if let toast {
+                Toast(title: toast.title, detail: toast.detail)
+                    .toastPlacement()
+                    .id(toast.id)
+            }
+        }
+        .animation(.easeOut(duration: Motion.normal), value: toast)
+        .sheet(isPresented: $showSettings) { SettingsView() }
+        .sheet(item: $editing) { schedule in ScheduleEditorView(schedule: schedule) }
+        .onChange(of: model.commandState) { _, state in show(ToastMessage(state)) }
+        .task {
+            if model.hasAccount {
+                await model.refreshStatus()
+            } else {
+                showSettings = true
+            }
+        }
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Text("500e").font(Type.page).tracking(Type.pageTitleTracking).foregroundStyle(Ink.foreground)
+            LicensePlate(text: model.plate)
+            Spacer()
+            SmallButton(title: "Settings") { showSettings = true }
+        }
+        .padding(.horizontal, Space.gutter)
+        .padding(.top, 20)
+    }
+
+    private func show(_ message: ToastMessage?) {
+        guard let message else { return }
+        toast = message
+        Haptics.notify(message.isError ? .error : .success)
+        Task {
+            try? await Task.sleep(for: .seconds(message.isError ? 6 : 3.5))
+            if toast?.id == message.id { toast = nil }
+        }
     }
 }
 
-// MARK: - Car
+/// What the last command did, said once at the foot of the screen.
+private struct ToastMessage: Equatable {
+    let id = UUID()
+    let title: String
+    var detail: String? = nil
+    var isError = false
 
-private struct CarCard: View {
-    let plate: String
+    init?(_ state: CarModel.CommandState) {
+        switch state {
+        case .idle, .sending, .waitingForCar:
+            return nil
+        case .failed(let message):
+            title = "Couldn't reach the car"; detail = message; isError = true
+        case .done(_, .failed, _):
+            title = "The car didn't accept it"; detail = "Check it's parked with enough charge."; isError = true
+        case .done(.preconditionOn, .succeeded, _):
+            title = "Preheating"
+        case .done(.preconditionOn, .unknown, _):
+            title = "Preheat sent"; detail = "The car hasn't confirmed yet."
+        case .done(.preconditionOff, _, _):
+            title = "Climate off"
+        }
+    }
+}
+
+// MARK: - Battery
+
+private struct BatteryCard: View {
     let status: VehicleStatus?
     let error: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("500e")
-                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                    if let updated = status?.updatedAt {
-                        Text("Updated \(updated, format: .relative(presentation: .named))")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+        Card {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Text("Battery").eyebrowStyle()
+                    Spacer()
+                    if status?.isCharging == true {
+                        DayTag(text: "Charging", tone: .good)
+                    } else if status?.isPluggedIn == true {
+                        DayTag(text: "Plugged in")
                     }
                 }
-                Spacer()
-                LicensePlate(text: plate)
-            }
-
-            HStack(spacing: 24) {
-                Metric(
-                    value: status?.stateOfCharge.map { "\(Int($0))%" } ?? "–",
-                    label: "Battery",
-                    symbol: batterySymbol
-                )
-                Metric(
-                    value: status?.range.map { "\(Int($0)) \(status?.rangeUnit ?? "km")" } ?? "–",
-                    label: "Range",
-                    symbol: "road.lanes"
-                )
-                if status?.isPluggedIn == true {
-                    Metric(
-                        value: status?.isCharging == true ? "Charging" : "Plugged in",
-                        label: "Cable",
-                        symbol: "powerplug.fill"
-                    )
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(status?.stateOfCharge.map { "\(Int($0))" } ?? "–")
+                        .font(Type.displayNumber).foregroundStyle(Ink.foreground)
+                        .contentTransition(.numericText())
+                    Text("%").font(Type.number).foregroundStyle(Ink.muted)
+                }
+                .padding(.top, 8)
+                Text(rangeLine)
+                    .font(Type.emphasis).foregroundStyle(Ink.secondary)
+                    .padding(.top, 4)
+                if let error {
+                    Text(error).font(Type.footnote).foregroundStyle(Ink.redText)
+                        .lineLimit(2)
+                        .padding(.top, 12)
                 }
             }
-
-            if let error {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .font(.footnote)
-                    .foregroundStyle(.orange)
-                    .lineLimit(2)
-            }
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: .rect(cornerRadius: 24))
+        .animation(Motion.change, value: status)
     }
 
-    private var batterySymbol: String {
-        guard let soc = status?.stateOfCharge else { return "battery.0percent" }
-        switch soc {
-        case ..<13: return "battery.0percent"
-        case ..<38: return "battery.25percent"
-        case ..<63: return "battery.50percent"
-        case ..<88: return "battery.75percent"
-        default: return "battery.100percent"
-        }
+    private var rangeLine: String {
+        guard let status else { return "Pull down to load" }
+        let range = status.range.map { "\(Int($0)) \(status.rangeUnit?.lowercased() ?? "km") range" } ?? "Range unknown"
+        return "\(range) · updated \(status.updatedAt.formatted(date: .omitted, time: .shortened))"
     }
 }
 
-private struct Metric: View {
-    let value: String
-    let label: String
-    let symbol: String
+// MARK: - Climate
+
+private struct ClimateCard: View {
+    @Environment(CarModel.self) private var model
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Label(label, systemImage: symbol)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.system(.title3, design: .rounded, weight: .semibold))
-                .monospacedDigit()
+        // Re-read `isPreheating` once a minute so the card falls back when the run ends.
+        TimelineView(.periodic(from: .now, by: 60)) { _ in
+            let active = model.isPreheating
+            Card {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
+                        Text("Climate").font(Type.heading).tracking(-0.3).foregroundStyle(Ink.foreground)
+                        Spacer()
+                        if active { DayTag(text: "On", tone: .good) }
+                    }
+                    Text(line(active: active))
+                        .font(Type.body).foregroundStyle(Ink.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 6)
+                        .animation(.default, value: model.commandState)
+
+                    Group {
+                        if active {
+                            PrimaryButton(title: busyTitle ?? "Stop", icon: "stop.fill", outline: true) {
+                                Task { await model.stopPreheat() }
+                            }
+                        } else {
+                            PrimaryButton(title: busyTitle ?? "Preheat now", icon: "thermometer.sun.fill") {
+                                Task { await model.startPreheat() }
+                            }
+                        }
+                    }
+                    .disabled(model.isBusy || !model.hasAccount)
+                    .padding(.top, 20)
+                }
+            }
         }
+    }
+
+    private var busyTitle: String? {
+        switch model.commandState {
+        case .sending: "Sending…"
+        case .waitingForCar: "Waiting for the car…"
+        default: nil
+        }
+    }
+
+    private func line(active: Bool) -> String {
+        if active, let start = model.lastPreheatStart {
+            return "Preheating since \(start.formatted(date: .omitted, time: .shortened)). The car stops by itself."
+        }
+        return "Heats or cools the cabin to the temperature last set in the car."
     }
 }
 
-/// Danish number plate: white, red frame, EU band with "DK".
+// MARK: - Schedules
+
+private struct SchedulesSection: View {
+    @Environment(CarModel.self) private var model
+    @Binding var editing: PreheatSchedule?
+
+    var body: some View {
+        CardSection(title: "Schedules", help: "Warm when you leave") {
+            SmallButton(title: "Add", icon: "plus") { editing = PreheatSchedule() }
+        } content: {
+            if model.schedules.isEmpty {
+                Card {
+                    Text("Add a time, such as weekdays at 07:30, and the car starts preheating before it.")
+                        .font(Type.body).foregroundStyle(Ink.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(model.schedules) { schedule in
+                        row(schedule, isEnabled: enabledBinding(schedule.id))
+                            .rowRule(schedule.id != model.schedules.last?.id)
+                    }
+                }
+                .cardSurface()
+            }
+        }
+    }
+
+    private func enabledBinding(_ id: UUID) -> Binding<Bool> {
+        Binding {
+            model.schedules.first { $0.id == id }?.isEnabled ?? false
+        } set: { on in
+            guard let index = model.schedules.firstIndex(where: { $0.id == id }) else { return }
+            model.schedules[index].isEnabled = on
+        }
+    }
+
+    private func row(_ s: PreheatSchedule, isEnabled: Binding<Bool>) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                Haptics.select()
+                editing = s
+            } label: {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(s.readyTimeText).font(Type.number).foregroundStyle(s.isEnabled ? Ink.foreground : Ink.subtle)
+                    Text("\(s.daysText) · starts \(String(format: "%02d:%02d", s.start.hour, s.start.minute))")
+                        .font(Type.footnote).foregroundStyle(Ink.muted)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            Toggle("Enabled", isOn: isEnabled)
+                .toggleStyle(WeeklySwitchStyle())
+                .labelsHidden()
+        }
+        .padding(.horizontal, Space.cardPadding)
+        .padding(.vertical, 14)
+    }
+}
+
+// MARK: - Plate
+
+/// The car's Danish number plate: white, red frame, EU band with "DK". A real-world object, so it
+/// keeps its own colours whatever the theme.
 struct LicensePlate: View {
     let text: String
 
@@ -134,156 +266,22 @@ struct LicensePlate: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            VStack(spacing: 1) {
-                Image(systemName: "star.circle")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.yellow)
-                Text("DK")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 18)
-            .frame(maxHeight: .infinity)
-            .background(Color(red: 0, green: 0.2, blue: 0.6))
-
+            Text("DK")
+                .font(Type.inter(9, .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 16)
+                .frame(maxHeight: .infinity)
+                .background(Color(hex: 0x1E40AF))
             Text(formatted)
-                .font(.system(size: 17, weight: .semibold, design: .monospaced))
-                .foregroundStyle(.black)
-                .padding(.horizontal, 8)
+                .font(Type.inter(15, .semibold).monospacedDigit())
+                .foregroundStyle(Color(hex: 0x0C0A09))
+                .padding(.horizontal, 7)
         }
-        .frame(height: 30)
-        .background(.white)
-        .clipShape(.rect(cornerRadius: 4))
-        .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(red: 0.8, green: 0.1, blue: 0.15), lineWidth: 2))
+        .frame(height: 26)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: Radius.small - 2, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radius.small - 2, style: .continuous).strokeBorder(Color(hex: 0xDC2626), lineWidth: 1.5))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Plate \(text)")
     }
-}
-
-// MARK: - Preheat
-
-private struct PreheatButton: View {
-    @Environment(CarModel.self) private var model
-
-    var body: some View {
-        // Re-evaluate `isPreheating` once a minute so the button falls back after the run ends.
-        TimelineView(.periodic(from: .now, by: 60)) { _ in
-            let active = model.isPreheating
-            VStack(spacing: 16) {
-                Button {
-                    Task {
-                        if active { await model.stopPreheat() } else { await model.startPreheat() }
-                    }
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(active ? AnyShapeStyle(Color.preheat.gradient) : AnyShapeStyle(.background))
-                            .shadow(color: active ? .preheat.opacity(0.45) : .black.opacity(0.08), radius: active ? 24 : 12, y: 6)
-                        if model.isBusy {
-                            ProgressView().controlSize(.large).tint(active ? .white : .preheat)
-                        } else {
-                            VStack(spacing: 8) {
-                                Image(systemName: active ? "stop.fill" : "thermometer.sun.fill")
-                                    .font(.system(size: 44, weight: .medium))
-                                    .symbolEffect(.pulse, isActive: active)
-                                Text(active ? "Stop" : "Preheat")
-                                    .font(.system(.title3, design: .rounded, weight: .semibold))
-                            }
-                            .foregroundStyle(active ? .white : .preheat)
-                        }
-                    }
-                    .frame(width: 190, height: 190)
-                }
-                .buttonStyle(.plain)
-                .disabled(model.isBusy || !model.hasAccount)
-                .sensoryFeedback(.impact, trigger: model.isBusy)
-                .accessibilityLabel(active ? "Stop preheating" : "Start preheating")
-
-                Text(statusText(active: active))
-                    .font(.subheadline)
-                    .foregroundStyle(isError ? .red : .secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(minHeight: 40)
-                    .animation(.default, value: model.commandState)
-            }
-            .padding(.vertical, 8)
-        }
-    }
-
-    private var isError: Bool {
-        switch model.commandState {
-        case .failed, .done(_, .failed, _): true
-        default: false
-        }
-    }
-
-    private func statusText(active: Bool) -> String {
-        switch model.commandState {
-        case .sending: return "Sending to the car…"
-        case .waitingForCar: return "Waiting for the car to confirm…"
-        case .failed(let message): return message
-        case .done(_, .failed, _): return "The car didn't accept the command. Is it parked with enough charge?"
-        case .done(.preconditionOff, _, _): return "Climate off."
-        case .done(.preconditionOn, .unknown, _): return "Sent. The car hasn't confirmed yet. It may be in a weak signal area."
-        case .done(.preconditionOn, .succeeded, _), .idle:
-            guard active, let start = model.lastPreheatStart else { return " " }
-            return "Preheating since \(start.formatted(date: .omitted, time: .shortened))"
-        }
-    }
-}
-
-// MARK: - Schedules
-
-private struct SchedulesSection: View {
-    @Environment(CarModel.self) private var model
-    @Binding var editing: PreheatSchedule?
-
-    var body: some View {
-        @Bindable var model = model
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Schedules").font(.title3.weight(.semibold))
-                Spacer()
-                Button("Add", systemImage: "plus") {
-                    editing = PreheatSchedule()
-                }
-                .labelStyle(.iconOnly)
-                .font(.title3)
-            }
-
-            if model.schedules.isEmpty {
-                Text("Add a schedule to have the car warm when you leave, e.g. weekdays at 07:30.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .background(.background, in: .rect(cornerRadius: 16))
-            }
-
-            ForEach($model.schedules) { $schedule in
-                Button { editing = schedule } label: {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(schedule.readyTimeText)
-                                .font(.system(size: 34, weight: .semibold, design: .rounded))
-                                .monospacedDigit()
-                            Text("\(schedule.daysText) · starts \(String(format: "%02d:%02d", schedule.start.hour, schedule.start.minute))")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Toggle("Enabled", isOn: $schedule.isEnabled).labelsHidden()
-                    }
-                    .opacity(schedule.isEnabled ? 1 : 0.5)
-                    .padding(16)
-                    .background(.background, in: .rect(cornerRadius: 16))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-}
-
-extension Color {
-    static let preheat = Color(red: 0.93, green: 0.36, blue: 0.16)
 }
