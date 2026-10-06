@@ -250,9 +250,10 @@ private struct SchedulesSection: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            Toggle("Enabled", isOn: isEnabled)
+            // WeeklySwitchStyle draws its label beside the switch, so the label stays empty here.
+            Toggle(isOn: isEnabled) { EmptyView() }
                 .toggleStyle(WeeklySwitchStyle())
-                .labelsHidden()
+                .accessibilityLabel("\(s.readyTimeText) schedule")
         }
         .padding(.horizontal, Space.cardPadding)
         .padding(.vertical, 14)
