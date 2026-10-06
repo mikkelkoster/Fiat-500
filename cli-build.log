@@ -1,0 +1,35 @@
+warning: 'fiat-500': found 21 file(s) which are unhandled; explicitly declare them as resources or exclude from the target
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/App/Demo.swift
+    /Users/runner/work/Fiat-500/Fiat-500/cli-build.log
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Scheduling/ScheduleCoordinator.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Intents/PreheatIntents.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/App/FiatPreheatApp.swift
+    /Users/runner/work/Fiat-500/Fiat-500/project.yml
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Support/Keychain.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-SemiBold.ttf
+    /Users/runner/work/Fiat-500/Fiat-500/scripts/build-and-capture.sh
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-LICENSE.txt
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Scheduling/PreheatSchedule.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Views/HomeView.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/App/CarModel.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-Regular.ttf
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Design/Tokens.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Views/ScheduleEditorView.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Views/SettingsView.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheatTests/FiatPreheatTests.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-Medium.ttf
+    /Users/runner/work/Fiat-500/Fiat-500/README.md
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Design/Components.swift
+Building for debugging...
+[0/6] Write sources
+[1/6] Write fiat-cli-entitlement.plist
+[2/6] Write swift-version-7974D3F7F03D5E95.txt
+[4/10] Compiling fiat_cli SigV4.swift
+[5/10] Compiling fiat_cli UconnectClient.swift
+[6/10] Emitting module fiat_cli
+[7/10] Compiling fiat_cli UconnectConfig.swift
+[8/11] Compiling fiat_cli main.swift
+[8/11] Write Objects.LinkFileList
+[9/11] Linking fiat-cli
+[10/11] Applying fiat-cli
+Build of product 'fiat-cli' complete! (7.35s)

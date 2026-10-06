@@ -1,0 +1,677 @@
+Command line invocation:
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/xcodebuild test -project FiatPreheat.xcodeproj -scheme FiatPreheat -destination "platform=iOS Simulator,name=iPhone 17" -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (2 targets)
+    Target 'FiatPreheatTests' in project 'FiatPreheat'
+        ➜ Explicit dependency on target 'FiatPreheat' in project 'FiatPreheat'
+    Target 'FiatPreheat' in project 'FiatPreheat' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 06c6e858e3ad37ec618d214e9f9b5d50
+Build description path: /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/XCBuildData/06c6e858e3ad37ec618d214e9f9b5d50.xcbuilddata
+CreateBuildDirectory /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products
+    cd /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat.xcodeproj
+    builtin-create-build-directory /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products
+
+CreateBuildDirectory /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex
+    cd /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat.xcodeproj
+    builtin-create-build-directory /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex
+
+ClangStatCache /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache
+    cd /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat.xcodeproj
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -o /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat-8b65818a121c3a1607abc3121292deca-VFS-iphonesimulator/all-product-headers.yaml
+    cd /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat.xcodeproj
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat-8b65818a121c3a1607abc3121292deca-VFS-iphonesimulator/all-product-headers.yaml
+
+CreateBuildDirectory /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator
+    cd /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat.xcodeproj
+    builtin-create-build-directory /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator
+
+CreateBuildDirectory /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+    cd /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat.xcodeproj
+    builtin-create-build-directory /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+CreateBuildDirectory /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+    cd /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat.xcodeproj
+    builtin-create-build-directory /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+CreateBuildDirectory /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+    cd /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat.xcodeproj
+    builtin-create-build-directory /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/empty-FiatPreheatTests.plist (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/empty-FiatPreheatTests.plist
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests_const_extract_protocols.json (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.SwiftFileList (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.SwiftFileList
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.SwiftConstValuesFileList (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.LinkFileList (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.LinkFileList
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests-OutputFileMap.json (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests.hmap (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests.hmap
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests.DependencyStaticMetadataFileList (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests.DependencyMetadataFileList (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests.DependencyMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-project-headers.hmap (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-project-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-own-target-headers.hmap (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-own-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-generated-files.hmap (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-generated-files.hmap
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-all-target-headers.hmap (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-all-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-all-non-framework-target-headers.hmap (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat_const_extract_protocols.json (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.SwiftFileList (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.SwiftFileList
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.SwiftConstValuesFileList (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.LinkFileList (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.LinkFileList
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat-OutputFileMap.json (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat.hmap (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat.hmap
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat.DependencyStaticMetadataFileList (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat.DependencyMetadataFileList (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat.DependencyMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-project-headers.hmap (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-project-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-own-target-headers.hmap (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-own-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-generated-files.hmap (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-generated-files.hmap
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-all-target-headers.hmap (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-all-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-all-non-framework-target-headers.hmap (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-DebugDylibPath-normal-arm64.txt (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-DebugDylibPath-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-DebugDylibInstallName-normal-arm64.txt (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    write-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-DebugDylibInstallName-normal-arm64.txt
+
+MkDir /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /bin/mkdir -p /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest
+
+MkDir /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /bin/mkdir -p /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns
+
+MkDir /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /bin/mkdir -p /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks
+
+MkDir /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /bin/mkdir -p /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app
+
+Ld /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/__preview.dylib normal (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -F/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -install_name @rpath/FiatPreheat.debug.dylib -Xlinker -dead_strip -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat_dependency_info.dat -o /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/__preview.dylib
+
+ProcessInfoPlistFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Info.plist /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Support/Info.plist (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-infoPlistUtility /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Support/Info.plist -producttype com.apple.product-type.application -genpkginfo /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -o /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Info.plist
+
+CpResource /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Geist-SemiBold.ttf /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-SemiBold.ttf (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-SemiBold.ttf /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app
+
+CpResource /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Geist-Regular.ttf /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-Regular.ttf (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-Regular.ttf /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app
+
+CpResource /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Geist-Medium.ttf /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-Medium.ttf (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-Medium.ttf /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app
+
+CpResource /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Geist-LICENSE.txt /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-LICENSE.txt (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-LICENSE.txt /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks/libXCTestSwiftSupport.dylib /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks/libXCTestBundleInject.dylib /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestBundleInject.dylib (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestBundleInject.dylib /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks/XCUnit.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCUnit.framework (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCUnit.framework /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks/XCUIAutomation.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCUIAutomation.framework (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCUIAutomation.framework /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks/XCTestSupport.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTestSupport.framework (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTestSupport.framework /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks/XCTestCore.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTestCore.framework (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTestCore.framework /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks/XCTest.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCTest.framework (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCTest.framework /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks/XCTAutomationSupport.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks/Testing.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/Testing.framework (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/Testing.framework /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks
+
+SwiftDriver FiatPreheat normal arm64 com.apple.xcode.tools.swift.compiler (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-SwiftDriver -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FiatPreheat -Onone @/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -F /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-generated-files.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-own-target-headers.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-project-headers.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat-Swift.h -working-directory /Users/runner/work/Fiat-500/Fiat-500 -experimental-emit-module-separately -disable-cmo
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/ptrcheck-E2WU0YMNGN1F3S03L2EX70B8C.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_Builtin_stdbool-EIWVA7LQS75O8JZC3G1WF79EV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/ptrauth-ACB1E5LM1PDZDAMEU3S4ZIHZ7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_AvailabilityInternal-C2TFPZH0WVT13YW8T8JRK3GJC.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/DeveloperToolsSupport-5HNVKFLJC6GGQVKM68X0UVND0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_Builtin_float-7XW0NPEVJVDQC1GAANI4TWYT0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/SwiftShims-505LHWES7DXJ50PZHUWG7J4EO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_SwiftConcurrencyShims-2V6JWHQ5SYP4BZQ74T8Q8BHBT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_Builtin_stdarg-FLJP0IND5JLYF4L0OYCB7Q4I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_DarwinFoundation1-6S8YXMHLH6JEKQJKDX529QGEE.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_Builtin_stddef-1UB23IL4NBH4UC1RSK0RX34J9.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_Builtin_limits-7FLRJAYAICKKPVGNTZP1UOZQ1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/ExtensionFoundation-A0LIU47PXAZ4I25T1J1FFGNDO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_DarwinFoundation2-E9E6YW7X44G4AY8HC1QTN6YLE.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_Builtin_stdint-97DPHBBULTXBZWIAEHXM6YK9P.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/sys_types-4DQKFFBGQ4ZDQCK7E6F44DXHP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_Builtin_tgmath-APPERT5TVXW5WEVP4SNU27RTP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_Builtin_stdatomic-8MRF9XS2R7XZWHMPOY8YSUB2Y.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_Builtin_intrinsics-6YMWDJBQD8LYQB226PP8XICQE.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_DarwinFoundation3-ETHAX67LMV9R2154DT0Y71HU8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_Builtin_inttypes-74S4C02JNTQT7NBVWKGSOO0S1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Darwin-6R68ZX5JZI8HVCBJ38L00PX2D.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/simd-176PTLHTBO8IW2YYXEV7DIXM7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/ObjectiveC-AFB5YWPLFHE159BOWBXVP9JSM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/MachO-4MKD4JNI9CI4BDGK2CB95XB4S.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/os_object-D7CXRXLOXPCSMQNHV80UASUXM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/os_workgroup-D3V8H3KHYUPMK57UBPVN4HL3X.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Dispatch-61XD416RWG1DP28X2OSI7VVU5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Spatial-26V8IT5G0CK3F75JE4L8TPO4G.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/CoreFoundation-VDWQ0G28ADMMVRK4QCNPN935.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/dnssd-E44R4R851Q2VATEG1U8QJ01TB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/XPC-6IH9PSBHHPNCQXOOVLA5K90YD.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Security-45B4YYQJD87TKLD0UL05DT1N7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/CFNetwork-1LXJJH8A5YDNLBEJ7AQZKRHDW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/os-537I8AKRQCWC569C6OIYK7BVH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/CoreGraphics-B8WM7LCZEVFAK6ZG3G946UXW1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Foundation-6CZOOI701P8359GPI3Z5I9TYY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/CoreText-4J3TRCVX8QOQ8Y54DHH9QOUR2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/ImageIO-AIY8EZEONOO5CDM5A81PGULZ5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/CoreData-18CBHOIJ22IGVPO912DNVS3N8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/FileProvider-16EIXI2MJMP2RETGHUK18DTU2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/UIUtilities-A1NWND0F4BD4MH3SLK154NQC.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/OSLog-5PB7TZKPSSIS36AOW8MK9RTFZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/BackgroundTasks-7WWX1VNO7AXQPCK1N657WFS1I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/RelevanceKit-CA5HPF7ZAMWU3UPQGM38ITYH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Network-6Y5S7MFN1WE4TKH7NCETOYVTK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/AppIntents-CF9GFZUCIO6O3XHSX0Z1BEY8G.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/DataDetection-1PBJFA6ATQMY38O7TGBG2W5CF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Symbols-EXSBZAOQYSERLPRO1SXPQEDYE.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/_LocationEssentials-7LBGGE9NZN2CTIQ11S2Q8YY6D.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/CoreTransferable-8Z9DC7A4AWUN2AIRAH3TRZQ4E.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/OpenGLES-1XAY2V80Q8INNVAHWSVPXPUOZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/LocalAuthentication-3PIKJI8IZW8GFXZR6BU3XE0GO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/CoreLocation-2RX9XENCC8JJ5D7XF25SK08DO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Accessibility-2NCMGBDH8LMC7HIGWJG5QZRZC.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/UserNotifications-17YLBWGFQN3H6Y17M9J36Q0YH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/UniformTypeIdentifiers-3SZ5Y056MOK9PZ2XBF7A227L5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/IOSurface-EA8ZD5Q55LP2O4ZGAOXJNGSY5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/CoreSpotlight-7VF09G7AK7X9AS06DX06F8QW0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Metal-CB6OIBPG9Y2BFR1KJK7L1XOIU.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/CoreVideo-2H92YRJZVIDVA70L4XT9J44R3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/CoreImage-OC7WCH0NV3I7WTIW3D4VZU9I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/QuartzCore-3S8A4BRT5G78Q4O9FNARABVCY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/SwiftUICore-CBEJQXRE4KHP0HJ5OS2O4ZVYY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/UIKit-A1NXM78C2ZZP86NMRSL2870U2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/SwiftUI-9XP01FKJA4RYRN2UXS15RPVFY.pcm
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ FiatPreheat (in target 'FiatPreheat' from project 'FiatPreheat')
+
+EmitSwiftModule normal arm64 (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 Compiling\ Keychain.swift,\ PreheatIntents.swift,\ PreheatSchedule.swift,\ ScheduleCoordinator.swift,\ ScheduleEditorView.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Support/Keychain.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Intents/PreheatIntents.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Scheduling/PreheatSchedule.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Scheduling/ScheduleCoordinator.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Views/ScheduleEditorView.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Support/Keychain.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Intents/PreheatIntents.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Scheduling/PreheatSchedule.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Scheduling/ScheduleCoordinator.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Views/ScheduleEditorView.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 Compiling\ SettingsView.swift,\ SigV4.swift,\ Tokens.swift,\ UconnectClient.swift,\ UconnectConfig.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Views/SettingsView.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Uconnect/SigV4.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Design/Tokens.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Uconnect/UconnectClient.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Uconnect/UconnectConfig.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Views/SettingsView.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Uconnect/SigV4.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Design/Tokens.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Uconnect/UconnectClient.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Uconnect/UconnectConfig.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 Compiling\ CarModel.swift,\ Components.swift,\ Demo.swift,\ FiatPreheatApp.swift,\ HomeView.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/App/CarModel.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Design/Components.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/App/Demo.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/App/FiatPreheatApp.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Views/HomeView.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/App/CarModel.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Design/Components.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/App/Demo.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/App/FiatPreheatApp.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Views/HomeView.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for FiatPreheat (in target 'FiatPreheat' from project 'FiatPreheat')
+
+SwiftDriver\ Compilation\ Requirements FiatPreheat normal arm64 com.apple.xcode.tools.swift.compiler (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FiatPreheat -Onone @/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -F /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-generated-files.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-own-target-headers.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-project-headers.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat-Swift.h -working-directory /Users/runner/work/Fiat-500/Fiat-500 -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling CarModel.swift, Components.swift, Demo.swift, FiatPreheatApp.swift, HomeView.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+
+SwiftMergeGeneratedHeaders /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/DerivedSources/FiatPreheat-Swift.h /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat-Swift.h (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-swiftHeaderTool -arch arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat-Swift.h -o /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/DerivedSources/FiatPreheat-Swift.h
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.swiftmodule/arm64-apple-ios-simulator.swiftmodule /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.swiftmodule (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.swiftmodule /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.swiftmodule/arm64-apple-ios-simulator.swiftdoc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.swiftdoc (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.swiftdoc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.swiftmodule/arm64-apple-ios-simulator.abi.json /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.abi.json (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.abi.json /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.swiftsourceinfo (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.swiftsourceinfo /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+SwiftDriver FiatPreheatTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-SwiftDriver -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FiatPreheatTests -Onone @/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.SwiftFileList -DDEBUG -plugin-path /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -F /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -parse-as-library -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-generated-files.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-own-target-headers.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-project-headers.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests-Swift.h -working-directory /Users/runner/work/Fiat-500/Fiat-500 -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling Keychain.swift, PreheatIntents.swift, PreheatSchedule.swift, ScheduleCoordinator.swift, ScheduleEditorView.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+
+SwiftDriverJobDiscovery normal arm64 Compiling SettingsView.swift, SigV4.swift, Tokens.swift, UconnectClient.swift, UconnectConfig.swift (in target 'FiatPreheat' from project 'FiatPreheat')
+
+SwiftDriver\ Compilation FiatPreheat normal arm64 com.apple.xcode.tools.swift.compiler (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-Swift-Compilation -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FiatPreheat -Onone @/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -F /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-generated-files.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-own-target-headers.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-project-headers.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat-Swift.h -working-directory /Users/runner/work/Fiat-500/Fiat-500 -experimental-emit-module-separately -disable-cmo
+
+Ld /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/FiatPreheat.debug.dylib normal (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -F/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -filelist /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.LinkFileList -install_name @rpath/FiatPreheat.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.swiftmodule @/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat-linker-args.resp -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -o /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/FiatPreheat.debug.dylib
+
+ConstructStubExecutorLinkFileList /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-ExecutorLinkFileList-normal-arm64.txt (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    construct-stub-executor-link-file-list /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/FiatPreheat.debug.dylib /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'FiatPreheat' from project 'FiatPreheat')
+
+Ld /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/FiatPreheat normal (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -F/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat-ExecutorLinkFileList-normal-arm64.txt /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/FiatPreheat.debug.dylib -o /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/FiatPreheat
+
+ExtractAppIntentsMetadata (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.ZnyMPu/Metal.xctoolchain --module-name FiatPreheat --sdk-root /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk --xcode-version 17F113 --platform-family iOS --deployment-target 17.0 --bundle-identifier dk.koster.FiatPreheat --output /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app --target-triple arm64-apple-ios17.0-simulator --binary-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/FiatPreheat --dependency-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat_dependency_info.dat --stringsdata-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.SwiftFileList --metadata-file-list /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/Objects-normal/arm64/FiatPreheat.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-06 11:44:58.608 appintentsmetadataprocessor[3002:12903] Starting appintentsmetadataprocessor export
+2026-10-06 11:44:58.655 appintentsmetadataprocessor[3002:12903] Writing Metadata.appintents
+2026-10-06 11:44:58.655 appintentsmetadataprocessor[3002:12903] Metadata root: /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Metadata.appintents
+
+CopySwiftLibs /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/FiatPreheat.debug.dylib --scan-folder /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks --scan-folder /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns --scan-folder /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/SystemExtensions --scan-folder /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Extensions --platform iphonesimulator --toolchain /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.ZnyMPu/Metal.xctoolchain --toolchain /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCUIAutomation-3ENBOFFYBSEX5WMO8Y7CDKF44.pcm
+
+AppIntentsSSUTraining (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Info.plist --temp-dir-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/ssu --bundle-id dk.koster.FiatPreheat --product-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app --extracted-metadata-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Metadata.appintents --metadata-file-list /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/FiatPreheat.DependencyMetadataFileList --source-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Info.plist --archive-ssu-assets
+2026-10-06 11:44:58.701 appintentsnltrainingprocessor[3004:12916] Parsing options for appintentsnltrainingprocessor
+2026-10-06 11:44:58.701 appintentsnltrainingprocessor[3004:12916] Starting AppIntents SSU YAML Generation
+2026-10-06 11:44:58.727 appintentsnltrainingprocessor[3004:12916] Training 'Preheat my car with ${+applicationName}|${+applicationName} preheat' for en
+2026-10-06 11:44:58.727 appintentsnltrainingprocessor[3004:12916] Training 'Stop preheating with ${+applicationName}' for en
+2026-10-06 11:44:58.727 appintentsnltrainingprocessor[3004:12916] Training Negative Phrases '' for en
+2026-10-06 11:44:58.727 appintentsnltrainingprocessor[3004:12916] Application name '500e Preheat' for en
+2026-10-06 11:44:58.743 appintentsnltrainingprocessor[3004:12916] Generated AppIntents SSU YAML files in file:///Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheat.build/ssu/
+2026-10-06 11:44:58.743 appintentsnltrainingprocessor[3004:12916] Copied AppIntents SSU YAML files to file:///Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Metadata.appintents/
+Archiving all locales.
+[------------------------------------------------------------] 0% archiving en[🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢] 100% archived en[🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢🁢] 100% archived 1 locales/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Metadata.appintents/nlu
+/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/Metadata.appintents/nlu/8f5b235813fb8add3ddd2c0fa8860b31.version
+
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCTest-6IT03ZMTPDZ1KODM7G46TEXS3.pcm
+
+SwiftExplicitDependencyCompileModuleFromInterface arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCUIAutomation-2Z9NAVYTNSQ94.swiftmodule
+
+SwiftExplicitDependencyCompileModuleFromInterface arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCTest-2BVL9OI9MKOAG.swiftmodule
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ FiatPreheatTests (in target 'FiatPreheatTests' from project 'FiatPreheat')
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheatTests/FiatPreheatTests.swift (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftCompile normal arm64 Compiling\ FiatPreheatTests.swift /Users/runner/work/Fiat-500/Fiat-500/FiatPreheatTests/FiatPreheatTests.swift (in target 'FiatPreheatTests' from project 'FiatPreheat')
+
+SwiftCompile normal arm64 /Users/runner/work/Fiat-500/Fiat-500/FiatPreheatTests/FiatPreheatTests.swift (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for FiatPreheatTests (in target 'FiatPreheatTests' from project 'FiatPreheat')
+
+SwiftDriver\ Compilation\ Requirements FiatPreheatTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FiatPreheatTests -Onone @/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.SwiftFileList -DDEBUG -plugin-path /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -F /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -parse-as-library -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-generated-files.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-own-target-headers.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-project-headers.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests-Swift.h -working-directory /Users/runner/work/Fiat-500/Fiat-500 -experimental-emit-module-separately -disable-cmo
+
+SwiftMergeGeneratedHeaders /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/DerivedSources/FiatPreheatTests-Swift.h /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests-Swift.h (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-swiftHeaderTool -arch arm64 /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests-Swift.h -o /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/DerivedSources/FiatPreheatTests-Swift.h
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheatTests.swiftmodule/arm64-apple-ios-simulator.swiftmodule /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.swiftmodule (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.swiftmodule /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheatTests.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheatTests.swiftmodule/arm64-apple-ios-simulator.swiftdoc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.swiftdoc (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.swiftdoc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheatTests.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheatTests.swiftmodule/arm64-apple-ios-simulator.abi.json /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.abi.json (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.abi.json /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheatTests.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheatTests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.swiftsourceinfo (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.swiftsourceinfo /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheatTests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+SwiftDriverJobDiscovery normal arm64 Compiling FiatPreheatTests.swift (in target 'FiatPreheatTests' from project 'FiatPreheat')
+
+SwiftDriver\ Compilation FiatPreheatTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-Swift-Compilation -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name FiatPreheatTests -Onone @/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.SwiftFileList -DDEBUG -plugin-path /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -F /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -parse-as-library -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-generated-files.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-own-target-headers.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests-project-headers.hmap -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests-Swift.h -working-directory /Users/runner/work/Fiat-500/Fiat-500 -experimental-emit-module-separately -disable-cmo
+
+Ld /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/FiatPreheatTests normal (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -bundle -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -L/Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator -iframework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -filelist /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -bundle_loader /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/FiatPreheat -Xlinker -object_path_lto -Xlinker /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.swiftmodule @/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests-linker-args.resp -Xlinker -needed_framework -Xlinker XCTest -framework XCTest -Xlinker -needed-lXCTestSwiftSupport -lXCTestSwiftSupport /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/FiatPreheat.debug.dylib -o /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/FiatPreheatTests
+
+ProcessInfoPlistFile /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/Info.plist /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/empty-FiatPreheatTests.plist (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-infoPlistUtility /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/empty-FiatPreheatTests.plist -producttype com.apple.product-type.bundle.unit-test -expandbuildsettings -format binary -platform iphonesimulator -o /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/Info.plist
+
+CopySwiftLibs /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/FiatPreheatTests --scan-folder /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/Frameworks --scan-folder /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/PlugIns --scan-folder /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/SystemExtensions --scan-folder /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/Extensions --platform iphonesimulator --toolchain /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.ZnyMPu/Metal.xctoolchain --toolchain /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.ZnyMPu/Metal.xctoolchain --module-name FiatPreheatTests --sdk-root /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk --xcode-version 17F113 --platform-family iOS --deployment-target 17.0 --bundle-identifier dk.koster.FiatPreheatTests --output /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest --target-triple arm64-apple-ios17.0-simulator --binary-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/FiatPreheatTests --dependency-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests_dependency_info.dat --stringsdata-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.SwiftFileList --metadata-file-list /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/Objects-normal/arm64/FiatPreheatTests.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-06 11:45:01.265 appintentsmetadataprocessor[3076:13150] Starting appintentsmetadataprocessor export
+2026-10-06 11:45:01.278 appintentsmetadataprocessor[3076:13150] Extracted no relevant App Intents symbols, skipping writing output
+
+AppIntentsSSUTraining (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/Info.plist --temp-dir-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/ssu --bundle-id dk.koster.FiatPreheatTests --product-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest --extracted-metadata-path /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/Metadata.appintents --metadata-file-list /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Intermediates.noindex/FiatPreheat.build/Debug-iphonesimulator/FiatPreheatTests.build/FiatPreheatTests.DependencyMetadataFileList --source-file /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest/Info.plist --archive-ssu-assets
+2026-10-06 11:45:01.302 appintentsnltrainingprocessor[3082:13164] Parsing options for appintentsnltrainingprocessor
+2026-10-06 11:45:01.302 appintentsnltrainingprocessor[3082:13164] Starting AppIntents SSU YAML Generation
+2026-10-06 11:45:01.303 appintentsnltrainingprocessor[3082:13164] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-RegisterExecutionPolicyException /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest
+
+Touch /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest (in target 'FiatPreheatTests' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /usr/bin/touch -c /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app/PlugIns/FiatPreheatTests.xctest
+
+RegisterExecutionPolicyException /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-RegisterExecutionPolicyException /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app
+
+Validate /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    builtin-validationUtility /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app (in target 'FiatPreheat' from project 'FiatPreheat')
+    cd /Users/runner/work/Fiat-500/Fiat-500
+    /usr/bin/touch -c /Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Build/Products/Debug-iphonesimulator/FiatPreheat.app
+
+Test Suite 'All tests' started at 2026-10-06 11:48:12.796.
+Test Suite 'FiatPreheatTests.xctest' started at 2026-10-06 11:48:12.797.
+Test Suite 'ScheduleTests' started at 2026-10-06 11:48:12.797.
+Test Case '-[FiatPreheatTests.ScheduleTests testDisabledScheduleHasNoStarts]' started.
+Test Case '-[FiatPreheatTests.ScheduleTests testDisabledScheduleHasNoStarts]' passed (0.002 seconds).
+Test Case '-[FiatPreheatTests.ScheduleTests testOperationStatusParsing]' started.
+Test Case '-[FiatPreheatTests.ScheduleTests testOperationStatusParsing]' passed (0.003 seconds).
+Test Case '-[FiatPreheatTests.ScheduleTests testStartCrossingMidnightMovesToPreviousDay]' started.
+Test Case '-[FiatPreheatTests.ScheduleTests testStartCrossingMidnightMovesToPreviousDay]' passed (0.002 seconds).
+Test Case '-[FiatPreheatTests.ScheduleTests testStartIsLeadMinutesBeforeReadyTime]' started.
+Test Case '-[FiatPreheatTests.ScheduleTests testStartIsLeadMinutesBeforeReadyTime]' passed (0.001 seconds).
+Test Case '-[FiatPreheatTests.ScheduleTests testUpcomingStartsSkipsUnselectedDays]' started.
+Test Case '-[FiatPreheatTests.ScheduleTests testUpcomingStartsSkipsUnselectedDays]' passed (0.004 seconds).
+Test Suite 'ScheduleTests' passed at 2026-10-06 11:48:12.812.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.012 (0.015) seconds
+Test Suite 'SigV4Tests' started at 2026-10-06 11:48:12.812.
+Test Case '-[FiatPreheatTests.SigV4Tests testMatchesAWSReferenceVector]' started.
+Test Case '-[FiatPreheatTests.SigV4Tests testMatchesAWSReferenceVector]' passed (0.005 seconds).
+Test Case '-[FiatPreheatTests.SigV4Tests testSignKeepsTrailingSlashAndSignsSecurityToken]' started.
+Test Case '-[FiatPreheatTests.SigV4Tests testSignKeepsTrailingSlashAndSignsSecurityToken]' passed (0.006 seconds).
+Test Suite 'SigV4Tests' passed at 2026-10-06 11:48:13.022.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.011 (0.210) seconds
+Test Suite 'FiatPreheatTests.xctest' passed at 2026-10-06 11:48:13.022.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.023 (0.225) seconds
+Test Suite 'All tests' passed at 2026-10-06 11:48:13.022.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.023 (0.226) seconds
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/Fiat-500/Fiat-500/build/DerivedData/Logs/Test/Test-FiatPreheat-2026.10.06_11-44-37-+0000.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
