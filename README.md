@@ -42,6 +42,21 @@ On first launch, enter your Fiat account and PIN. The app finds the car on your 
 
 Run the unit tests with ⌘U. They cover AWS request signing (against AWS's reference vector), schedule maths and status parsing.
 
+## Test signing in from a Mac (no phone needed)
+
+`fiat-cli` runs the app's own Uconnect code in Terminal, so you can check the login and the car
+connection before installing anything:
+
+```sh
+swift run fiat-cli vehicles   # sign in, list the cars on the account
+swift run fiat-cli status     # battery, range, plug
+swift run fiat-cli preheat    # start climate and wait for the car to confirm
+swift run fiat-cli stop
+```
+
+It asks for your email, password and PIN (hidden as you type), or reads `FIAT_EMAIL`,
+`FIAT_PASSWORD` and `FIAT_PIN`. Nothing is stored. Errors print what Fiat's server answered.
+
 ## How it talks to the car
 
 ```

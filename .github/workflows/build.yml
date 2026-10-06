@@ -33,6 +33,9 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: Build the command-line tool
+        run: swift build --product fiat-cli 2>&1 | tee cli-build.log
+
       - name: Build, test and capture
         run: scripts/build-and-capture.sh
 
@@ -43,6 +46,7 @@ jobs:
           mkdir -p "$R"
           cp -R screenshots "$R/" 2>/dev/null || true
           cp build/xcodebuild.log "$R/" 2>/dev/null || true
+          cp cli-build.log "$R/" 2>/dev/null || true
           grep -E "error:|Test Case .* failed|TEST FAILED|BUILD FAILED" build/xcodebuild.log > "$R/errors.txt" 2>/dev/null || true
           grep -E "Executed [0-9]+ test" build/xcodebuild.log | tail -1 > "$R/tests.txt" 2>/dev/null || true
           xcodebuild -version > "$R/xcode.txt"
