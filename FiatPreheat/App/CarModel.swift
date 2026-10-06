@@ -69,11 +69,21 @@ final class CarModel {
         lastPreheatStart = defaults.object(forKey: Keys.lastPreheat) as? Date
 
         hasAccount = AccountStore.load() != nil
+
+        if Demo.isActive {
+            hasAccount = true
+            vehicles = [Demo.vehicle]
+            selectedVIN = Demo.vehicle.vin
+            plate = "ED35079"
+            status = Demo.status
+            schedules = Demo.schedules
+            lastPreheatStart = Demo.screen == "preheating" ? Date().addingTimeInterval(-6 * 60) : nil
+        }
     }
 
     // MARK: Account
 
-    var account: UconnectAccount? { AccountStore.load() }
+    var account: UconnectAccount? { Demo.isActive ? Demo.account : AccountStore.load() }
 
     /// Saves the account and verifies it by fetching the vehicle list.
     func signIn(_ account: UconnectAccount) async throws {
@@ -101,6 +111,10 @@ final class CarModel {
 
     func refreshStatus() async {
         guard hasAccount else { return }
+        if Demo.isActive {
+            status = Demo.status
+            return
+        }
         await client.setAccount(account)
         do {
             if vehicles.isEmpty {
@@ -133,6 +147,12 @@ final class CarModel {
             return commandState
         }
         commandState = .sending(command)
+        if Demo.isActive {
+            try? await Task.sleep(for: .seconds(1))
+            recordAccepted(command)
+            commandState = .done(command, .succeeded, Date())
+            return commandState
+        }
         await client.setAccount(account)
         do {
             let correlationId = try await client.send(command, vin: vin)
@@ -157,6 +177,7 @@ final class CarModel {
 
     private func setLastPreheat(_ date: Date?) {
         lastPreheatStart = date
+        guard !Demo.isActive else { return }
         defaults.set(date, forKey: Keys.lastPreheat)
     }
 }

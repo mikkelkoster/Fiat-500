@@ -34,6 +34,14 @@ struct HomeView: View {
         .sheet(item: $editing) { schedule in ScheduleEditorView(schedule: schedule) }
         .onChange(of: model.commandState) { _, state in show(ToastMessage(state)) }
         .task {
+            if Demo.isActive {
+                switch Demo.screen {
+                case "settings": showSettings = true
+                case "schedule": editing = model.schedules.first
+                default: break
+                }
+                return
+            }
             if model.hasAccount {
                 await model.refreshStatus()
             } else {
