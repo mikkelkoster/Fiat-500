@@ -17,9 +17,10 @@ fi
 echo "▸ Simulator: $DEVICE"
 
 echo "▸ Generating project"
-xcodegen --quiet
+xcodegen generate --quiet
 
 echo "▸ Building and running unit tests"
+mkdir -p build
 xcodebuild test \
   -project FiatPreheat.xcodeproj -scheme FiatPreheat \
   -destination "platform=iOS Simulator,name=$DEVICE" \

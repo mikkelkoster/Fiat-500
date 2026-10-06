@@ -34,6 +34,10 @@ targets:
     type: bundle.unit-test
     platform: iOS
     sources: [FiatPreheatTests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: dk.koster.FiatPreheatTests
     dependencies:
       - target: FiatPreheat
 schemes:

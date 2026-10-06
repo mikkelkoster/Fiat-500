@@ -1,0 +1,54 @@
+name: Build
+
+# Builds the app on a GitHub macOS runner, runs the unit tests and screenshots each screen on
+# sample data (scripts/build-and-capture.sh). The outcome, errors and screenshots are pushed to
+# the `ci-results` branch so they can be read without the Actions UI.
+on:
+  push:
+    branches: [claude/fiat-500e-preheat-app-3ck8s3]
+    paths-ignore: ["**.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select the newest Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+          xcrun simctl list runtimes
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build, test and capture
+        run: scripts/build-and-capture.sh
+
+      - name: Publish results to ci-results
+        if: always()
+        run: |
+          R=$RUNNER_TEMP/results
+          mkdir -p "$R"
+          cp -R screenshots "$R/" 2>/dev/null || true
+          cp build/xcodebuild.log "$R/" 2>/dev/null || true
+          grep -E "error:|Test Case .* failed|TEST FAILED|BUILD FAILED" build/xcodebuild.log > "$R/errors.txt" 2>/dev/null || true
+          grep -E "Executed [0-9]+ test" build/xcodebuild.log | tail -1 > "$R/tests.txt" 2>/dev/null || true
+          xcodebuild -version > "$R/xcode.txt"
+          echo "${{ job.status }} ${{ github.sha }} ${{ github.run_id }}" > "$R/STATUS"
+          cd "$R"
+          git init -q -b ci-results
+          git add -A
+          git -c user.name="ci" -c user.email="ci@users.noreply.github.com" commit -qm "Results for ${{ github.sha }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-results
