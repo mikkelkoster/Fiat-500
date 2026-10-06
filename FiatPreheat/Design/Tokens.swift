@@ -6,68 +6,89 @@ import UIKit
 // token there first, then copy it here. Every color, type step and spacing in the app comes from
 // here; nothing is hard-coded in views.
 //
-// Each color carries a light and a dark value (stone greys since 2026-10-01, warmer than the zinc before, the same data hues lifted a step
-// for contrast on black). Views never branch on the color scheme; the tokens do.
+// Each color carries a light and a dark value: Tailwind neutral greys (since 2026-10-05; stone read
+// reddish brown), the data hues lifted a step for contrast on black. Views never branch on the
+// color scheme; the tokens do.
 
 enum Ink {
-    static let foreground = Color(light: 0x0C0A09, dark: 0xE7E5E4)   // titles, values
-    static let muted = Color(light: 0x78716C, dark: 0x78716C)        // labels, captions, units
-    static let secondary = Color(light: 0x57534E, dark: 0xA8A29E)    // body copy, legend
-    static let subtle = Color(light: 0xA8A29E, dark: 0x78716C)       // eyebrow, secondary chart line
-    static let primary = Color(light: 0x1C1917, dark: 0xFAFAF9)      // buttons, chart ink, fills
-    static let onPrimary = Color(light: 0xFFFFFF, dark: 0x0C0A09)    // text on a primary fill
-    /// Hairlines. In dark, white at 10% rather than neutral 800: a solid grey matched the dark
-    /// glass cards and every line inside them disappeared (Mikkel, 2026-09-30). A tint stays a step
-    /// lighter than whatever it lies on, glass, card or page.
-    static let border = Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor.white.withAlphaComponent(0.10) : UIColor(hex: 0xE7E5E4) })
+    // Neutral greys throughout (Mikkel, 2026-10-05): the stone greys read reddish brown, in dark most.
+    static let foreground = Color(light: 0x0A0A0A, dark: 0xE5E5E5)   // titles, values
+    static let muted = Color(light: 0x737373, dark: 0x737373)        // labels, captions, units
+    static let secondary = Color(light: 0x525252, dark: 0xA3A3A3)    // body copy, legend
+    static let subtle = Color(light: 0xA3A3A3, dark: 0x737373)       // eyebrow, secondary chart line
+    static let primary = Color(light: 0x171717, dark: 0xFAFAFA)      // buttons, chart ink, fills
+    static let onPrimary = Color(light: 0xFFFFFF, dark: 0x0A0A0A)    // text on a primary fill
+    /// A switch's track when on: ink in light; in dark a light grey. White ink left the white knob
+    /// on a white track, and neutral 500 read too close to the off track (Mikkel, 2026-10-05).
+    /// Neutral 900 / 300.
+    static let switchOn = Color(light: 0x171717, dark: 0xD4D4D4)
+    /// The word inside a switch (On / Off) and the off track: on reads on the on-track, off on a soft
+    /// grey (Mikkel, 2026-10-05, after a switch with its state written inside).
+    static let switchOnText = Color(light: 0xFFFFFF, dark: 0x171717)
+    static let switchOff = Color(light: 0xE5E5E5, dark: 0x404040)
+    static let switchOffText = Color(light: 0x737373, dark: 0xA3A3A3)
+    /// A switch's knob: white in both modes, as the system's.
+    static let knob = Color(light: 0xFFFFFF, dark: 0xFFFFFF)
+    /// A picked chip (a day in a day picker): a soft fill under ink words, neutral 200 / 600; an
+    /// unpicked one is the control's white with its edge (Mikkel, 2026-10-05: the black day bars
+    /// made Plan settings heavy).
+    static let chipOn = Color(light: 0xE5E5E5, dark: 0x525252)
+    /// Hairlines: neutral 200 / 800, solid. A see-through white drew crossings twice as dark (a stat
+    /// grid's dividers, Mikkel 2026-10-05); the flat cards it once vanished on are gone.
+    static let border = Color(light: 0xE5E5E5, dark: 0x262626)
     /// A step brighter: the edge of something that is meant to stand out from its neighbours,
     /// like the work line's badges against the recovery line's.
-    static let border2 = Color(light: 0xD6D3D1, dark: 0x44403C)
+    static let border2 = Color(light: 0xD4D4D4, dark: 0x404040)
     static let track = border2        // inactive bars
     /// A ride's map before its tiles are in: the map's own average tone, so the head of the page is
     /// map-grey from the first frame rather than the page's white (Mikkel, 2026-09-29).
-    static let mapGround = Color(light: 0xD6D3D1, dark: 0x292524)
+    static let mapGround = Color(light: 0xD4D4D4, dark: 0x262626)
     // A control that can't be used right now: one look everywhere, never opacity on the enabled one
     // (which fades the label and the fill by different amounts and read as two different states).
-    static let disabledFill = Color(light: 0xE7E5E4, dark: 0x44403C)
-    static let disabledText = subtle
+    // Disabled, a step stronger (Mikkel, 2026-10-05: it all but vanished on white): neutral 200
+    // fill under neutral 500 words; dark neutral 800 under 400.
+    static let disabledFill = Color(light: 0xE5E5E5, dark: 0x262626)
+    static let disabledText = Color(light: 0x737373, dark: 0xA3A3A3)
     /// Tab group, progress track, chips, skeletons. Dark is white at 8% rather than a solid grey: the
     /// solid (#18181B) sat one shade off the card surface, so every track, chip and segmented control
     /// on a card disappeared. A tint lifts by the same step whatever it lies on (2026-09-25).
     // Neutral 200 since 2026-10-05: stone 100 was the card's own grey, so skeletons and fills vanished on cards.
     static let mutedBg = Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor.white.withAlphaComponent(0.08) : UIColor(hex: 0xE5E5E5) })
-    /// A segmented control's track: zinc 200 in light, where the muted grey left the white segment
-    /// on white (Mikkel, 2026-09-29: "too light compared to dark mode"); the muted tint in dark.
-    static let segmentTrack = Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor.white.withAlphaComponent(0.08) : UIColor(hex: 0xE7E5E4) })
+    /// A segmented control's track: neutral 200 in light; the muted tint in dark.
+    static let segmentTrack = Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor.white.withAlphaComponent(0.08) : UIColor(hex: 0xE5E5E5) })
     /// The same, sitting on the page's ground rather than a card: neutral 900 in dark, where a
     /// tint of white on the black ground all but vanished.
-    static let segmentTrackOnGround = Color(light: 0xE7E5E4, dark: 0x1C1917)
-    static let selected = Color(light: 0xEFF6FF, dark: 0x1E293B)
+    static let segmentTrackOnGround = Color(light: 0xE5E5E5, dark: 0x171717)
+    // Pressed and selected: neutral 200 / 800, a step past the card, no colour (Mikkel,
+    // 2026-10-05: light blue belonged to the old look).
+    static let selected = Color(light: 0xE5E5E5, dark: 0x262626)
     /// What the light greys (a neutral badge, a meter's empty steps, a bar's track, a skeleton)
-    /// become on a selected row: grey on the light blue all but vanished (2026-09-28). Dark is
-    /// slate-700, a step up from the selected slate-800, as white would glare.
-    static let onSelected = Color(light: 0xFFFFFF, dark: 0x334155)
-    /// A week's summary at the head of its card on Plan and History: in light the segmented
-    /// control's grey, so the two are one (Mikkel, 2026-09-29); zinc 300 since the glass rows under
-    /// it came out greyer than white and 200 lost its contrast (2026-09-30),
-    /// and neutral 800 in dark, a step up from the card's 900.
-    /// Sets it apart from the white day rows; the light blue it was read as a highlight rather than
-    /// a heading (2026-09-26).
-    // Dark: neutral 700, two steps over the neutral 900 cards, as zinc 300 sits over light's white
-    // rows; at 800 it matched the dark glass and the summary vanished (Mikkel, 2026-09-30).
-    // Airy, after Pluto (2026-10-05): a whisper of grey on the grey card, not a heavy band.
-    static let summary = Color(light: 0xFAFAFA, dark: 0x44403C)
-    /// Today inside an already tinted row (the calendar's this week): blue 100 on blue 50.
-    static let today = Color(light: 0xDBEAFE, dark: 0x334155)     // tapped row, today's row, "you": a light blue, as blue means today
+    /// become on a selected row: grey on grey vanishes, so white; dark is neutral 700, a step up
+    /// from the selected neutral 800, as white would glare.
+    static let onSelected = Color(light: 0xFFFFFF, dark: 0x404040)
+    /// A week's summary at the head of its card on Plan and History: a whisper off the card, after
+    /// Pluto (2026-10-05). One step either way: neutral 50 on light's 100 card, 800 on dark's 900
+    /// (dark was 700, two steps, a heavy band next to light's whisper).
+    static let summary = Color(light: 0xFAFAFA, dark: 0x262626)
+    /// Today's mark inside a row.
+    static let today = Color(light: 0xE5E5E5, dark: 0x262626)     // today's mark: neutral 200 / 800, no blue (2026-10-05)
     static let background = Color(light: 0xFFFFFF, dark: 0x0A0A0A)   // the base everything sits on: white, under flat grey cards (2026-10-05)
     /// One step up from the base: stat tiles, list rows, cards, chips. Dark mirrors what light has
     /// always had — white panels on an off-white page — instead of everything floating on flat black.
-    static let surface = Color(light: 0xFFFFFF, dark: 0x1C1917)
+    static let surface = Color(light: 0xFFFFFF, dark: 0x262626)   // neutral 800 in dark: one step over the card, so it shows on it (was stone 900, which read brown and vanished, 2026-10-05)
+    /// The ring that cuts a chart's dot out of its line: the card's ground in dark, white in light.
+    static let dotRing = Color(light: 0xFFFFFF, dark: 0x171717)
     /// A card: soft grey on the white page, no border, no glass (Mikkel, 2026-10-05, after Pluto).
     static let card = Color(light: 0xF5F5F5, dark: 0x171717)
     /// A secondary button: grey on the page, white on a card, so it always stands off what's under it.
     static let control = Color(light: 0xF5F5F5, dark: 0x262626)
     static let controlOnCard = Color(light: 0xFFFFFF, dark: 0x262626)
+    /// The secondary button's edge: white on the white page needs one, and on a grey card it
+    /// keeps the two grounds' buttons the same (Mikkel, 2026-10-05). Neutral 200 / 700.
+    static let controlBorder = Color(light: 0xE5E5E5, dark: 0x404040)
+    /// A text or number field: white on the grey card in light; neutral 800 in dark. It was the
+    /// surface, stone 900, which read brown and sunk on the neutral card (Mikkel, 2026-10-05).
+    static let field = Color(light: 0xFFFFFF, dark: 0x262626)
 
     // Every colour is a Tailwind v3 shade (Mikkel, 2026-09-24: "only use tailwind colors").
     // v3 hues — data only, never decoration.
@@ -80,12 +101,31 @@ enum Ink {
     static let zoneRecovery = Color(hex: 0xA3A3A3)   // neutral 400
     static let zoneEndurance = Color(hex: 0x38BDF8)  // sky 400
     static let zoneTempo = Color(hex: 0x34D399)      // emerald 400
-    static let zoneThreshold = Color(hex: 0xFBBF24)  // amber 400
+    static let zoneThreshold = Color(hex: 0xFACC15)  // yellow 400: the Progress tiles' yellow, brighter than amber (2026-10-05)
     static let zoneVO2 = Color(hex: 0xFB923C)        // orange 400
-    static let zoneAnaerobic = Color(hex: 0xF87171)  // red 400         // power, primary data line
+    static let zoneAnaerobic = Color(hex: 0xF87171)  // red 400
+    // A tapped block: its own colour two Tailwind steps deeper, 400 to 600 (one step read too faint) (Mikkel, 2026-10-05:
+    // a blue Z2 bar turning black on tap read as a different thing).
+    static let zoneRecoveryLit = Color(hex: 0x525252)   // neutral 600
+    static let zoneEnduranceLit = Color(hex: 0x0284C7)  // sky 600
+    static let zoneTempoLit = Color(hex: 0x059669)      // emerald 600
+    static let zoneThresholdLit = Color(hex: 0xCA8A04)  // yellow 600
+    static let zoneVO2Lit = Color(hex: 0xEA580C)        // orange 600
+    static let zoneAnaerobicLit = Color(hex: 0xDC2626)  // red 600
+    static let trackLit = Color(light: 0xA3A3A3, dark: 0x525252) // a tapped warm-up or rest: neutral 400 / 600, a step past track
+    /// A zone's badge in its bar's hue (Mikkel, 2026-10-05): the 100 under 800 words, as every
+    /// badge; dark is the 950 under 300. Z1 grey, Z2 sky, Z3 emerald, Z4 yellow, Z5 orange, Z6+ red.
+    static let zoneBadge: [(fill: Color, ink: Color)] = [
+        (Color(light: 0xE5E5E5, dark: 0x262626), Color(light: 0x404040, dark: 0xD4D4D4)),
+        (Color(light: 0xE0F2FE, dark: 0x082F49), Color(light: 0x075985, dark: 0x7DD3FC)),
+        (Color(light: 0xD1FAE5, dark: 0x022C22), Color(light: 0x065F46, dark: 0x6EE7B7)),
+        (Color(light: 0xFEF9C3, dark: 0x422006), Color(light: 0x854D0E, dark: 0xFDE047)),
+        (Color(light: 0xFFEDD5, dark: 0x431407), Color(light: 0x9A3412, dark: 0xFDBA74)),
+        (Color(light: 0xFEE2E2, dark: 0x450A0A), Color(light: 0x991B1B, dark: 0xFCA5A5)),
+    ]
     static let red = Color(light: 0xDC2626, dark: 0xF87171)          // heart rate
     static let orange = Color(light: 0xEA580C, dark: 0xFB923C)       // orange 600 / 400
-    static let fatigue = primary      // recent load on the fitness chart: the ink, stone 900 / 50; its hot gap takes the badge's yellow or red (2026-10-01)
+    static let fatigue = primary      // recent load on the fitness chart: the ink, neutral 900 / 50; its hot gap takes the badge's yellow or red (2026-10-01)
     /// Figure glyphs, one step softer than the chart lines they echo (blue 400, red 400).
     static let powerGlyph = Color(light: 0x60A5FA, dark: 0x60A5FA)
     static let heartGlyph = Color(light: 0xF87171, dark: 0xF87171)
@@ -133,7 +173,7 @@ enum Ink {
     /// blues is not a signal; this is a step brighter than the brightest tint, so it reads as lit.
     static let tintLit = Color(light: 0x3B82F6, dark: 0x93C5FD)
     /// Label on the three lighter steps (4.6:1 or better on each, both modes).
-    static let tintLabelDark = Color(light: 0x172554, dark: 0xDBEAFE)
+    static let tintLabelDark = Color(light: 0x171717, dark: 0xE5E5E5) // ink on a light circle, no blue (2026-10-05)
     /// Label on the strongest step: white on light, near-black on dark (5.2:1 / 5.4:1).
     static let tintLabelLight = onPrimary
 }
@@ -143,10 +183,11 @@ enum Ink {
 // they line up in columns. Geist Mono was used for figures until 2026-09-23; Mikkel found the mix
 // read as generated design, so the `mono` steps now resolve to Geist and only keep their names.
 extension Ink {
-    /// Text and marks on the blue fill (a primary button, a picked day, a calendar end).
+    /// Text and marks on a coloured fill: a red swipe box, Strava's orange.
     static let onAccent = Color.white
-    /// A divider between two picked days.
-    static let onAccentDivider = Color.white.opacity(0.35)
+    /// A divider between two picked days, on the ink fill: the fill's own text colour, faded. It was
+    /// white, which vanished on dark's white fill.
+    static let onAccentDivider = onPrimary.opacity(0.35)
     /// Behind a panel that covers the page.
     static let scrim = Color.black.opacity(0.25)
     /// Glass's inner edge before iOS 26.
@@ -183,14 +224,15 @@ enum Type {
     // between the steps. Figures take the same step as the words beside them, with tabular digits.
     //
     //   Display   64 medium    the one key number on a card
-    //   Page      32 bold      a tab's name at the top of its page
+    //   Page      28 bold      a tab's name at the top of its page
     //   Title     26 semibold  a sheet's title, a ride or session name heading its page
-    //   Number    28 semibold  tile and strip figures
+    //   Number    30 semibold  tile and strip figures
+    //   Readout   22 semibold  the figure in a scrub box
     //   Heading   18 semibold  every card and section title
     //   Emphasis  17 medium    row names, figures in rows, the sentence under a key number
     //   Body      16           text, bullets, buttons, menus (medium for buttons)
     //   Footnote  13           sub-lines, units, chips, axis, legends
-    //   Label     12 semibold  caps labels over a figure, badges, eyebrows
+    //   Label     14 semibold  labels over a figure, badges, eyebrows
     static let displayNumber = mono(64, .medium)
     /// Ride now's figures, read at a glance mid-effort: between Number and Display.
     static let liveFigure = inter(38, .semibold).monospacedDigit()
@@ -198,6 +240,9 @@ enum Type {
     static let title = inter(26, .semibold)
     static let number = inter(30, .semibold).monospacedDigit()
     static let heading = inter(18, .semibold)
+    /// The figure in a scrub box: a step over Heading, so it reads at a glance under the finger
+    /// (Mikkel, 2026-10-05).
+    static let readout = inter(22, .semibold)
     static let emphasis = inter(17, .medium)
     static let body = inter(16)
     static let bodyMedium = inter(16, .medium)
@@ -212,11 +257,22 @@ enum Type {
     static let monoBody = mono(16)
     static let monoBodyMedium = mono(16, .medium)
     static let monoEmphasis = mono(17, .medium)
-    /// Long text read top to bottom (the ride analysis headline): the Body step.
-    /// Reading text in the coach's analyses: a step over body, in the ink (2026-10-01).
+    /// Reading text in the coach's analyses: a step over Body, in the ink (2026-10-01).
     static let reading = inter(17)
     static let readingLineSpacing: CGFloat = 16 * 0.4
     static let pageTitleTracking: CGFloat = -0.6
+}
+
+/// How thick a chart's line is drawn, one place for every line chart (Mikkel, 2026-10-05: thick
+/// lines were hard to read; 3 pt went to 2, tiles 2 to 1.5).
+enum Stroke {
+    /// A chart's line on a card or sheet.
+    static let line: CGFloat = 2
+    /// A line in a small tile.
+    static let lineCompact: CGFloat = 1.5
+    /// A ride's own second-by-second streams (power, heart rate, cadence…): dense and jagged, so
+    /// thinner than a trend's line, which read thick there (Mikkel, 2026-10-05).
+    static let stream: CGFloat = 1.25
 }
 
 /// Corner radii, by what they round. Every rounded shape in the app takes one of these, so a new
@@ -253,9 +309,12 @@ struct Elevation {
     static let bottomSheet = Elevation(opacity: 0.12, radius: 20, y: -2)
     /// Every button: a soft lift, so a white one stands off a grey card (Mikkel, 2026-10-05).
     static let button = Elevation(opacity: 0.05, radius: 6, y: 2)
-    /// Glass before iOS 26, and its blue variant.
+    /// A switch's knob, lifted off its track.
+    static let knob = Elevation(opacity: 0.15, radius: 2, y: 1)
+    /// Glass before iOS 26, and its prominent (ink) variant: a black shadow, not the blue of the
+    /// old blue buttons.
     static let glass = Elevation(opacity: 0.08, radius: 6, y: 2)
-    static let glassProminent = Elevation(opacity: 0.25, radius: 6, y: 2, color: Ink.blue)
+    static let glassProminent = Elevation(opacity: 0.15, radius: 6, y: 2)
 }
 
 extension View {
@@ -278,9 +337,9 @@ enum Space {
     /// Sideways, a chart alone on the screen: the safe area already keeps it off the Dynamic
     /// Island, so the page gutter on top of that only cost width.
     static let sideGutter: CGFloat = 12
-    /// Between one card and the next in a stack: always this, whatever the cards hold. 28 since
-    /// 2026-10-05 (airier, after Pluto; 20 before).
-    static let cardGap: CGFloat = 28
+    /// Between one card and the next in a stack: always this, whatever the cards hold. 20 (28 was
+    /// tried on 2026-10-05 and read too far apart).
+    static let cardGap: CGFloat = 20
     /// Inside every card, from its edge to its content: one value on every screen. 20 since
     /// 2026-10-05 (was 16).
     static let cardPadding: CGFloat = 20

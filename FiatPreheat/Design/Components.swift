@@ -3,7 +3,8 @@ import UIKit
 
 // The building blocks this app uses from Torque's design system, ported from torque-ios
 // (Views/Components/Primitives.swift, Notice.swift, Motion.swift, Plan/SessionSheets.swift,
-// AppShell.swift). Same names, sizes and tokens, so a screen here reads like a Torque screen.
+// AppShell.swift), last synced with torque-ios main at 9171fd2. Same names, sizes and tokens,
+// so a screen here reads like a Torque screen.
 // Keep them dumb: layout and tokens only.
 
 // MARK: - Motion & haptics
@@ -45,13 +46,18 @@ extension View {
     }
 }
 
+/// Solid, no lens: primary black; secondary white with a neutral 200 edge on every ground, the
+/// white page or a grey card.
 private struct GlassSurface<S: Shape>: ViewModifier {
     let shape: S
     let prominent: Bool
-    @Environment(\.onCard) private var onCard
 
-    func body(content: Content) -> some View {
-        content.background(shape.fill(prominent ? Ink.primary : onCard ? Ink.controlOnCard : Ink.control).elevation(.button))
+    @ViewBuilder func body(content: Content) -> some View {
+        if prominent {
+            content.background(shape.fill(Ink.primary).elevation(.button))
+        } else {
+            content.background(shape.fill(Ink.controlOnCard).overlay(shape.stroke(Ink.controlBorder, lineWidth: 1)).elevation(.button))
+        }
     }
 }
 
@@ -236,48 +242,122 @@ struct SmallButton: View {
     }
 }
 
+/// The one round icon button: an SF Symbol on a circle in the secondary button's style, or black
+/// when `prominent`. Every circle icon control draws this. Two sizes: `ControlSize.regular` (34) in
+/// content, `ControlSize.bar` (44) in a sheet's header. The tap area is 44 pt either way.
+struct IconButton: View {
+    let systemImage: String
+    let label: String
+    var size: CGFloat = ControlSize.regular
+    var prominent = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            IconButtonLabel(systemImage: systemImage, size: size, prominent: prominent)
+        }
+        .buttonStyle(PressableStyle())
+        .accessibilityLabel(label)
+    }
+}
+
+/// IconButton's look on its own, for a control that isn't a Button: a stepper's − and +.
+struct IconButtonLabel: View {
+    let systemImage: String
+    var size: CGFloat = ControlSize.regular
+    var prominent = false
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        // Medium at 44, a step smaller and semibold at 34, so the strokes read the same weight.
+        Image(systemName: systemImage)
+            .font(size >= ControlSize.bar ? Icon.l.weight(.medium) : Icon.m.weight(.semibold))
+            .imageScale(.medium)
+            .foregroundStyle(!isEnabled ? Ink.disabledText : prominent ? Ink.onPrimary : Ink.foreground)
+            .frame(width: size, height: size)
+            .glass(Circle(), prominent: prominent && isEnabled)
+            .frame(width: max(44, size), height: max(44, size))
+            .contentShape(Rectangle())
+    }
+}
+
 struct CloseButton: View {
     let action: () -> Void
 
     var body: some View {
-        if #available(iOS 26.0, *) {
-            Button(role: .close, action: action) {
-                Image(systemName: "xmark").font(Icon.l.weight(.medium))
-                    .foregroundStyle(Ink.foreground)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: .circle)
-            .accessibilityLabel("Close")
-        } else {
-            Button(action: action) {
-                Image(systemName: "xmark").font(Icon.s.weight(.medium)).foregroundStyle(Ink.foreground)
-                    .frame(width: 32, height: 32).background(Circle().fill(Ink.mutedBg))
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Close")
+        IconButton(systemImage: "xmark", label: "Close", size: ControlSize.bar, action: action)
+    }
+}
+
+/// An answer as underlined words rather than a button: a toast's Undo. Body Medium in the ink;
+/// `quiet` is Body in the subtle grey. The tap area is 44 pt.
+struct TextLink: View {
+    let title: String
+    var quiet = false
+    var color: Color? = nil
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title).font(quiet ? Type.body : Type.bodyMedium)
+                .foregroundStyle(color ?? (quiet ? Ink.subtle : Ink.foreground)).underline()
+                .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
         }
+        .buttonStyle(PressableStyle())
     }
 }
 
 // MARK: - Controls
 
-/// The app's switch: the system's own, in the accent ink, with any label after it and a 44 pt row.
+/// The app's switch, its state drawn inside: a check beside the knob on the ink track when on, a
+/// cross on grey when off, so on and off read apart in dark too. Any label after it, a 44 pt row;
+/// the whole row toggles. To VoiceOver and UI tests it is still a switch.
 struct WeeklySwitchStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
         HStack(spacing: 8) {
-            Toggle(isOn: configuration.$isOn) { configuration.label }
-                .toggleStyle(.switch)
-                .labelsHidden()
-                .tint(Ink.accent)
-                .fixedSize()
+            MarkSwitch(isOn: configuration.isOn)
             configuration.label
         }
         .frame(minHeight: 44)
-        .accessibilityElement(children: .combine)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            Haptics.select()
+            withAnimation(.snappy(duration: Motion.normal)) { configuration.isOn.toggle() }
+        }
+        .accessibilityRepresentation {
+            Toggle(isOn: configuration.$isOn) { configuration.label }
+        }
+    }
+}
+
+/// The capsule itself: 56 × 32, a 26 pt white knob that slides, and both marks always drawn, each
+/// on its own side, crossfading as the knob passes, so nothing jumps.
+struct MarkSwitch: View {
+    let isOn: Bool
+    @Environment(\.isEnabled) private var enabled
+    static let width: CGFloat = 56, height: CGFloat = 32, inset: CGFloat = 3
+
+    var body: some View {
+        let knob = Self.height - Self.inset * 2
+        let side = Self.width - knob - Self.inset * 2   // the room beside the knob
+        ZStack(alignment: .leading) {
+            Capsule().fill(isOn ? Ink.switchOn : Ink.switchOff)
+            Image(systemName: "checkmark").font(Icon.s.weight(.bold))
+                .foregroundStyle(Ink.switchOnText)
+                .frame(width: side).offset(x: Self.inset)
+                .opacity(isOn ? 1 : 0)
+            Image(systemName: "xmark").font(Icon.xs.weight(.bold))
+                .foregroundStyle(Ink.switchOffText)
+                .frame(width: side).offset(x: Self.width - side - Self.inset)
+                .opacity(isOn ? 0 : 1)
+            Circle().fill(Ink.knob)
+                .elevation(.knob)
+                .frame(width: knob, height: knob)
+                .offset(x: isOn ? Self.width - knob - Self.inset : Self.inset)
+        }
+        .frame(width: Self.width, height: Self.height)
+        .opacity(enabled ? 1 : 0.5)
+        .accessibilityHidden(true)
     }
 }
 
@@ -314,18 +394,15 @@ struct NumberStepper: View {
             Haptics.tap(.light)
             withAnimation(Motion.change) { action() }
         } label: {
-            Image(systemName: icon).font(Icon.l.weight(.semibold))
-                .foregroundStyle(enabled ? Ink.foreground : Ink.disabledText)
-                .frame(width: ControlSize.bar, height: ControlSize.bar)
-                .glass(Circle())
-                .contentShape(Rectangle())
+            IconButtonLabel(systemImage: icon, size: ControlSize.bar)
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
     }
 }
 
-/// Days of the week as one segmented strip. `days` are Calendar weekdays (1 = Sunday … 7 = Saturday).
+/// Days of the week as chips: picked ones a soft grey under ink words, the rest white with an
+/// edge. `days` are Calendar weekdays (1 = Sunday … 7 = Saturday).
 struct DayPicker: View {
     let days: [Int]
     let selected: Set<Int>
@@ -334,32 +411,27 @@ struct DayPicker: View {
     var body: some View {
         let short = Calendar.current.shortWeekdaySymbols
         let long = Calendar.current.weekdaySymbols
-        HStack(spacing: 0) {
-            ForEach(Array(days.enumerated()), id: \.element) { i, d in
+        HStack(spacing: 6) {
+            ForEach(days, id: \.self) { d in
                 let on = selected.contains(d)
                 Button {
                     Haptics.select()
                     withAnimation(.easeOut(duration: Motion.fast)) { toggle(d) }
                 } label: {
                     Text(short[d - 1]).font(Type.footnoteMedium)
-                        .foregroundStyle(on ? Ink.onPrimary : Ink.secondary)
-                        .frame(maxWidth: .infinity).frame(height: 44)
-                        .background(on ? Ink.accent : Color.clear)
+                        .lineLimit(1).minimumScaleFactor(0.85)
+                        .foregroundStyle(on ? Ink.foreground : Ink.muted)
+                        .frame(maxWidth: .infinity).frame(height: 40)
+                        .background(Capsule().fill(on ? Ink.chipOn : Ink.controlOnCard))
+                        .overlay(Capsule().strokeBorder(on ? Color.clear : Ink.controlBorder, lineWidth: 1))
+                        .frame(height: 44)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                // A short line between two days of the same state, so a run of picked days still reads as days.
-                .overlay(alignment: .leading) {
-                    if i > 0, on == selected.contains(days[i - 1]) {
-                        Rectangle().fill(on ? Ink.onAccentDivider : Ink.border).frame(width: 1).padding(.vertical, 12)
-                    }
-                }
                 .accessibilityLabel(long[d - 1])
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
-        .background(Ink.mutedBg)
-        .clipShape(RoundedRectangle(cornerRadius: Radius.control))
     }
 }
 
@@ -379,7 +451,7 @@ struct FormTextField: View {
         }
         .font(Type.body).foregroundStyle(Ink.foreground)
         .padding(.horizontal, 12).frame(height: 44)
-        .background(Ink.surface, in: RoundedRectangle(cornerRadius: Radius.control))
+        .background(Ink.field, in: RoundedRectangle(cornerRadius: Radius.control))
         .overlay(RoundedRectangle(cornerRadius: Radius.control).strokeBorder(Ink.border, lineWidth: 1))
     }
 }
@@ -428,9 +500,12 @@ struct SheetHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            HStack(alignment: .center, spacing: 12) {
+            // The close button is centred on the title's first line, so a title that wraps grows
+            // downwards and keeps it where a one-line title has it.
+            HStack(alignment: .sheetTitleLine, spacing: 12) {
                 Text(title).font(Type.title).tracking(-24 * 0.025).foregroundStyle(Ink.foreground)
                     .fixedSize(horizontal: false, vertical: true)
+                    .alignmentGuide(.sheetTitleLine) { d in (d[.firstTextBaseline] + d.height - d[.lastTextBaseline]) / 2 }
                 Spacer(minLength: 0)
                 CloseButton(action: onClose)
             }
@@ -439,8 +514,16 @@ struct SheetHeader: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, Space.gutter).padding(.top, 22).padding(.bottom, 28)
+        .padding(.horizontal, Space.gutter).padding(.top, 22).padding(.bottom, 18)
     }
+}
+
+extension VerticalAlignment {
+    /// A sheet header's title line: the middle of a title's first line, the middle of the buttons.
+    fileprivate enum SheetTitleLine: AlignmentID {
+        static func defaultValue(in d: ViewDimensions) -> CGFloat { d[VerticalAlignment.center] }
+    }
+    fileprivate static let sheetTitleLine = VerticalAlignment(SheetTitleLine.self)
 }
 
 /// A word from the app at the foot of the screen, on `primary`: what just happened, and when there
@@ -470,9 +553,7 @@ struct Toast: View {
                 }
             }
             if let action {
-                Button(action.title, action: action.run)
-                    .font(Type.bodyMedium).foregroundStyle(Ink.onPrimary).underline()
-                    .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+                TextLink(title: action.title, color: Ink.onPrimary, action: action.run)
             }
         }
         .padding(.leading, 16).padding(.trailing, action == nil ? 16 : 8)
