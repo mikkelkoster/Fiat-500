@@ -13,7 +13,7 @@ struct HomeScreen: View {
     enum Sheet: String, Identifiable { case find, schedule, settings, trips; var id: String { rawValue } }
 
     /// The gauge's height and how far it reaches up over the car.
-    private static let gaugeHeight: CGFloat = 172
+    private static let gaugeHeight: CGFloat = 200
     private static let gaugeOverlap: CGFloat = 104
 
     /// Everything under the hero: the gauge (less its overlap), Heat cabin, the action row, the
@@ -345,7 +345,7 @@ struct ArcGauge: View {
         let progress = target > 0 ? shown / target : 0
         ZStack {
             Circle().trim(from: 0, to: 0.75)
-                .stroke(V.outline.opacity(0.7), style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                .stroke(V.outline.opacity(0.7), style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 .rotationEffect(.degrees(135))
             if value == nil {
                 LoadingArc()
@@ -359,7 +359,7 @@ struct ArcGauge: View {
                     HStack(alignment: .firstTextBaseline, spacing: 3) {
                         // The final number, hidden, holds the width; the counting one sits over it.
                         Text("\(Int(target.rounded()))")
-                            .font(V.sora(52, .ultraLight)).tracking(-2).monospacedDigit()
+                            .font(V.sora(60, .ultraLight)).tracking(-2).monospacedDigit()
                             .hidden()
                             .overlay(alignment: .trailing) {
                                 Color.clear.modifier(CountUp(value: shown)).fixedSize()
@@ -371,7 +371,7 @@ struct ArcGauge: View {
             }
             .offset(y: 4)
         }
-        .frame(width: 148, height: 148)
+        .frame(width: 176, height: 176)
         .frame(maxWidth: .infinity)
         .animation(.easeOut(duration: 0.3), value: value == nil)
         // On opening, wait for the launch transition so the fill is seen.
@@ -403,12 +403,12 @@ struct ArcGauge: View {
     @ViewBuilder private func filledArc(progress: Double) -> some View {
         let end = max(0.01, min(1, fraction * progress))
         Circle().trim(from: 0, to: 0.75 * end)
-            .stroke(color, style: StrokeStyle(lineWidth: 16, lineCap: .round))
+            .stroke(color, style: StrokeStyle(lineWidth: 18, lineCap: .round))
             .rotationEffect(.degrees(135))
-            .blur(radius: 14)
+            .blur(radius: 16)
             .opacity(0.75)
         Circle().trim(from: 0, to: 0.75 * end)
-            .stroke(color, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+            .stroke(color, style: StrokeStyle(lineWidth: 8, lineCap: .round))
             .rotationEffect(.degrees(135))
             .shadow(color: color.opacity(0.9), radius: 5)
             .shadow(color: color.opacity(0.5), radius: 12)
@@ -443,7 +443,7 @@ private struct LoadingArc: View {
                     .blur(radius: 10)
                 Circle().trim(from: 0.75 * from, to: 0.75 * to)
                     .stroke(LinearGradient(colors: [V.text.opacity(0), V.text.opacity(0.7)], startPoint: .leading, endPoint: .trailing),
-                            style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                            style: StrokeStyle(lineWidth: 8, lineCap: .round))
             }
             .rotationEffect(.degrees(135))
         }
@@ -457,7 +457,7 @@ private struct LoadingNumber: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(V.raised)
-            .frame(width: 76, height: 40)
+            .frame(width: 88, height: 46)
             .opacity(dim ? 0.45 : 0.9)
             .padding(.vertical, 12)
             .onAppear {
@@ -470,7 +470,7 @@ private struct LoadingNumber: View {
 /// the way along. A shape, so it's animated along the curve rather than straight across.
 struct ArcKnob: Shape {
     var fraction: Double
-    var size: CGFloat = 14
+    var size: CGFloat = 16
     var animatableData: Double {
         get { fraction }
         set { fraction = newValue }
@@ -494,7 +494,7 @@ private struct CountUp: ViewModifier, Animatable {
 
     func body(content: Content) -> some View {
         Text("\(Int(value.rounded()))")
-            .font(V.sora(52, .ultraLight)).tracking(-2).foregroundStyle(V.text)
+            .font(V.sora(60, .ultraLight)).tracking(-2).foregroundStyle(V.text)
             .monospacedDigit()
             // Each frame is its own number; no cross-fade between them.
             .contentTransition(.identity)
@@ -518,7 +518,7 @@ struct GaugePager<Content: View>: View {
     @State private var tail: CGFloat = 0
 
     /// How far a drag goes for a whole page.
-    private let width: CGFloat = 230
+    private let width: CGFloat = 250
 
     var body: some View {
         // The arc's opening is empty, so the dots sit up in it.
@@ -539,7 +539,7 @@ struct GaugePager<Content: View>: View {
                         .allowsHitTesting(i == page)
                 }
             }
-            .frame(width: width, height: 160)
+            .frame(width: width, height: 188)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 8)

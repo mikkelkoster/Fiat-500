@@ -32,7 +32,7 @@ struct CarHero: View {
             // wheels stay where the gauge overlaps them.
             let imageWidth = w * 620 / 390 * 1.08
             let imageHeight = imageWidth * 640 / 1200
-            let imageTop = 78 * w / 390 + max(0, geo.size.height - 420) * 0.3
+            let imageTop = 62 * w / 390 + max(0, geo.size.height - 420) * 0.3
             ZStack(alignment: .topLeading) {
                 spotlight
                 if let image {
@@ -139,7 +139,7 @@ struct CarHero: View {
                     }
                     .frame(height: 44)
                     // A long name shrinks to fit one line rather than running under the car.
-                    Text(carName).font(V.sora(48, .ultraLight)).tracking(-1.5).foregroundStyle(V.text)
+                    Text(carName).font(V.sora(42, .ultraLight)).tracking(-1.2).foregroundStyle(V.text)
                         .lineLimit(1).minimumScaleFactor(0.5)
                         .padding(.top, 2)
 
