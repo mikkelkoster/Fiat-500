@@ -30,7 +30,6 @@ final class CarModel {
     private var commandID = 0
     private var pendingWait: Task<OperationResult, Never>?
     private(set) var lastPreheatStart: Date?
-    private(set) var lastLightsOn: Date?
     private(set) var statusError: String?
     private(set) var location: CarLocation?
     private(set) var locationError: String?
@@ -117,8 +116,6 @@ final class CarModel {
 
     /// The 500e stops preconditioning on its own; treat it as running for this long.
     static let assumedPreheatDuration: TimeInterval = 30 * 60
-    /// The lights stay on about this long after the command.
-    static let assumedLightsDuration: TimeInterval = 30
 
     var isPreheating: Bool {
         guard let lastPreheatStart else { return false }
@@ -130,10 +127,6 @@ final class CarModel {
         return max(0, Int((Self.assumedPreheatDuration - Date().timeIntervalSince(lastPreheatStart)) / 60))
     }
 
-    var isLightsOn: Bool {
-        guard let lastLightsOn else { return false }
-        return Date().timeIntervalSince(lastLightsOn) < Self.assumedLightsDuration
-    }
 
     var isBusy: Bool {
         switch commandState {
@@ -575,7 +568,6 @@ final class CarModel {
             let result = await wait.value
             guard id == commandID else { return .done(command, result, Date()) }
             if result == .failed, command == .preconditionOn { setLastPreheat(nil) }
-            if result == .failed, command == .lights { lastLightsOn = nil }
             if result == .succeeded { await followUp(command) }
             commandState = .done(command, result, Date())
         } catch {
@@ -588,7 +580,6 @@ final class CarModel {
         switch command {
         case .preconditionOn: setLastPreheat(Date())
         case .preconditionOff: setLastPreheat(nil)
-        case .lights: lastLightsOn = Date()
         default: break
         }
     }

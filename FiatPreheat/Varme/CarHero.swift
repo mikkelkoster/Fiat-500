@@ -8,8 +8,7 @@ struct CarHero: View {
     let carColor: Color
     let image: Image?
     let heating: Bool
-    let lightsOn: Bool
-    /// The picture is one of the 500e renders, whose lamp and tyre positions are known.
+    /// The picture is one of the 500e renders, whose tyre positions are known.
     var lampsKnown = false
     /// Where any other picture meets the ground, worked out from its silhouette.
     var ground: GroundShape? = nil
@@ -69,13 +68,6 @@ struct CarHero: View {
                                 .animation(.timingCurve(0.3, 0.1, 0.2, 1, duration: 3.6).repeatForever(autoreverses: false).delay(Double(i) * 1.2), value: shimmer)
                                 .position(x: x, y: imageTop + imageHeight * 0.14)
                         }
-                    }
-                    if lightsOn, lampsKnown {
-                        // Only where the lamp position is known for this render.
-                        Ellipse().fill(RadialGradient(colors: [Color(hex: 0xfef3c7).opacity(0.6), Color(hex: 0xfef3c7).opacity(0)], center: .center, startRadius: 0, endRadius: 40))
-                            .frame(width: imageWidth * 0.177, height: imageHeight * 0.18)
-                            .blur(radius: 4)
-                            .position(x: w / 2 - imageWidth / 2 + imageWidth * 0.485, y: imageTop + imageHeight * 0.41)
                     }
                 } else if loading {
                     TimelineView(.animation) { context in

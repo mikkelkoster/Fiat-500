@@ -111,7 +111,6 @@ struct HomeScreen: View {
             carColor: Color(hexString: model.carColorHex),
             image: model.carImage,
             heating: model.isPreheating,
-            lightsOn: model.isLightsOn,
             lampsKnown: !model.paints.isEmpty,
             ground: model.carGround,
             updated: updatedText,
@@ -252,7 +251,7 @@ struct HomeScreen: View {
 
     private var actionTiles: some View {
         HStack(spacing: 8) {
-            ActionTile(icon: "sun", title: model.isLightsOn ? "On" : "Lights", state: tileState(.lights, active: model.isLightsOn)) {
+            ActionTile(icon: "sun", title: "Lights", state: tileState(.lights)) {
                 Task { await model.perform(.lights) }
             }
             ActionTile(icon: "map-pin", title: "Find", state: tileState(.locate)) { sheet = .find }
@@ -833,7 +832,7 @@ struct ToastItem: Equatable {
 
     private static let confirmed: [RemoteCommand: String] = [
         .preconditionOn: "Heating", .preconditionOff: "Climate off", .lock: "Locked", .unlock: "Unlocked",
-        .lights: "Lights on", .trunkUnlock: "Boot unlocked", .chargeNow: "Charging started",
+        .lights: "Lights flashed", .trunkUnlock: "Boot unlocked", .chargeNow: "Charging started",
         .deepRefresh: "Updated from the car", .locate: "Location updated",
     ]
     private static let sent: [RemoteCommand: String] = [
