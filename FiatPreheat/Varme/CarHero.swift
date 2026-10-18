@@ -38,7 +38,7 @@ struct CarHero: View {
             let w = geo.size.width
             let imageWidth = w * 620 / 390
             let imageHeight = imageWidth * 640 / 1200
-            let imageTop = 118 * w / 390 + max(0, geo.size.height - 420) * 0.4
+            let imageTop = 104 * w / 390 + max(0, geo.size.height - 420) * 0.4
             ZStack(alignment: .topLeading) {
                 spotlight
                 if let image {
@@ -94,9 +94,49 @@ struct CarHero: View {
                     .frame(maxHeight: .infinity, alignment: .bottom)
 
                 VStack(alignment: .leading, spacing: 0) {
-                    // Settings alone at the top right, clear of the Dynamic Island; the name below it.
-                    HStack {
-                        Spacer()
+                    // Plate and update time on the left, settings on the right, clear of the Dynamic Island.
+                    HStack(alignment: .center, spacing: 10) {
+                        HStack(spacing: 10) {
+                            if cars.count > 1, let onSwitchCar {
+                                Menu {
+                                    ForEach(cars, id: \.vin) { car in
+                                        Button(car.name) { onSwitchCar(car.vin) }
+                                    }
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        plateChipText
+                                        PhIcon(name: "caret-down", size: 10)
+                                    }
+                                    .foregroundStyle(V.text)
+                                    .padding(.horizontal, 10).frame(height: 24)
+                                    .background(Capsule().fill(V.scrim))
+                                    .overlay(Capsule().strokeBorder(V.outline, lineWidth: 1))
+                                }
+                                .accessibilityLabel("Switch car")
+                            } else if !plate.isEmpty {
+                                plateChipText
+                                    .padding(.horizontal, 10).frame(height: 24)
+                                    .background(Capsule().fill(V.scrim))
+                                    .overlay(Capsule().strokeBorder(V.outline, lineWidth: 1))
+                            }
+                            if let updated {
+                                Button { onWake?() } label: {
+                                    HStack(spacing: 5) {
+                                        Text(waking ? "Asking the car…" : updated).font(V.label).foregroundStyle(V.textMuted).lineLimit(1)
+                                        if onWake != nil {
+                                            PhIcon(name: "arrows-clockwise", size: 11).foregroundStyle(V.textMuted)
+                                                .rotationEffect(.degrees(waking ? 360 : 0))
+                                                .animation(waking ? .linear(duration: 1.2).repeatForever(autoreverses: false) : .default, value: waking)
+                                        }
+                                    }
+                                    .frame(height: 24).contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(onWake == nil || waking)
+                                .accessibilityHint("Wakes the car for fresh numbers")
+                            }
+                        }
+                        Spacer(minLength: 8)
                         if let onSettings {
                             Button(action: onSettings) {
                                 PhIcon(name: "gear", size: 20).foregroundStyle(V.text)
@@ -113,49 +153,8 @@ struct CarHero: View {
                     // A long name shrinks to fit one line rather than running under the car.
                     Text(carName).font(V.display).tracking(-3).foregroundStyle(V.text)
                         .lineLimit(1).minimumScaleFactor(0.4)
-                        .padding(.top, -8)
-                    HStack(spacing: 10) {
-                        if cars.count > 1, let onSwitchCar {
-                            Menu {
-                                ForEach(cars, id: \.vin) { car in
-                                    Button(car.name) { onSwitchCar(car.vin) }
-                                }
-                            } label: {
-                                HStack(spacing: 6) {
-                                    plateChipText
-                                    PhIcon(name: "caret-down", size: 10)
-                                }
-                                .foregroundStyle(V.text)
-                                .padding(.horizontal, 10).frame(height: 24)
-                                .background(Capsule().fill(V.scrim))
-                                .overlay(Capsule().strokeBorder(V.outline, lineWidth: 1))
-                            }
-                            .accessibilityLabel("Switch car")
-                        } else if !plate.isEmpty {
-                            plateChipText
-                                .padding(.horizontal, 10).frame(height: 24)
-                                .background(Capsule().fill(V.scrim))
-                                .overlay(Capsule().strokeBorder(V.outline, lineWidth: 1))
-                        }
-                        if let updated {
-                            Button { onWake?() } label: {
-                                HStack(spacing: 5) {
-                                    Text(waking ? "Asking the car…" : updated).font(V.label).foregroundStyle(V.textMuted).lineLimit(1)
-                                    if onWake != nil {
-                                        PhIcon(name: "arrows-clockwise", size: 11).foregroundStyle(V.textMuted)
-                                            .rotationEffect(.degrees(waking ? 360 : 0))
-                                            .animation(waking ? .linear(duration: 1.2).repeatForever(autoreverses: false) : .default, value: waking)
-                                    }
-                                }
-                                .frame(height: 24).contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(onWake == nil || waking)
-                            .accessibilityHint("Wakes the car for fresh numbers")
-                        }
-                    }
-                    // The name's line box leaves room for descenders it rarely has; tuck the row up into it.
-                    .padding(.top, -8)
+                        .padding(.top, 2)
+
                 }
                 .padding(.horizontal, V.gutter)
                 .padding(.top, 54)
