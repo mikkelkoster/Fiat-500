@@ -26,6 +26,9 @@ final class CarModel {
     private(set) var vehicles: [Vehicle] = []
     private(set) var status: VehicleStatus?
     private(set) var commandState: CommandState = .idle
+    /// Bumped per command, so a wait that was overtaken by a newer command (Stop while starting) stays quiet.
+    private var commandID = 0
+    private var pendingWait: Task<OperationResult, Never>?
     private(set) var lastPreheatStart: Date?
     private(set) var lastLightsOn: Date?
     private(set) var statusError: String?
@@ -43,7 +46,7 @@ final class CarModel {
     }
     /// The owner's own choice, as `#rrggbb`; tints the light around the car.
     var carColorHex: String {
-        didSet { defaults.set(carColorHex, forKey: Keys.carColor) }
+        didSet { defaults.set(carColorHex, forKey: Keys.carColor); publishSnapshot() }
     }
     var ownerName: String? {
         didSet { defaults.set(ownerName, forKey: Keys.ownerName) }
@@ -90,14 +93,24 @@ final class CarModel {
 
     var vehicle: Vehicle? { vehicles.first { $0.vin == selectedVIN } }
 
-    /// The one schedule the home screen shows and the sheet edits.
-    var schedule: PreheatSchedule? { schedules.first }
+    /// The schedule that runs next and when the car will be warm, for the home screen and widgets.
+    var nextSchedule: (schedule: PreheatSchedule, ready: Date)? {
+        schedules.compactMap { s in
+            s.upcomingStarts(after: Date()).first.map { (s, $0.addingTimeInterval(TimeInterval(s.leadMinutes * 60))) }
+        }
+        .min { $0.1 < $1.1 }
+    }
 
     /// The picture of the car. For now the one render we have; other cars get a silhouette.
     var carImage: Image? {
-        guard let vehicle else { return Demo.isActive ? Image("car-fiat-500e-nero") : nil }
+        paints.isEmpty ? nil : Image(CarPaint.fiat500e(matching: carColorHex).imageName)
+    }
+
+    /// The factory paints we have pictures of for this car; empty when we only have a silhouette.
+    var paints: [CarPaint] {
+        guard let vehicle else { return Demo.isActive ? CarPaint.fiat500e : [] }
         let isNew500 = vehicle.vin.hasPrefix("ZFAEFAC") || (vehicle.model ?? "").localizedCaseInsensitiveContains("500")
-        return isNew500 ? Image("car-fiat-500e-nero") : nil
+        return isNew500 ? CarPaint.fiat500e : []
     }
 
     /// From the car's service list. A car that lists nothing gets every command, so an older or
@@ -144,9 +157,9 @@ final class CarModel {
             vehicles = [Demo.vehicle]
             selectedVIN = Demo.vehicle.vin
             plate = "ED 35079"
-            carName = "500e"
+            carName = UserDefaults.standard.string(forKey: "demoName") ?? "500e"
             ownerName = "Mikkel"
-            carColorHex = "#18181b"
+            carColorHex = UserDefaults.standard.string(forKey: "demoColor") ?? "#18181b"
             status = Demo.status
             schedules = Demo.schedules
             location = Demo.location
@@ -231,18 +244,20 @@ final class CarModel {
         if let index = schedules.firstIndex(where: { $0.id == schedule.id }) {
             schedules[index] = schedule
         } else {
-            schedules = [schedule]
+            schedules.append(schedule)
         }
         publishSnapshot()
     }
 
-    func deleteSchedule() {
-        schedules = []
+    func deleteSchedule(_ id: PreheatSchedule.ID) {
+        schedules.removeAll { $0.id == id }
+        publishSnapshot()
     }
 
-    /// Fired by a notification or background refresh: honours "only when plugged in".
-    func scheduledPreheat() async {
-        if schedule?.onlyWhenPluggedIn == true {
+    /// Fired by a notification or background refresh for one schedule: honours its "only when plugged in".
+    func scheduledPreheat(scheduleID: PreheatSchedule.ID?) async {
+        let schedule = schedules.first { $0.id == scheduleID }
+        if schedule?.onlyWhenPluggedIn ?? true {
             await refreshStatus()
             if status?.isPluggedIn == false { return }
         }
@@ -272,10 +287,23 @@ final class CarModel {
             commandState = .failed(UconnectError.missingAccount.localizedDescription)
             return commandState
         }
+        pendingWait?.cancel()
+        commandID += 1
+        let id = commandID
         commandState = .sending(command)
         if Demo.isActive {
             try? await Task.sleep(for: .seconds(1))
             recordAccepted(command)
+            if waitForCar {
+                commandState = .waitingForCar(command)
+                let wait = Task { () -> OperationResult in
+                    try? await Task.sleep(for: .seconds(4))
+                    return Task.isCancelled ? .unknown : .succeeded
+                }
+                pendingWait = wait
+                _ = await wait.value
+                guard id == commandID else { return .done(command, .unknown, Date()) }
+            }
             await followUp(command)
             commandState = .done(command, .succeeded, Date())
             return commandState
@@ -289,13 +317,16 @@ final class CarModel {
                 return commandState
             }
             commandState = .waitingForCar(command)
-            let result = await client.waitForResult(vin: vin, correlationId: correlationId)
+            let wait = Task { [client] in await client.waitForResult(vin: vin, correlationId: correlationId) }
+            pendingWait = wait
+            let result = await wait.value
+            guard id == commandID else { return .done(command, result, Date()) }
             if result == .failed, command == .preconditionOn { setLastPreheat(nil) }
             if result == .failed, command == .lights { lastLightsOn = nil }
             if result == .succeeded { await followUp(command) }
             commandState = .done(command, result, Date())
         } catch {
-            commandState = .failed(error.localizedDescription)
+            if id == commandID { commandState = .failed(error.localizedDescription) }
         }
         return commandState
     }
@@ -336,14 +367,11 @@ final class CarModel {
         guard !Demo.isActive else { return }
         var rangeKm = status?.range
         if let r = rangeKm, status?.rangeUnit?.lowercased().hasPrefix("mi") == true { rangeKm = r * 1.609 }
-        let next = schedule.flatMap { s -> String? in
-            guard s.isEnabled, let start = s.upcomingStarts(after: Date()).first else { return nil }
-            return start.addingTimeInterval(TimeInterval(s.leadMinutes * 60)).formatted(.dateTime.weekday(.abbreviated).hour().minute())
-        }
+        let next = nextSchedule?.ready.formatted(.dateTime.weekday(.abbreviated).hour().minute())
         CarSnapshot(carName: carName, plate: plate, stateOfCharge: status?.stateOfCharge, rangeKm: rangeKm, useMiles: useMiles,
                     isCharging: status?.isCharging == true, isPluggedIn: status?.isPluggedIn == true, isLocked: status?.isLocked,
                     preheatStartedAt: isPreheating ? lastPreheatStart : nil, nextSchedule: next, hasCarImage: carImage != nil,
-                    updatedAt: Date()).save()
+                    updatedAt: Date(), carImageName: paints.isEmpty ? nil : CarPaint.fiat500e(matching: carColorHex).imageName).save()
         if let snapshot = CarSnapshot.load() { WatchLink.shared.publish(snapshot) }
         WidgetCenter.shared.reloadAllTimelines()
         if #available(iOS 18.0, *) { ControlCenter.shared.reloadAllControls() }

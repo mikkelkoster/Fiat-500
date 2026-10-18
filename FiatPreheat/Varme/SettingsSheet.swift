@@ -13,22 +13,29 @@ struct SettingsSheet: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
-                        field("Name", text: $model.carName)
-                        Divider().overlay(V.raised)
+                        field("Vehicle name", text: $model.carName)
+                        Divider().overlay(V.outline).padding(.leading, 18)
                         field("Plate", text: $model.plate, caps: true)
-                        Divider().overlay(V.raised)
+                        Divider().overlay(V.outline).padding(.leading, 18)
                         field("Your name", text: Binding(get: { model.ownerName ?? "" }, set: { model.ownerName = $0.isEmpty ? nil : $0 }))
                     }
                     .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Colour").font(V.label).foregroundStyle(V.textMuted)
-                        CarColorPicker(hex: $model.carColorHex)
+                        HStack {
+                            Text("Colour").font(V.label).foregroundStyle(V.textMuted)
+                            Spacer()
+                            if !model.paints.isEmpty {
+                                Text(CarPaint.fiat500e(matching: model.carColorHex).name).font(V.label).foregroundStyle(V.text)
+                            }
+                        }
+                        CarColorPicker(hex: $model.carColorHex, paints: model.paints)
                     }
                     .padding(16)
                     .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
 
-                    VSwitchRow(title: "Miles instead of kilometres", isOn: $model.useMiles)
+                    VMenuRow(title: "Distance", options: [(false, "Kilometres"), (true, "Miles")], selection: $model.useMiles)
+                        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
 
                     if model.vehicles.count > 1 {
                         VStack(spacing: 0) {
@@ -48,7 +55,7 @@ struct SettingsSheet: View {
                                     .padding(.horizontal, 18).frame(minHeight: 56)
                                 }
                                 .buttonStyle(.plain)
-                                if vehicle.vin != model.vehicles.last?.vin { Divider().overlay(V.raised) }
+                                if vehicle.vin != model.vehicles.last?.vin { Divider().overlay(V.outline).padding(.leading, 18) }
                             }
                         }
                         .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
@@ -82,22 +89,15 @@ struct SettingsSheet: View {
     }
 
     private func field(_ title: String, text: Binding<String>, caps: Bool = false) -> some View {
-        HStack {
-            Text(title).font(V.body).foregroundStyle(V.textMuted)
-            Spacer()
-            TextField(title, text: text)
-                .font(V.body).foregroundStyle(V.text)
-                .multilineTextAlignment(.trailing)
-                .textInputAutocapitalization(caps ? .characters : .words)
-                .autocorrectionDisabled()
-        }
-        .padding(.horizontal, 18).frame(height: 56)
+        VTextRow(title: title, text: text, caps: caps)
     }
 }
 
 /// Twelve swatches and a free colour. The choice tints the light around the car.
 struct CarColorPicker: View {
     @Binding var hex: String
+    /// The car's factory paints, when we have pictures of them; the picture follows the choice.
+    var paints: [CarPaint] = []
 
     static let swatches: [(String, String)] = [
         ("Black", "#18181b"), ("White", "#f4f4f5"), ("Grey", "#71717a"), ("Silver", "#d4d4d8"), ("Red", "#dc2626"), ("Orange", "#f97316"),
@@ -106,7 +106,7 @@ struct CarColorPicker: View {
 
     var body: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 6), spacing: 6) {
-            ForEach(Self.swatches, id: \.1) { name, value in
+            ForEach(paints.isEmpty ? Self.swatches : paints.map { ($0.name, $0.hex) }, id: \.1) { name, value in
                 Button {
                     Haptics.select()
                     hex = value
@@ -120,10 +120,12 @@ struct CarColorPicker: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(name)
             }
-            ColorPicker("", selection: Binding(get: { Color(hexString: hex) }, set: { hex = $0.hexString }), supportsOpacity: false)
-                .labelsHidden()
-                .frame(width: 44, height: 44)
-                .accessibilityLabel("Any colour")
+            if paints.isEmpty {
+                ColorPicker("", selection: Binding(get: { Color(hexString: hex) }, set: { hex = $0.hexString }), supportsOpacity: false)
+                    .labelsHidden()
+                    .frame(width: 44, height: 44)
+                    .accessibilityLabel("Any colour")
+            }
         }
     }
 }

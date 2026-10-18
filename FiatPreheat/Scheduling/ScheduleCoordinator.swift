@@ -30,7 +30,7 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
 
     func configure() {
         center.delegate = self
-        let start = UNNotificationAction(identifier: Self.startActionID, title: "Preheat now", options: [])
+        let start = UNNotificationAction(identifier: Self.startActionID, title: "Heat now", options: [])
         center.setNotificationCategories([
             UNNotificationCategory(identifier: Self.categoryID, actions: [start], intentIdentifiers: [])
         ])
@@ -53,7 +53,7 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
             for schedule in schedules where schedule.isEnabled {
                 for weekday in schedule.weekdays {
                     let content = UNMutableNotificationContent()
-                    content.title = "Preheat for \(schedule.readyTimeText)"
+                    content.title = "Warm by \(schedule.readyTimeText)"
                     content.body = "Long-press and choose Preheat now. Skipped if it already started."
                     content.sound = .default
                     content.categoryIdentifier = Self.categoryID
@@ -88,9 +88,9 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
     private func handleBackgroundRefresh(_ task: BGAppRefreshTask) {
         let work = Task { @MainActor in
             let model = CarModel.shared
-            if let due = Self.dueStart(in: model.schedules, now: Date()), !Self.alreadyFired(due) {
-                Self.markFired(due)
-                await model.scheduledPreheat()
+            if let due = Self.due(in: model.schedules, now: Date()), !Self.alreadyFired(due.start) {
+                Self.markFired(due.start)
+                await model.scheduledPreheat(scheduleID: due.schedule.id)
             }
             self.submitBackgroundRefresh(for: model.schedules)
             task.setTaskCompleted(success: true)
@@ -100,10 +100,15 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
 
     /// The start time a wake-up at `now` should act on, if any.
     static func dueStart(in schedules: [PreheatSchedule], now: Date) -> Date? {
+        due(in: schedules, now: now)?.start
+    }
+
+    /// The same, with the schedule it belongs to.
+    static func due(in schedules: [PreheatSchedule], now: Date) -> (start: Date, schedule: PreheatSchedule)? {
         schedules
-            .flatMap { $0.upcomingStarts(after: now.addingTimeInterval(-lateWindow)) }
-            .filter { $0.timeIntervalSince(now) <= earlyWindow }
-            .min()
+            .flatMap { s in s.upcomingStarts(after: now.addingTimeInterval(-lateWindow)).map { (start: $0, schedule: s) } }
+            .filter { $0.start.timeIntervalSince(now) <= earlyWindow }
+            .min { $0.start < $1.start }
     }
 
     private static func alreadyFired(_ start: Date) -> Bool {
@@ -120,12 +125,13 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
         let start = Calendar.current.dateInterval(of: .minute, for: notification.date)?.start ?? notification.date
         guard !Self.alreadyFired(start) else { return }
         Self.markFired(start)
-        await Self.startPreheat()
+        let id = (notification.request.content.userInfo["scheduleID"] as? String).flatMap(UUID.init(uuidString:))
+        await Self.startPreheat(scheduleID: id)
     }
 
     @MainActor
-    private static func startPreheat() async {
-        await CarModel.shared.scheduledPreheat()
+    private static func startPreheat(scheduleID: UUID?) async {
+        await CarModel.shared.scheduledPreheat(scheduleID: scheduleID)
     }
 
     // MARK: UNUserNotificationCenterDelegate

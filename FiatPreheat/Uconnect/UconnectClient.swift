@@ -231,8 +231,9 @@ actor UconnectClient {
     /// Polls until the car confirms or rejects the command, or the timeout passes.
     func waitForResult(vin: String, correlationId: String, timeout: Duration = .seconds(90)) async -> OperationResult {
         let deadline = ContinuousClock.now + timeout
-        while ContinuousClock.now < deadline {
+        while ContinuousClock.now < deadline, !Task.isCancelled {
             try? await Task.sleep(for: .seconds(3))
+            if Task.isCancelled { break }
             if let result = await operationResult(vin: vin, correlationId: correlationId) {
                 return result
             }

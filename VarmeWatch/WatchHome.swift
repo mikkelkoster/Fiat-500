@@ -94,7 +94,7 @@ struct WatchHome: View {
                 HStack(spacing: 8) {
                     if model.sending == "preheat" { ProgressView().tint(V.ground).frame(width: 18, height: 18) }
                     else { PhIcon(name: "flame", size: 18) }
-                    Text(model.sending == "preheat" ? "Sending…" : "Preheat").font(V.sora(16, .semibold))
+                    Text(model.sending == "preheat" ? "Sending…" : "Heat").font(V.sora(16, .semibold))
                 }
                 .foregroundStyle(V.ground)
                 .frame(maxWidth: .infinity).frame(height: 52)

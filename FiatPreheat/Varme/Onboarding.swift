@@ -132,7 +132,7 @@ struct OnboardingFlow: View {
                         body: active ? "Your account has \(package), so Varme can heat, lock and find the car." : "Reading your battery is free. Doing things to the car from a distance is a \(brand.name) subscription called \(package). Varme can't work around it; nobody can.") {
             VStack(spacing: 0) {
                 PackageRow(ok: true, title: "Battery, range, plugged in", detail: "Included with the car")
-                PackageRow(ok: active, title: "Preheat and cool", detail: active ? "Active" : "Needs \(package)")
+                PackageRow(ok: active, title: "Heat and cool", detail: active ? "Active" : "Needs \(package)")
                 PackageRow(ok: active, title: "Lock, unlock, lights, boot", detail: active ? "Active" : "Needs \(package)")
                 PackageRow(ok: active, title: "Find the car, charge now", detail: active ? "Active" : "Needs \(package)", last: true)
             }
@@ -194,16 +194,14 @@ struct OnboardingFlow: View {
                 .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
             }
             VStack(spacing: 0) {
-                HStack { Text("Name").font(V.body).foregroundStyle(V.textMuted); Spacer(); TextField("Name", text: $model.carName).font(V.body).foregroundStyle(V.text).multilineTextAlignment(.trailing) }
-                    .padding(.horizontal, 18).frame(height: 56)
-                Divider().overlay(V.raised)
-                HStack { Text("Plate").font(V.body).foregroundStyle(V.textMuted); Spacer(); TextField("Plate", text: $model.plate).font(V.body).foregroundStyle(V.text).multilineTextAlignment(.trailing).textInputAutocapitalization(.characters) }
-                    .padding(.horizontal, 18).frame(height: 56)
+                VTextRow(title: "Vehicle name", text: $model.carName)
+                Divider().overlay(V.outline).padding(.leading, 18)
+                VTextRow(title: "Plate", text: $model.plate, caps: true)
             }
             .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
             VStack(alignment: .leading, spacing: 10) {
                 Text("Colour").font(V.label).foregroundStyle(V.textMuted)
-                CarColorPicker(hex: $model.carColorHex)
+                CarColorPicker(hex: $model.carColorHex, paints: model.paints)
             }
         } footer: {
             VButton(title: "Continue") { step = 5 }
@@ -217,7 +215,7 @@ struct OnboardingFlow: View {
             VStack(spacing: 0) {
                 TipRow(icon: "clock", title: "Set a morning schedule", detail: "Warm by 07:30 on weekdays")
                 TipRow(icon: "flame", title: "Allow Siri", detail: "\"Hey Siri, warm up my car with Varme\"")
-                TipRow(icon: "car", title: "Add the widget", detail: "Battery and Preheat on your home screen", last: true)
+                TipRow(icon: "car", title: "Add the widget", detail: "Battery and Heat on your home screen", last: true)
             }
             .padding(.horizontal, 16)
             .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
@@ -269,14 +267,17 @@ struct FormField: View {
     let placeholder: String
     @Binding var text: String
     var secure = false
+    @FocusState private var focused: Bool
 
     var body: some View {
         Group {
             if secure { SecureField(placeholder, text: $text) } else { TextField(placeholder, text: $text) }
         }
+        .focused($focused)
         .font(V.body).foregroundStyle(V.text)
         .textInputAutocapitalization(.never).autocorrectionDisabled()
         .padding(.horizontal, 16).frame(height: 52)
+        .background(Color.clear.contentShape(Rectangle()).onTapGesture { focused = true })
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(V.surface))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(V.raised, lineWidth: 1))
     }
@@ -298,7 +299,7 @@ private struct PackageRow: View {
             Spacer()
         }
         .padding(.vertical, 14)
-        .overlay(alignment: .bottom) { if !last { Divider().overlay(V.raised) } }
+        .overlay(alignment: .bottom) { if !last { Divider().overlay(V.outline).padding(.leading, 18) } }
     }
 }
 
@@ -317,7 +318,7 @@ private struct TipRow: View {
             Spacer()
         }
         .padding(.vertical, 14)
-        .overlay(alignment: .bottom) { if !last { Divider().overlay(V.raised) } }
+        .overlay(alignment: .bottom) { if !last { Divider().overlay(V.outline).padding(.leading, 18) } }
     }
 }
 

@@ -20,7 +20,8 @@ struct FindCarSheet: View {
             ZStack(alignment: .topTrailing) {
                 if let location = model.location {
                     Map(position: $camera) {
-                        if let me = locator.location {
+                        // The walking line only when it's a walk; from far away it's just a line off the map.
+                        if let me = locator.location, let distance, distance < 5000 {
                             UserAnnotation()
                             MapPolyline(coordinates: [me.coordinate, location.coordinate]).stroke(V.cool, style: StrokeStyle(lineWidth: 3, dash: [1, 9], dashPhase: 0))
                         }
@@ -32,6 +33,8 @@ struct FindCarSheet: View {
                     .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
                     .mapControls { }
                     .colorScheme(.dark)
+                    .id("\(location.latitude),\(location.longitude)")
+                    .onAppear { camera = .region(location.region) }
                 } else {
                     V.raised
                     Text(model.locationError ?? "Loading the last known position…")
@@ -81,7 +84,7 @@ struct FindCarSheet: View {
         }
         .onChange(of: model.location) { _, location in
             guard let location else { return }
-            withAnimation { camera = .region(location.region) }
+            camera = .region(location.region)
             Task { await describe() }
         }
         .onChange(of: locator.location) { _, _ in updateDistance() }
@@ -98,8 +101,12 @@ struct FindCarSheet: View {
         guard let location = model.location else { return nil }
         var parts: [String] = []
         if let distance {
-            parts.append(distance < 1000 ? "\(Int(distance)) m" : String(format: "%.1f km", distance / 1000))
-            parts.append("\(max(1, Int(distance / 80))) min walk")
+            if model.useMiles {
+                parts.append(distance < 1609 ? "\(Int(distance * 1.094)) yd" : String(format: distance < 16_090 ? "%.1f mi" : "%.0f mi", distance / 1609))
+            } else {
+                parts.append(distance < 1000 ? "\(Int(distance)) m" : String(format: distance < 10_000 ? "%.1f km" : "%.0f km", distance / 1000))
+            }
+            if distance < 5000 { parts.append("\(max(1, Int(distance / 80))) min walk") }
         }
         if let when = location.updatedAt { parts.append("seen \(when.formatted(.relative(presentation: .named)))") }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")

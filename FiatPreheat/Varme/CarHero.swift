@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The top of the home screen: the owner's car in a pool of light, the greeting and the car's
-/// name over it, the plate top-right, the status line at the foot. 420 pt tall at 390 wide.
+/// name over it with the plate and when it last reported, the status line at the foot.
 struct CarHero: View {
     let greeting: String
     let carName: String
@@ -10,7 +10,12 @@ struct CarHero: View {
     let image: Image?
     let heating: Bool
     let lightsOn: Bool
+    /// The picture is one of the 500e renders, whose lamp position is known.
+    var lampsKnown = false
     let status: [StatusItem]
+    var updated: String? = nil
+    var height: CGFloat = 420
+    var onSettings: (() -> Void)? = nil
 
     struct StatusItem: Identifiable, Equatable {
         let text: String
@@ -26,10 +31,15 @@ struct CarHero: View {
             let w = geo.size.width
             let imageWidth = w * 620 / 390
             let imageHeight = imageWidth * 640 / 1200
-            let imageTop = 104 * w / 390
+            let imageTop = 126 * w / 390
             ZStack(alignment: .topLeading) {
                 spotlight
                 if let image {
+                    // A soft shadow of our own under the wheels; the picture has none.
+                    Ellipse()
+                        .fill(RadialGradient(colors: [.black.opacity(0.75), .black.opacity(0)], center: .center, startRadius: 0, endRadius: imageWidth * 0.26))
+                        .frame(width: imageWidth * 0.56, height: imageHeight * 0.075)
+                        .position(x: w / 2 - imageWidth / 2 + imageWidth * 0.5, y: imageTop + imageHeight * 0.755)
                     if heating {
                         // A blurred warm copy of the car itself breathes under it.
                         image.resizable().aspectRatio(contentMode: .fit)
@@ -60,7 +70,7 @@ struct CarHero: View {
                                 .position(x: x, y: imageTop + imageHeight * 0.14)
                         }
                     }
-                    if lightsOn, image == Image("car-fiat-500e-nero") {
+                    if lightsOn, lampsKnown {
                         // Only where the lamp position is known for this render.
                         Ellipse().fill(RadialGradient(colors: [Color(hex: 0xfef3c7).opacity(0.6), Color(hex: 0xfef3c7).opacity(0)], center: .center, startRadius: 0, endRadius: 40))
                             .frame(width: imageWidth * 0.177, height: imageHeight * 0.18)
@@ -76,29 +86,47 @@ struct CarHero: View {
                     .frame(height: 120)
                     .frame(maxHeight: .infinity, alignment: .bottom)
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(greeting).eyebrowStyle()
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(alignment: .center) {
+                        Text(greeting).eyebrowStyle().lineLimit(1).minimumScaleFactor(0.7)
+                        Spacer(minLength: 12)
+                        if let onSettings {
+                            Button(action: onSettings) {
+                                PhIcon(name: "gear", size: 18).foregroundStyle(V.text)
+                                    .frame(width: 40, height: 40)
+                                    .glassCircle()
+                                    .frame(width: 44, height: 44).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.trailing, -2)
+                            .accessibilityLabel("Settings")
+                        }
+                    }
+                    .frame(height: 44)
+                    // A long name shrinks to fit one line rather than running under the car.
                     Text(carName).font(V.display).tracking(-3).foregroundStyle(V.text)
-                        .lineLimit(1).minimumScaleFactor(0.5)
+                        .lineLimit(1).minimumScaleFactor(0.4)
+                    HStack(spacing: 10) {
+                        if !plate.isEmpty {
+                            Text(plate).font(V.sora(12, .medium)).tracking(0.5).foregroundStyle(V.text)
+                                .padding(.horizontal, 10).frame(height: 24)
+                                .background(Capsule().fill(V.scrim))
+                                .overlay(Capsule().strokeBorder(V.outline, lineWidth: 1))
+                        }
+                        if let updated { Text(updated).font(V.label).foregroundStyle(V.textMuted).lineLimit(1) }
+                    }
+                    .padding(.top, 4)
                 }
-                .padding(.leading, V.gutter)
-                .padding(.top, 58)
-
-                Text(plate).font(V.label).foregroundStyle(V.text)
-                    .padding(.horizontal, 12).frame(height: 32)
-                    .background(Capsule().fill(V.scrim))
-                    .overlay(Capsule().strokeBorder(V.outline, lineWidth: 1))
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .padding(.trailing, V.gutter)
-                    .padding(.top, 84)
+                .padding(.horizontal, V.gutter)
+                .padding(.top, 46)
 
                 statusLine
                     .padding(.leading, V.gutter)
                     .frame(maxHeight: .infinity, alignment: .bottom)
-                    .padding(.bottom, 14)
+                    .padding(.bottom, 2)
             }
         }
-        .frame(height: 420)
+        .frame(height: height)
         .clipped()
         .onAppear { startAnimations() }
         .onChange(of: heating) { _, _ in startAnimations() }
@@ -112,7 +140,7 @@ struct CarHero: View {
     }
 
     private var spotlight: some View {
-        let tint: Color = carColor.luminance < 0.15 ? V.outline : carColor.opacity(0.38)
+        let tint: Color = carColor.luminance < 0.15 ? V.outline : carColor.opacity(0.24)
         let centre = heating ? Color(hex: 0x431407) : tint
         let mid = heating ? Color(hex: 0x1c1917) : V.surface
         return RadialGradient(colors: [centre, mid, V.ground], center: UnitPoint(x: 0.5, y: 0.7), startRadius: 0, endRadius: 320)

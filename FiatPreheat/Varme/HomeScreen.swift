@@ -11,17 +11,17 @@ struct HomeScreen: View {
 
     enum Sheet: String, Identifiable { case find, schedule, settings; var id: String { rawValue } }
 
+    /// How far to pull before letting go refreshes.
+    private let pullThreshold: CGFloat = 64
+
     var body: some View {
         ZStack(alignment: .top) {
             V.ground.ignoresSafeArea()
             refreshWheel
-            ScrollView(showsIndicators: false) {
+            // The page fits the screen, so it doesn't scroll: it only moves when pulled down to refresh.
+            GeometryReader { geo in
                 VStack(spacing: V.cardGap) {
-                    GeometryReader { g in
-                        Color.clear.preference(key: PullKey.self, value: g.frame(in: .named("scroll")).minY)
-                    }
-                    .frame(height: 0)
-                    hero
+                    hero(height: min(440, max(330, geo.size.height + geo.safeAreaInsets.top - 404)))
                     tiles.padding(.horizontal, V.gutter)
                     preheatButton.padding(.horizontal, V.gutter)
                     actionTiles.padding(.horizontal, V.gutter)
@@ -29,17 +29,26 @@ struct HomeScreen: View {
                         if unlock { confirmUnlock = true } else { Task { await model.perform(.lock) } }
                     }
                     .padding(.horizontal, V.gutter)
-                    .padding(.bottom, 24)
+                    Spacer(minLength: 0)
                 }
-                .offset(y: refreshing ? 56 : 0)
+                .offset(y: refreshing ? 56 : pull)
                 .animation(.timingCurve(0.2, 0.8, 0.2, 1, duration: 0.35), value: refreshing)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 12)
+                        .onChanged { drag in
+                            guard !refreshing, drag.translation.height > 0, drag.translation.height > abs(drag.translation.width) else { return }
+                            // Resists more the further it goes.
+                            pull = 110 * (1 - 1 / (drag.translation.height / 110 + 1))
+                        }
+                        .onEnded { _ in
+                            let release = pull >= pullThreshold * 0.8
+                            withAnimation(.timingCurve(0.2, 0.8, 0.2, 1, duration: 0.35)) { pull = 0 }
+                            if release, !refreshing { Task { await refresh() } }
+                        }
+                )
             }
-            .coordinateSpace(name: "scroll")
             .ignoresSafeArea(edges: .top)
-            .onPreferenceChange(PullKey.self) { pull = max(0, $0) }
-            .simultaneousGesture(DragGesture().onEnded { _ in
-                if pull >= 48, !refreshing { Task { await refresh() } }
-            })
         }
         .overlay(alignment: .bottom) {
             if let toast { VToast(title: toast.title, detail: toast.detail, isError: toast.isError).padding(.bottom, 16).id(toast.id) }
@@ -76,7 +85,7 @@ struct HomeScreen: View {
 
     // MARK: Pieces
 
-    private var hero: some View {
+    private func hero(height: CGFloat) -> some View {
         CarHero(
             greeting: Greeting.text(name: model.ownerName),
             carName: model.carName,
@@ -85,16 +94,18 @@ struct HomeScreen: View {
             image: model.carImage,
             heating: model.isPreheating,
             lightsOn: model.isLightsOn,
-            status: statusItems
+            lampsKnown: !model.paints.isEmpty,
+            status: statusItems,
+            updated: updatedText,
+            height: height,
+            onSettings: { sheet = .settings }
         )
-        .overlay(alignment: .topTrailing) {
-            Button { sheet = .settings } label: {
-                PhIcon(name: "gear", size: 18).foregroundStyle(V.textMuted).frame(width: 44, height: 44).contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .padding(.top, 50).padding(.trailing, 8)
-            .accessibilityLabel("Settings")
-        }
+    }
+
+    private var updatedText: String {
+        guard let updated = model.status?.updatedAt else { return model.statusError == nil ? "Pull down to load" : "Couldn't reach the car" }
+        let time = updated.formatted(date: .omitted, time: .shortened)
+        return Calendar.current.isDateInToday(updated) ? "Updated \(time)" : "Updated \(updated.formatted(.dateTime.day().month(.abbreviated))) \(time)"
     }
 
     private var statusItems: [CarHero.StatusItem] {
@@ -105,9 +116,6 @@ struct HomeScreen: View {
         }
         if model.status?.isCharging == true { items.append(.init(text: "Charging")) }
         else if model.status?.isPluggedIn == true { items.append(.init(text: "Plugged in")) }
-        if items.isEmpty, let updated = model.status?.updatedAt {
-            items.append(.init(text: "Updated \(updated.formatted(date: .omitted, time: .shortened))"))
-        }
         return items
     }
 
@@ -119,19 +127,26 @@ struct HomeScreen: View {
     }
 
     @ViewBuilder private var preheatButton: some View {
-        if model.isPreheating {
-            HeatingButton(minutesLeft: model.preheatMinutesLeft, busy: model.isBusy) { Task { await model.stopPreheat() } }
+        if let phase = heatPhase {
+            HeatingButton(phase: phase, minutesLeft: model.preheatMinutesLeft) { Task { await model.stopPreheat() } }
         } else {
-            VButton(title: busyTitle ?? "Preheat cabin", icon: "flame", height: 64) { Task { await model.startPreheat() } }
-                .disabled(model.isBusy || model.availability(of: .preconditionOn) != .available)
+            let connecting = model.commandState == .sending(.preconditionOn)
+            VButton(title: connecting ? "Connecting…" : "Heat cabin", icon: "flame", height: 64, loading: connecting, glass: true) {
+                Task { await model.startPreheat() }
+            }
+            // Busy stays white (it's saying "Connecting…"); it just ignores taps.
+            .allowsHitTesting(!model.isBusy)
+            .disabled(model.availability(of: .preconditionOn) != .available)
         }
     }
 
-    private var busyTitle: String? {
+    /// Once the car has the start command, the heating button shows, and Stop works straight away,
+    /// even while we're still waiting for the car to confirm.
+    private var heatPhase: HeatingButton.Phase? {
         switch model.commandState {
-        case .sending(.preconditionOn): "Sending…"
-        case .waitingForCar(.preconditionOn): "Waiting for the car…"
-        default: nil
+        case .sending(.preconditionOff), .waitingForCar(.preconditionOff): return .stopping
+        case .waitingForCar(.preconditionOn): return .starting
+        default: return model.isPreheating ? .running : nil
         }
     }
 
@@ -149,19 +164,22 @@ struct HomeScreen: View {
     private var scheduleTile: some View {
         Button { sheet = .schedule } label: {
             VStack(spacing: 6) {
-                if let s = model.schedule {
-                    Text(s.readyTimeText).font(V.button).tracking(-0.5).foregroundStyle(s.isEnabled ? V.text : V.textFaint)
-                    Text(s.isEnabled ? s.daysText : "Off").font(V.label).foregroundStyle(V.textMuted)
+                if let next = model.nextSchedule {
+                    Text(next.schedule.readyTimeText).font(V.button).tracking(-0.5).foregroundStyle(V.text)
+                    Text(next.ready.formatted(.dateTime.weekday(.abbreviated))).font(V.label).foregroundStyle(V.textMuted)
+                } else if !model.schedules.isEmpty {
+                    PhIcon(name: "clock").foregroundStyle(V.textFaint)
+                    Text("Off").font(V.label).foregroundStyle(V.textMuted)
                 } else {
                     PhIcon(name: "clock").foregroundStyle(V.text)
                     Text("Schedule").font(V.label).foregroundStyle(V.text)
                 }
             }
             .frame(maxWidth: .infinity).frame(height: 78)
-            .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
-            .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.raised, lineWidth: 1))
+            .glassTile()
+            .contentShape(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous))
         }
-        .buttonStyle(PressStyle())
+        .buttonStyle(.plain)
     }
 
     private func tileState(_ command: RemoteCommand, active: Bool = false) -> ActionTile.State {
@@ -174,19 +192,24 @@ struct HomeScreen: View {
     }
 
     private var refreshWheel: some View {
-        PhIcon(name: "wheel", size: 26)
+        PhIcon(name: "wheel", size: 22)
             .foregroundStyle(V.text)
             .rotationEffect(.degrees(refreshing ? (wheelSpin ? 360 : 0) : Double(pull) * 4))
-            .animation(refreshing ? .linear(duration: 0.8).repeatForever(autoreverses: false) : .default, value: wheelSpin)
-            .opacity(min(1, Double(refreshing ? 56 : pull) / 48))
-            .padding(.top, 14)
+            .animation(refreshing ? .linear(duration: 0.9).repeatForever(autoreverses: false) : .default, value: wheelSpin)
+            .opacity(refreshing ? 1 : min(1, Double(pull) / pullThreshold))
+            .scaleEffect(refreshing ? 1 : 0.7 + 0.3 * min(1, pull / pullThreshold))
+            .padding(.top, 8)
+            .onChange(of: pull >= pullThreshold * 0.8) { _, armed in if armed { Haptics.select() } }
     }
 
+    /// Battery, range, lock state and where the car is, all at once.
     private func refresh() async {
         refreshing = true
         wheelSpin = true
         Haptics.tap()
-        await model.refreshStatus()
+        async let status: () = model.refreshStatus()
+        async let location: () = model.loadLocation()
+        _ = await (status, location)
         refreshing = false
         wheelSpin = false
     }
@@ -200,11 +223,6 @@ struct HomeScreen: View {
             if toast?.id == item.id { toast = nil }
         }
     }
-}
-
-private struct PullKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
 
 // MARK: - Tiles
@@ -221,20 +239,24 @@ struct BatteryTile: View {
             HStack(spacing: 5) {
                 if charging { PhIcon(name: "lightning", size: 13).foregroundStyle(V.positive).opacity(sheen ? 1 : 0.6) }
                 Text(charging ? "Charging" : "Battery").font(V.label).foregroundStyle(charging ? V.positive : V.textMuted)
+                    .fixedSize()
+                if let word = V.batteryWord(soc), !charging {
+                    Spacer(minLength: 4)
+                    Text(word).font(V.sora(11, .medium)).foregroundStyle(V.ground)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                        .padding(.horizontal, 7).frame(height: 20)
+                        .background(Capsule().fill(color))
+                }
             }
             Spacer(minLength: 0)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(soc.map { "\(Int($0))" } ?? "–").font(V.number).tracking(-2).foregroundStyle(V.text).contentTransition(.numericText())
                 Text("%").font(V.body).foregroundStyle(V.textMuted)
-                if let word = V.batteryWord(soc), !charging {
-                    Spacer()
-                    Text(word).font(V.label).foregroundStyle(V.ground).padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill(color))
-                }
             }
             Spacer(minLength: 0)
             GeometryReader { g in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(V.raised)
+                    Capsule().fill(V.outline)
                     Capsule().fill(color)
                         .frame(width: g.size.width * CGFloat(min(100, max(0, soc ?? 0))) / 100)
                         .overlay(alignment: .leading) {
@@ -249,15 +271,14 @@ struct BatteryTile: View {
                 }
             }
             .frame(height: 5)
-            if charging || status != nil {
-                Text(charging ? "Full by \(fullBy)" : (soc.map { $0 >= 100 ? "Full" : " " } ?? " ")).font(V.label).foregroundStyle(V.textFaint).padding(.top, 8)
-            }
+            // Only while charging; otherwise the line stays empty so the number sits level with Range.
+            Text(charging ? "Full by \(fullBy)" : " ").font(V.label).foregroundStyle(V.textFaint).padding(.top, 8)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: V.tileHeight)
-        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
-        .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.raised, lineWidth: 1))
+        // Read-only: flat, no edge. Things you can press are glass.
+        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.tile))
         .onAppear { if charging { withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 4.8).repeatForever(autoreverses: false)) { sheen = true } } }
         .onChange(of: charging) { _, on in
             sheen = false
@@ -286,14 +307,14 @@ struct RangeTile: View {
                 Text(useMiles ? "mi" : "km").font(V.body).foregroundStyle(V.textMuted)
             }
             Spacer(minLength: 0)
-            Text(status.map { "Updated \($0.updatedAt.formatted(date: .omitted, time: .shortened))" } ?? "Pull down to load")
-                .font(V.label).foregroundStyle(V.textFaint)
+            Color.clear.frame(height: 5)
+            Text(" ").font(V.label).padding(.top, 8)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: V.tileHeight)
-        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
-        .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.raised, lineWidth: 1))
+        // Read-only: flat, no edge. Things you can press are glass.
+        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.tile))
     }
 
     private var rangeValue: String {
@@ -309,28 +330,45 @@ struct RangeTile: View {
 
 /// The preheat button while the cabin heats: a faint band drifts across inside every 5.2 s, the dot breathes.
 struct HeatingButton: View {
+    enum Phase { case starting, running, stopping }
+    let phase: Phase
     let minutesLeft: Int
-    let busy: Bool
     let stop: () -> Void
     @State private var sweep = false
     @State private var pulse = false
 
+    private var text: String {
+        switch phase {
+        case .starting: "Connecting to the car…"
+        case .running: "Heating · \(minutesLeft) min left"
+        case .stopping: "Stopping…"
+        }
+    }
+
     var body: some View {
         HStack {
             HStack(spacing: 10) {
-                Circle().fill(V.heat).frame(width: 10, height: 10)
-                    .scaleEffect(pulse ? 1.08 : 0.92).opacity(pulse ? 1 : 0.55)
-                Text("Preheating · \(minutesLeft) min left").font(V.button).foregroundStyle(V.heat)
+                if phase == .running {
+                    Circle().fill(V.heat).frame(width: 10, height: 10)
+                        .scaleEffect(pulse ? 1.08 : 0.92).opacity(pulse ? 1 : 0.55)
+                } else {
+                    ProgressView().controlSize(.small).tint(V.heat)
+                }
+                Text(text).font(V.button).foregroundStyle(V.heat)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                    .contentTransition(.opacity)
             }
             .padding(.leading, 22)
-            Spacer()
+            .animation(.easeInOut(duration: 0.3), value: phase)
+            Spacer(minLength: 8)
             Button(action: stop) {
                 Text("Stop").font(V.body).foregroundStyle(V.ground)
                     .padding(.horizontal, 16).frame(height: 44)
                     .background(Capsule().fill(V.heat))
             }
             .buttonStyle(PressStyle())
-            .disabled(busy)
+            .disabled(phase == .stopping)
+            .opacity(phase == .stopping ? 0.5 : 1)
             .padding(.trailing, 10)
         }
         .frame(height: 64)
@@ -371,10 +409,10 @@ struct ActionTile: View {
             }
             .foregroundStyle(state == .active ? V.amber : state == .pending ? V.textFaint : state == .unavailable ? V.textFaint : V.text)
             .frame(maxWidth: .infinity).frame(height: 78)
-            .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(state == .active ? V.activeFill(V.amber) : V.surface))
-            .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(state == .active ? V.amber : V.raised, lineWidth: state == .active ? 1.5 : 1))
+            .glassTile(tint: state == .active ? V.amber : nil)
+            .contentShape(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous))
         }
-        .buttonStyle(PressStyle())
+        .buttonStyle(.plain)
         .disabled(state == .pending || state == .unavailable)
     }
 }
@@ -393,13 +431,12 @@ struct UnlockSlider: View {
         GeometryReader { g in
             let travel = g.size.width - 50 - 10
             ZStack(alignment: .leading) {
-                Capsule().fill(V.surface).overlay(Capsule().strokeBorder(V.raised, lineWidth: 1))
+                Color.clear.glassCapsule(tint: nil)
                 Text(locked ? "SWIPE TO UNLOCK" : "SWIPE TO LOCK").font(V.eyebrow).tracking(3).foregroundStyle(V.textMuted)
                     .frame(maxWidth: .infinity).opacity(1 - Double(drag / travel) * 1.5)
-                Circle().fill(V.text)
+                PhIcon(name: locked ? "lock" : "lock-open", size: 20).foregroundStyle(V.ground)
                     .frame(width: 50, height: 50)
-                    .overlay(PhIcon(name: locked ? "lock" : "lock-open", size: 20).foregroundStyle(V.ground))
-                    .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+                    .glassCapsule(tint: V.text)
                     .offset(x: 5 + drag)
                     .gesture(DragGesture()
                         .onChanged { drag = min(travel, max(0, $0.translation.width)) }
@@ -444,12 +481,12 @@ struct ToastItem: Equatable {
     }
 
     private static let confirmed: [RemoteCommand: String] = [
-        .preconditionOn: "Preheating", .preconditionOff: "Climate off", .lock: "Locked", .unlock: "Unlocked",
+        .preconditionOn: "Heating", .preconditionOff: "Climate off", .lock: "Locked", .unlock: "Unlocked",
         .lights: "Lights on", .trunkUnlock: "Boot unlocked", .chargeNow: "Charging started",
         .deepRefresh: "Updated from the car", .locate: "Location updated",
     ]
     private static let sent: [RemoteCommand: String] = [
-        .preconditionOn: "Preheat sent", .preconditionOff: "Stop sent", .lock: "Lock sent", .unlock: "Unlock sent",
+        .preconditionOn: "Heat sent", .preconditionOff: "Stop sent", .lock: "Lock sent", .unlock: "Unlock sent",
         .lights: "Lights sent", .trunkUnlock: "Boot unlock sent", .chargeNow: "Charge now sent",
         .deepRefresh: "Update requested", .locate: "Location requested",
     ]

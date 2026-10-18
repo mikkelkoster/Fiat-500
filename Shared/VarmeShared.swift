@@ -29,6 +29,10 @@ struct CarSnapshot: Codable, Equatable {
     var nextSchedule: String?
     var hasCarImage: Bool
     var updatedAt: Date
+    /// Which picture of the car, in the asset catalog; follows the paint chosen in the app.
+    var carImageName: String? = nil
+
+    var carImage: String { carImageName ?? "car-fiat-500e-601" }
 
     static let placeholder = CarSnapshot(carName: "500e", plate: "ED 35079", stateOfCharge: 100, rangeKm: 260, useMiles: false,
                                          isCharging: false, isPluggedIn: true, isLocked: true, preheatStartedAt: nil,

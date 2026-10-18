@@ -61,6 +61,6 @@ final class WatchLink: NSObject, WCSessionDelegate, @unchecked Sendable {
         "preheat": .preconditionOn, "stop": .preconditionOff, "lock": .lock, "unlock": .unlock, "lights": .lights,
     ]
     private static let sent: [String: String] = [
-        "preheat": "Preheating", "stop": "Climate off", "lock": "Locking", "unlock": "Unlocking", "lights": "Lights on",
+        "preheat": "Heating", "stop": "Climate off", "lock": "Locking", "unlock": "Unlocking", "lights": "Lights on",
     ]
 }

@@ -3,7 +3,7 @@ import AppIntents
 /// Exposed to Siri, Spotlight and Shortcuts. A Shortcuts "Time of Day" automation set to
 /// "Run Immediately" running this intent is the most reliable way to preheat on a schedule.
 struct StartPreheatIntent: AppIntent {
-    static let title: LocalizedStringResource = "Preheat Car"
+    static let title: LocalizedStringResource = "Heat Car"
     static let description = IntentDescription("Starts climate preconditioning on your Fiat 500e.")
 
     @MainActor
@@ -13,7 +13,7 @@ struct StartPreheatIntent: AppIntent {
         if case .failed(let message) = state {
             throw IntentError(message)
         }
-        return .result(dialog: "Preheating \(model.carName).")
+        return .result(dialog: "Heating \(model.carName).")
     }
 }
 
@@ -91,8 +91,8 @@ struct PreheatShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: StartPreheatIntent(),
-            phrases: ["Preheat my car with \(.applicationName)", "\(.applicationName) preheat", "Warm up my car with \(.applicationName)"],
-            shortTitle: "Preheat",
+            phrases: ["Heat my car with \(.applicationName)", "Preheat my car with \(.applicationName)", "\(.applicationName) preheat", "Warm up my car with \(.applicationName)"],
+            shortTitle: "Heat cabin",
             systemImageName: "thermometer.sun.fill"
         )
         AppShortcut(

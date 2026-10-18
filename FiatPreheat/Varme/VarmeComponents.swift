@@ -11,12 +11,36 @@ struct VButton: View {
     var prominent = true
     var height: CGFloat = V.buttonHeight
     var tint: Color? = nil
+    var loading = false
+    /// iOS glass with a white tint, for the main action in a sheet.
+    var glass = false
     let action: () -> Void
 
     var body: some View {
+        if glass { glassBody } else { solidBody }
+    }
+
+    private var glassBody: some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                if let icon { PhIcon(name: icon, size: 20) }
+                if loading { ProgressView().controlSize(.small).tint(V.ground) }
+                else if let icon { PhIcon(name: icon, size: 20) }
+                Text(title).font(V.button)
+            }
+            .foregroundStyle(V.ground)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .glassCapsule(tint: V.text)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var solidBody: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                if loading { ProgressView().controlSize(.small).tint(tint ?? (prominent ? V.ground : V.text)) }
+                else if let icon { PhIcon(name: icon, size: 20) }
                 Text(title).font(prominent ? V.button : V.body)
             }
             .foregroundStyle(tint ?? (prominent ? V.ground : V.text))
@@ -48,12 +72,12 @@ struct VCloseButton: View {
         Button(action: action) {
             PhIcon(name: "x", size: 16)
                 .foregroundStyle(V.text)
-                .frame(width: 36, height: 36)
-                .background(Circle().fill(V.raised))
+                .frame(width: 40, height: 40)
+                .glassCircle()
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(PressStyle())
+        .buttonStyle(.plain)
         .accessibilityLabel("Close")
     }
 }
@@ -234,5 +258,96 @@ struct RollingText: View {
         }
         .clipped()
         .animation(.timingCurve(0.2, 0.8, 0.2, 1, duration: 0.42), value: text)
+    }
+}
+
+/// A settings row you type into: the name on the left, the value on the right, and a tap anywhere
+/// on the row puts the cursor in it.
+struct VTextRow: View {
+    let title: String
+    @Binding var text: String
+    var caps = false
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title).font(V.body).foregroundStyle(V.textMuted).fixedSize()
+            TextField(title, text: spaced)
+                .font(V.body).foregroundStyle(V.text)
+                .multilineTextAlignment(.trailing)
+                .textInputAutocapitalization(caps ? .characters : .words)
+                .autocorrectionDisabled()
+                .focused($focused)
+            PhIcon(name: "pencil-simple", size: 14).foregroundStyle(focused ? V.text : V.textFaint)
+        }
+        .padding(.horizontal, 18).frame(height: 56)
+        .background(Color.clear.contentShape(Rectangle()).onTapGesture { focused = true })
+    }
+
+    /// A right-aligned field doesn't draw a space typed at the end, so the cursor looks stuck.
+    /// While editing, spaces are shown as no-break spaces, which it does draw.
+    private var spaced: Binding<String> {
+        Binding(
+            get: { text.replacingOccurrences(of: " ", with: "\u{00A0}") },
+            set: { text = $0.replacingOccurrences(of: "\u{00A0}", with: " ") }
+        )
+    }
+}
+
+/// A settings row with a short list of choices: the name on the left, the choice and a chevron on
+/// the right, the native menu on tap.
+struct VMenuRow<Value: Hashable>: View {
+    let title: String
+    let options: [(value: Value, label: String)]
+    @Binding var selection: Value
+
+    var body: some View {
+        Menu {
+            Picker(title, selection: $selection) {
+                ForEach(options, id: \.value) { Text($0.label).tag($0.value) }
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Text(title).font(V.body).foregroundStyle(V.textMuted)
+                Spacer()
+                Text(options.first { $0.value == selection }?.label ?? "").font(V.body).foregroundStyle(V.text)
+                PhIcon(name: "caret-down", size: 12).foregroundStyle(V.textMuted)
+            }
+            .padding(.horizontal, 18).frame(height: 56)
+            .contentShape(Rectangle())
+        }
+        .onChange(of: selection) { _, _ in Haptics.select() }
+    }
+}
+
+// MARK: - Glass
+
+extension View {
+    /// The system's Liquid Glass in a circle, frosted material before iOS 26.
+    @ViewBuilder func glassCircle() -> some View {
+        if #available(iOS 26.0, *) {
+            glassEffect(.regular.interactive(), in: .circle)
+        } else {
+            background(Circle().fill(.ultraThinMaterial))
+        }
+    }
+
+    /// Liquid Glass in a capsule, optionally tinted; frosted material before iOS 26.
+    @ViewBuilder func glassCapsule(tint: Color?) -> some View {
+        if #available(iOS 26.0, *) {
+            glassEffect(tint.map { .regular.tint($0).interactive() } ?? .regular.interactive(), in: .capsule)
+        } else {
+            background(Capsule().fill(.ultraThinMaterial).overlay(Capsule().fill((tint ?? .clear).opacity(0.85))))
+        }
+    }
+
+    /// Liquid Glass in the card shape, for tiles that are buttons (unlike the read-only ones).
+    @ViewBuilder func glassTile(tint: Color? = nil) -> some View {
+        let shape = RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous)
+        if #available(iOS 26.0, *) {
+            glassEffect(tint.map { .regular.tint($0.opacity(0.25)).interactive() } ?? .regular.interactive(), in: shape)
+        } else {
+            background(shape.fill(.ultraThinMaterial).overlay(shape.fill((tint ?? .clear).opacity(0.12))))
+        }
     }
 }

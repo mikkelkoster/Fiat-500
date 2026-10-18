@@ -138,7 +138,7 @@ struct PreheatWidget: Widget {
         StaticConfiguration(kind: "dk.koster.varme.preheat", provider: CarProvider()) { entry in
             PreheatWidgetView(car: entry.car)
         }
-        .configurationDisplayName("Preheat")
+        .configurationDisplayName("Heat")
         .description("One tap to warm the cabin.")
         .supportedFamilies([.systemSmall])
     }
@@ -152,7 +152,7 @@ struct PreheatWidgetView: View {
             Circle().fill(heating ? V.heat : V.text).frame(width: 52, height: 52)
                 .overlay(WidgetIcon(name: "flame", size: 26).foregroundStyle(V.ground))
             Spacer()
-            Text(heating ? "Preheating" : "Preheat").font(V.sora(16, .semibold)).foregroundStyle(V.text)
+            Text(heating ? "Heating" : "Heat").font(V.sora(16, .semibold)).foregroundStyle(V.text)
             Text(heating ? car.carName : (car.nextSchedule.map { "Next: \($0)" } ?? car.carName)).font(V.sora(12)).foregroundStyle(V.textMuted).lineLimit(1)
         }
         .varmeWidgetBackground()
@@ -178,7 +178,7 @@ struct CarWidgetView: View {
     var body: some View {
         HStack(spacing: 6) {
             if car.hasCarImage {
-                Image("car-fiat-500e-nero").resizable().aspectRatio(contentMode: .fit).frame(width: 150)
+                Image(car.carImage).resizable().aspectRatio(contentMode: .fit).frame(width: 150)
             }
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
@@ -230,14 +230,14 @@ struct PreheatLiveActivity: Widget {
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     if CarSnapshot.load()?.hasCarImage ?? true {
-                        Image("car-fiat-500e-nero").resizable().aspectRatio(contentMode: .fit).frame(width: 92)
+                        Image(CarSnapshot.load()?.carImage ?? "car-fiat-500e-601").resizable().aspectRatio(contentMode: .fit).frame(width: 92)
                     } else {
                         WidgetIcon(name: "flame", size: 28).foregroundStyle(V.heat).padding(.top, 8)
                     }
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("Preheating").font(V.sora(13)).foregroundStyle(V.textMuted)
+                        Text("Heating").font(V.sora(13)).foregroundStyle(V.textMuted)
                         Text(timerInterval: Date()...context.state.endDate, countsDown: true)
                             .font(V.sora(34, .ultraLight)).tracking(-1).foregroundStyle(V.heat).monospacedDigit()
                     }
@@ -276,7 +276,7 @@ private struct LockScreenActivity: View {
                 HStack(spacing: 10) {
                     Circle().fill(V.heat.opacity(0.18)).frame(width: 32, height: 32)
                         .overlay(WidgetIcon(name: "flame", size: 18).foregroundStyle(V.heat))
-                    Text("Preheating \(context.attributes.carName)").font(V.sora(14, .semibold)).foregroundStyle(V.text)
+                    Text("Heating \(context.attributes.carName)").font(V.sora(14, .semibold)).foregroundStyle(V.text)
                 }
                 Spacer()
                 Text(context.attributes.plate).font(V.sora(12)).foregroundStyle(V.textMuted)
@@ -309,10 +309,10 @@ struct PreheatControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "dk.koster.varme.control.preheat") {
             ControlWidgetButton(action: OpenVarmeIntent(link: "preheat")) {
-                Label("Preheat", systemImage: "flame")
+                Label("Heat cabin", systemImage: "flame")
             }
         }
-        .displayName("Preheat")
+        .displayName("Heat cabin")
         .description("Warm the cabin.")
     }
 }
