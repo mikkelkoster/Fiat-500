@@ -42,11 +42,10 @@ struct CarHero: View {
             ZStack(alignment: .topLeading) {
                 spotlight
                 if let image {
-                    // A soft shadow of our own under the wheels; the picture has none.
-                    Ellipse()
-                        .fill(RadialGradient(colors: [.black.opacity(0.75), .black.opacity(0)], center: .center, startRadius: 0, endRadius: imageWidth * 0.26))
-                        .frame(width: imageWidth * 0.56, height: imageHeight * 0.075)
-                        .position(x: w / 2 - imageWidth / 2 + imageWidth * 0.5, y: imageTop + imageHeight * 0.755)
+                    // The picture has no ground of its own: a lit floor and shadows put the car on it.
+                    CarGround(knownWheels: lampsKnown)
+                        .frame(width: imageWidth, height: imageHeight)
+                        .position(x: w / 2, y: imageTop + imageHeight / 2)
                     if heating {
                         // A blurred warm copy of the car itself breathes under it.
                         image.resizable().aspectRatio(contentMode: .fit)
@@ -268,5 +267,41 @@ enum SVGPath {
             }
         }
         return path
+    }
+}
+
+/// The floor under the car, drawn on the same 1200×640 canvas as the car pictures: a faint pool of
+/// light on the floor, a soft shadow under the body, and dark contact shadows where the tyres touch.
+struct CarGround: View {
+    /// The 500e pictures, whose tyre positions were measured; other cars get a general shadow.
+    let knownWheels: Bool
+
+    /// Where the tyres touch down in the 500e pictures: rear, front, far front (x, y, width).
+    private static let tyres: [(CGFloat, CGFloat, CGFloat)] = [(348, 466, 84), (600, 486, 116), (830, 479, 82)]
+
+    var body: some View {
+        Canvas { ctx, size in
+            let s = size.width / 1200
+            func oval(_ cx: CGFloat, _ cy: CGFloat, _ w: CGFloat, _ h: CGFloat) -> Path {
+                Path(ellipseIn: CGRect(x: (cx - w / 2) * s, y: (cy - h / 2) * s, width: w * s, height: h * s))
+            }
+            ctx.drawLayer { floor in
+                floor.addFilter(.blur(radius: 30 * s))
+                floor.fill(oval(600, 482, 860, 110), with: .color(.white.opacity(0.08)))
+            }
+            ctx.drawLayer { body in
+                body.addFilter(.blur(radius: 14 * s))
+                body.fill(oval(592, 474, knownWheels ? 600 : 560, 44), with: .color(.black.opacity(0.85)))
+            }
+            ctx.drawLayer { contact in
+                contact.addFilter(.blur(radius: 5 * s))
+                if knownWheels {
+                    for (x, y, w) in Self.tyres { contact.fill(oval(x, y, w, 16), with: .color(.black)) }
+                } else {
+                    contact.fill(oval(599, 488, 520, 18), with: .color(.black.opacity(0.9)))
+                }
+            }
+        }
+        .allowsHitTesting(false)
     }
 }

@@ -307,7 +307,7 @@ struct BatteryTile: View {
                 Text(charging ? "Charging" : "Battery").font(V.label).foregroundStyle(charging ? V.positive : V.textMuted)
             }
         }
-        .padding(.vertical, 12)
+        .padding(.vertical, 20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear { if charging { withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 4.8).repeatForever(autoreverses: false)) { sheen = true } } }
         .onChange(of: charging) { _, on in
@@ -338,11 +338,18 @@ struct RangeTile: View {
                     .contentTransition(.numericText()).animation(.smooth, value: rangeValue)
                 Text(useMiles ? "mi" : "km").font(V.body).foregroundStyle(V.textMuted)
             }
-            // Level with the battery bar, so the captions line up.
-            Color.clear.frame(height: 5)
+            // How much of a full charge's range is left. White: green belongs to the battery.
+            GeometryReader { g in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(V.outline)
+                    Capsule().fill(V.text.opacity(0.85))
+                        .frame(width: g.size.width * CGFloat(min(100, max(0, status?.stateOfCharge ?? 0))) / 100)
+                }
+            }
+            .frame(height: 5)
             Text("Range").font(V.label).foregroundStyle(V.textMuted)
         }
-        .padding(.vertical, 12)
+        .padding(.vertical, 20)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 

@@ -44,7 +44,7 @@ enum V {
 
     static let gutter: CGFloat = 20
     static let cardGap: CGFloat = 12
-    static let tileHeight: CGFloat = 96
+    static let tileHeight: CGFloat = 118
     static let buttonHeight: CGFloat = 60
     static let control: CGFloat = 44
     static let radiusCard: CGFloat = 24
