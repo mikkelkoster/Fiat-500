@@ -10,7 +10,7 @@ struct UconnectAccount: Sendable, Equatable {
     var config: UconnectConfig { brand.config(in: region) }
 }
 
-struct Vehicle: Sendable, Identifiable, Hashable {
+struct Vehicle: Sendable, Identifiable, Hashable, Codable {
     let vin: String
     let nickname: String?
     let model: String?

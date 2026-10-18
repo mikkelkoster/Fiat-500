@@ -115,6 +115,7 @@ struct HomeScreen: View {
             lampsKnown: !model.paints.isEmpty,
             ground: model.carGround,
             updated: updatedText,
+            loading: model.carImageLoading,
             height: height,
             onSettings: { sheet = .settings },
             cars: model.vehicles.map { v in (v.vin, v.vin == model.selectedVIN ? model.carName : (model.savedName(for: v) ?? v.nickname ?? v.model ?? "Car")) },
@@ -157,7 +158,7 @@ struct HomeScreen: View {
             } else {
                 ArcGauge(fraction: model.rangeFraction, color: color, value: range,
                          unit: model.useMiles ? "mi" : "km", caption: "Range", captionColor: V.textMuted,
-                         note: nil, active: active)
+                         note: note ?? fullRangeNote, active: active)
             }
         }
         .frame(maxWidth: .infinity)
@@ -170,6 +171,13 @@ struct HomeScreen: View {
         // VoiceOver hears both, without swiping.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(gaugeSummary)
+    }
+
+    /// What a full charge reaches, so the range arc has a measure (and the gauge isn't bare).
+    private var fullRangeNote: ArcGauge.Note? {
+        guard let km = model.rangeKm, let soc = model.status?.stateOfCharge, soc > 0 else { return nil }
+        let full = max(model.bestFullRangeKm ?? 0, km * 100 / soc)
+        return .text(model.useMiles ? "Up to \(Int(full / 1.609)) mi" : "Up to \(Int(full)) km")
     }
 
     private var gaugeSummary: String {
@@ -411,6 +419,8 @@ private struct CountUp: ViewModifier, Animatable {
         Text(placeholder ? "–" : "\(Int(value.rounded()))")
             .font(V.sora(52, .ultraLight)).tracking(-2).foregroundStyle(V.text)
             .monospacedDigit()
+            // Each frame is its own number; no cross-fade between them.
+            .contentTransition(.identity)
     }
 }
 
@@ -424,46 +434,55 @@ struct GaugePager<Content: View>: View {
     @ViewBuilder let content: (_ index: Int, _ active: Bool) -> Content
 
     @State private var drag: CGFloat = 0
+    /// Decided at the start of each drag: sideways pages, up or down is left to the page.
+    @State private var sideways: Bool?
     /// The dot indicator's two ends, in page units: the head leads, the tail follows.
     @State private var head: CGFloat = 0
     @State private var tail: CGFloat = 0
 
+    /// The window the gauges slide through: a little wider than a gauge, fading at its sides.
+    private let width: CGFloat = 230
     private static var settle: Animation { .spring(response: 0.45, dampingFraction: 0.7) }
 
     var body: some View {
         VStack(spacing: 8) {
-            GeometryReader { geo in
-                let width = geo.size.width
-                HStack(spacing: 0) {
-                    ForEach(0..<count, id: \.self) { i in
-                        content(i, i == page).frame(width: width)
-                    }
+            HStack(spacing: 0) {
+                ForEach(0..<count, id: \.self) { i in
+                    content(i, i == page).frame(width: width)
                 }
-                .offset(x: -CGFloat(page) * width + drag)
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 10)
-                        .onChanged { value in
-                            guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                            var dx = value.translation.width
-                            // Past either end it gives, but grudgingly.
-                            if (page == 0 && dx > 0) || (page == count - 1 && dx < 0) { dx /= 3 }
-                            drag = dx
-                            head = CGFloat(page) + max(-1, min(1, -dx / width))
-                        }
-                        .onEnded { value in
-                            let flung = value.predictedEndTranslation.width
-                            var next = page
-                            if flung < -width * 0.3 { next = min(count - 1, page + 1) }
-                            if flung > width * 0.3 { next = max(0, page - 1) }
-                            if next != page { Haptics.select() }
-                            withAnimation(Self.settle) { page = next; drag = 0 }
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { head = CGFloat(next) }
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.72).delay(0.06)) { tail = CGFloat(next) }
-                        }
-                )
             }
-            .frame(height: 160)
+            .frame(width: width, alignment: .leading)
+            .offset(x: -CGFloat(page) * width + drag)
+            .frame(width: width, height: 160, alignment: .leading)
+            .clipped()
+            .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.14),
+                                         .init(color: .black, location: 0.86), .init(color: .clear, location: 1)],
+                                 startPoint: .leading, endPoint: .trailing))
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 8)
+                    .onChanged { value in
+                        if sideways == nil { sideways = abs(value.translation.width) > abs(value.translation.height) }
+                        guard sideways == true else { return }
+                        var dx = value.translation.width
+                        // Past either end it gives, but grudgingly.
+                        if (page == 0 && dx > 0) || (page == count - 1 && dx < 0) { dx /= 3 }
+                        drag = dx
+                        head = CGFloat(page) + max(-1, min(1, -dx / width))
+                    }
+                    .onEnded { value in
+                        defer { sideways = nil }
+                        guard sideways == true else { return }
+                        let flung = value.predictedEndTranslation.width
+                        var next = page
+                        if flung < -width * 0.35 { next = min(count - 1, page + 1) }
+                        if flung > width * 0.35 { next = max(0, page - 1) }
+                        if next != page { Haptics.select() }
+                        withAnimation(Self.settle) { page = next; drag = 0 }
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { head = CGFloat(next) }
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.72).delay(0.06)) { tail = CGFloat(next) }
+                    }
+            )
             dots
         }
         .onAppear { head = CGFloat(page); tail = CGFloat(page) }

@@ -14,6 +14,8 @@ struct CarHero: View {
     /// Where any other picture meets the ground, worked out from its silhouette.
     var ground: GroundShape? = nil
     var updated: String? = nil
+    /// The picture is on its way: the wheel turns where the car will be.
+    var loading = false
     var height: CGFloat = 420
     var onSettings: (() -> Void)? = nil
     /// Other cars on the account (VIN, name); with more than one, the plate opens a switcher.
@@ -73,6 +75,13 @@ struct CarHero: View {
                             .blur(radius: 4)
                             .position(x: w / 2 - imageWidth / 2 + imageWidth * 0.485, y: imageTop + imageHeight * 0.41)
                     }
+                } else if loading {
+                    TimelineView(.animation) { context in
+                        PhIcon(name: "wheel", size: 30).foregroundStyle(V.textMuted)
+                            .rotationEffect(.degrees(context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1) * 360))
+                    }
+                    .position(x: w / 2, y: imageTop + imageHeight * 0.55)
+                    .accessibilityLabel("Loading the car's picture")
                 } else {
                     CarSilhouette().fill(V.raised)
                         .frame(width: imageWidth * 0.7, height: imageWidth * 0.7 * 0.5)

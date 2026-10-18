@@ -58,6 +58,13 @@ final class CarModel {
             for (vin, picture) in pictures where grounds[vin] == nil { grounds[vin] = CarPicture.ground(of: picture) }
         }
     }
+    /// A picture is being fetched and cut out.
+    private(set) var pictureLoading = false
+    /// Nothing to show yet, but something is on its way: the car list, or the car's picture.
+    var carImageLoading: Bool {
+        carImage == nil && (pictureLoading || (hasAccount && vehicles.isEmpty && statusError == nil))
+    }
+
     /// Where each of those pictures meets the ground, for its shadow.
     private(set) var grounds: [String: GroundShape] = [:]
     var carGround: GroundShape? { selectedVIN.flatMap { grounds[$0] } }
@@ -166,6 +173,7 @@ final class CarModel {
 
     private enum Keys {
         static let vin = "selectedVIN"
+        static let vehicles = "vehicles"
         static let plate = "plate"
         static let carName = "carName"
         static let carColor = "carColor"
@@ -192,6 +200,8 @@ final class CarModel {
 
     private init() {
         let savedVIN = defaults.string(forKey: Keys.vin)
+        // Last launch's car list: the picture (and what the car can do) is known before Fiat answers.
+        vehicles = defaults.data(forKey: Keys.vehicles).flatMap { try? JSONDecoder().decode([Vehicle].self, from: $0) } ?? []
         selectedVIN = savedVIN
         // Settings saved before they were kept per car move to the selected car.
         if let vin = savedVIN {
@@ -243,6 +253,7 @@ final class CarModel {
         AccountStore.save(account)
         hasAccount = true
         vehicles = found
+        defaults.set(try? JSONEncoder().encode(found), forKey: Keys.vehicles)
         if selectedVIN == nil || !found.contains(where: { $0.vin == selectedVIN }) {
             selectedVIN = found.first?.vin
         }
@@ -262,6 +273,7 @@ final class CarModel {
         hasAccount = false
         onboarded = false
         vehicles = []
+        defaults.removeObject(forKey: Keys.vehicles)
         status = nil
         location = nil
         selectedVIN = nil
@@ -279,7 +291,9 @@ final class CarModel {
         do {
             // Fetched every time: the service list changes when a brand subscription starts or ends.
             vehicles = try await client.vehicles()
+            defaults.set(try? JSONEncoder().encode(vehicles), forKey: Keys.vehicles)
             if selectedVIN == nil || vehicle == nil { selectedVIN = vehicles.first?.vin }
+            Task { await loadPictureIfNeeded() }
             guard let vin = selectedVIN else { return }
             let fresh = try await client.status(vin: vin)
             status = fresh
@@ -290,7 +304,6 @@ final class CarModel {
             statusError = error.localizedDescription
         }
         publishSnapshot()
-        await loadPictureIfNeeded()
     }
 
     /// Above 30 % the projection to a full charge is steady enough to learn from.
@@ -334,6 +347,8 @@ final class CarModel {
         guard paints.isEmpty, let vin = selectedVIN, pictures[vin] == nil, !picturesTried.contains(vin) else { return }
         picturesTried.insert(vin)
         if let cached = CarPicture.cached(vin: vin) { pictures[vin] = cached; return }
+        pictureLoading = true
+        defer { pictureLoading = false }
         var url = vehicle?.imageURL
         if url == nil { url = try? await client.imageURL(vin: vin) }
         guard let url, let made = await CarPicture.make(vin: vin, from: url) else { return }
