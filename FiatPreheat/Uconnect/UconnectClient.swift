@@ -10,6 +10,13 @@ struct Vehicle: Sendable, Identifiable, Hashable {
     let vin: String
     let nickname: String?
     let model: String?
+    /// Service codes the car is capable of and has enabled (e.g. "ROPRECOND", "RDL").
+    /// Remote commands outside this list are refused with SERVICE_NOT_SUPPORTED.
+    var services: [String] = []
+    /// Service codes the car is capable of but which are not enabled on the account.
+    var disabledServices: [String] = []
+    /// Fiat's own picture of this car, when the vehicle list includes one.
+    var imageURL: URL? = nil
     var id: String { vin }
 }
 
@@ -20,6 +27,48 @@ struct VehicleStatus: Sendable, Equatable {
     var isCharging: Bool?
     var isPluggedIn: Bool?
     var updatedAt: Date
+    /// All doors locked, from the car's last remote status report. Nil when it hasn't said.
+    var isLocked: Bool? = nil
+    var isTrunkLocked: Bool? = nil
+
+    /// Reads the doors and boot out of `/remote/status`.
+    mutating func applyRemoteStatus(_ json: [String: Any]) {
+        if let doors = json["doors"] as? [String: Any] {
+            let states = doors.values.compactMap { ($0 as? [String: Any])?["status"] as? String }
+            isLocked = states.isEmpty ? nil : states.allSatisfy { $0 == "LOCKED" }
+        }
+        if let trunk = (json["trunk"] as? [String: Any])?["status"] as? String {
+            isTrunkLocked = trunk == "LOCKED"
+        }
+    }
+}
+
+/// Where the car last reported itself.
+struct CarLocation: Sendable, Equatable {
+    var latitude: Double
+    var longitude: Double
+    var updatedAt: Date?
+    var isApproximate: Bool
+
+    /// Parses `/location/lastknown`. Fiat sends numbers or numeric strings and a millisecond timestamp.
+    init?(json: [String: Any]) {
+        func number(_ value: Any?) -> Double? {
+            (value as? NSNumber)?.doubleValue ?? (value as? String).flatMap(Double.init)
+        }
+        guard let latitude = number(json["latitude"]), let longitude = number(json["longitude"]),
+              latitude != 0 || longitude != 0 else { return nil }
+        self.latitude = latitude
+        self.longitude = longitude
+        updatedAt = number(json["timeStamp"]).map { Date(timeIntervalSince1970: $0 / 1000) }
+        isApproximate = json["isLocationApprox"] as? Bool ?? false
+    }
+
+    init(latitude: Double, longitude: Double, updatedAt: Date?, isApproximate: Bool = false) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.updatedAt = updatedAt
+        self.isApproximate = isApproximate
+    }
 }
 
 enum OperationResult: Sendable, Equatable {
@@ -39,6 +88,8 @@ enum UconnectError: LocalizedError {
         switch self {
         case .missingAccount: "Add your Fiat account in Settings first."
         case .loginFailed(let reason): "Login failed: \(reason)"
+        case .requestFailed(_, let body) where body.contains("SERVICE_NOT_SUPPORTED"):
+            "Fiat says this car's subscription doesn't include that. It needs the My Remote package."
         case .requestFailed(let code, let body): "Server returned \(code). \(body.prefix(200))"
         case .commandRejected(let reason): "The car rejected the command: \(reason)"
         case .unexpectedResponse(let detail): "Unexpected response: \(detail.prefix(200))"
@@ -88,10 +139,17 @@ actor UconnectClient {
         }
         return list.compactMap { item in
             guard let vin = item["vin"] as? String else { return nil }
+            let capable = (item["services"] as? [[String: Any]] ?? [])
+                .filter { $0["vehicleCapable"] as? Bool == true }
             return Vehicle(
                 vin: vin,
                 nickname: item["nickname"] as? String,
-                model: (item["modelDescription"] as? String) ?? (item["make"] as? String)
+                model: (item["modelDescription"] as? String) ?? (item["make"] as? String),
+                services: capable.filter { $0["serviceEnabled"] as? Bool == true }
+                    .compactMap { $0["service"] as? String },
+                disabledServices: capable.filter { $0["serviceEnabled"] as? Bool != true }
+                    .compactMap { $0["service"] as? String },
+                imageURL: (item["vehicleImageURL"] as? String).flatMap(URL.init(string:))
             )
         }
     }
@@ -101,7 +159,7 @@ actor UconnectClient {
         let json = try await signedRequest("GET", "/v3/accounts/\(uid)/vehicles/\(vin)/status/")
         let battery = (json["evInfo"] as? [String: Any])?["battery"] as? [String: Any]
         let range = battery?["distanceToEmpty"] as? [String: Any]
-        return VehicleStatus(
+        var status = VehicleStatus(
             stateOfCharge: number(battery?["stateOfCharge"]),
             range: number(range?["value"]),
             rangeUnit: range?["unit"] as? String,
@@ -109,6 +167,29 @@ actor UconnectClient {
             isPluggedIn: battery?["plugInStatus"] as? Bool,
             updatedAt: Date()
         )
+        // Doors and boot come from a second endpoint; the battery is the part that matters, so
+        // a failure here leaves the lock state unknown instead of failing the refresh.
+        if let remote = try? await signedRequest("GET", "/v1/accounts/\(uid)/vehicles/\(vin)/remote/status") {
+            status.applyRemoteStatus(remote)
+        }
+        return status
+    }
+
+    /// The car's own charging and departure schedules, as Fiat sends them. Read-only for now: the
+    /// format isn't documented, so this is for looking before the app writes one.
+    func carSchedules(vin: String) async throws -> [String: Any] {
+        let uid = try await authenticatedUID()
+        return try await signedRequest("GET", "/v4/accounts/\(uid)/vehicles/\(vin)/ev/schedule/")
+    }
+
+    /// The car's last reported position. Send `.locate` first to ask it for a fresh one.
+    func location(vin: String) async throws -> CarLocation {
+        let uid = try await authenticatedUID()
+        let json = try await signedRequest("GET", "/v1/accounts/\(uid)/vehicles/\(vin)/location/lastknown")
+        guard let location = CarLocation(json: json) else {
+            throw UconnectError.unexpectedResponse("no position in \(json)")
+        }
+        return location
     }
 
     // MARK: Commands
@@ -118,10 +199,20 @@ actor UconnectClient {
     func send(_ command: RemoteCommand, vin: String) async throws -> String {
         let uid = try await authenticatedUID()
         let pinToken = try await pinAuthToken(uid: uid)
-        let json = try await signedRequest(
-            "POST", "/v1/accounts/\(uid)/vehicles/\(vin)/remote",
-            body: ["command": command.rawValue, "pinAuth": pinToken]
-        )
+        func post(_ endpoint: RemoteCommand.Endpoint) async throws -> [String: Any] {
+            try await signedRequest(
+                "POST", "/\(endpoint.version)/accounts/\(uid)/vehicles/\(vin)/\(endpoint.path)",
+                body: ["command": endpoint.command, "pinAuth": pinToken]
+            )
+        }
+        let json: [String: Any]
+        do {
+            json = try await post(command.endpoint)
+        } catch UconnectError.requestFailed(403, _) where command.fallback != nil {
+            // `perform` dropped the credentials on 403; sign in again before the retry.
+            _ = try await authenticatedUID()
+            json = try await post(command.fallback!)
+        }
         guard json["responseStatus"] as? String == "pending",
               let correlationId = json["correlationId"] as? String else {
             throw UconnectError.commandRejected((json["debugMsg"] as? String) ?? "\(json)")

@@ -22,6 +22,11 @@ final class CarModel {
     private(set) var commandState: CommandState = .idle
     private(set) var lastPreheatStart: Date?
     private(set) var statusError: String?
+    private(set) var location: CarLocation?
+    private(set) var locationError: String?
+
+    /// Whether the car offers a command and whether the account has it switched on.
+    enum Availability { case available, needsSubscription, unsupported }
 
     var selectedVIN: String? {
         didSet { defaults.set(selectedVIN, forKey: Keys.vin) }
@@ -42,6 +47,17 @@ final class CarModel {
     var isPreheating: Bool {
         guard let lastPreheatStart else { return false }
         return Date().timeIntervalSince(lastPreheatStart) < Self.assumedPreheatDuration
+    }
+
+    var vehicle: Vehicle? { vehicles.first { $0.vin == selectedVIN } }
+
+    /// From the car's service list. A car that lists nothing gets every command, so an older or
+    /// different account isn't locked out by a list it doesn't send.
+    func availability(of command: RemoteCommand) -> Availability {
+        guard let vehicle, !vehicle.services.isEmpty || !vehicle.disabledServices.isEmpty else { return .available }
+        if vehicle.services.contains(command.rawValue) { return .available }
+        if vehicle.disabledServices.contains(command.rawValue) { return .needsSubscription }
+        return .unsupported
     }
 
     var isBusy: Bool {
@@ -77,6 +93,7 @@ final class CarModel {
             plate = "ED35079"
             status = Demo.status
             schedules = Demo.schedules
+            location = Demo.location
             lastPreheatStart = Demo.screen == "preheating" ? Date().addingTimeInterval(-6 * 60) : nil
         }
     }
@@ -104,6 +121,7 @@ final class CarModel {
         hasAccount = false
         vehicles = []
         status = nil
+        location = nil
         selectedVIN = nil
     }
 
@@ -117,15 +135,28 @@ final class CarModel {
         }
         await client.setAccount(account)
         do {
-            if vehicles.isEmpty {
-                vehicles = try await client.vehicles()
-                if selectedVIN == nil { selectedVIN = vehicles.first?.vin }
-            }
+            // Fetched every time: the service list changes when a Fiat subscription starts or ends.
+            vehicles = try await client.vehicles()
+            if selectedVIN == nil || vehicle == nil { selectedVIN = vehicles.first?.vin }
             guard let vin = selectedVIN else { return }
             status = try await client.status(vin: vin)
             statusError = nil
         } catch {
             statusError = error.localizedDescription
+        }
+    }
+
+    // MARK: Location
+
+    /// Reads where the car last reported itself, without waking it.
+    func loadLocation() async {
+        guard hasAccount, !Demo.isActive, let vin = selectedVIN else { return }
+        await client.setAccount(account)
+        do {
+            location = try await client.location(vin: vin)
+            locationError = nil
+        } catch {
+            locationError = error.localizedDescription
         }
     }
 
@@ -139,6 +170,12 @@ final class CarModel {
     @discardableResult
     func stopPreheat(waitForCar: Bool = true) async -> CommandState {
         await run(.preconditionOff, waitForCar: waitForCar)
+    }
+
+    /// Sends any remote command and, unless told not to, waits for the car to confirm it.
+    @discardableResult
+    func perform(_ command: RemoteCommand, waitForCar: Bool = true) async -> CommandState {
+        await run(command, waitForCar: waitForCar)
     }
 
     private func run(_ command: RemoteCommand, waitForCar: Bool) async -> CommandState {
@@ -164,6 +201,7 @@ final class CarModel {
             commandState = .waitingForCar(command)
             let result = await client.waitForResult(vin: vin, correlationId: correlationId)
             if result == .failed, command == .preconditionOn { setLastPreheat(nil) }
+            if result == .succeeded { await followUp(command) }
             commandState = .done(command, result, Date())
         } catch {
             commandState = .failed(error.localizedDescription)
@@ -172,7 +210,23 @@ final class CarModel {
     }
 
     private func recordAccepted(_ command: RemoteCommand) {
-        setLastPreheat(command == .preconditionOn ? Date() : nil)
+        switch command {
+        case .preconditionOn: setLastPreheat(Date())
+        case .preconditionOff: setLastPreheat(nil)
+        default: break
+        }
+    }
+
+    /// Reads back what a confirmed command changed, so the screen shows the car's new state.
+    private func followUp(_ command: RemoteCommand) async {
+        switch command {
+        case .lock: status?.isLocked = true
+        case .unlock: status?.isLocked = false
+        case .trunkUnlock: status?.isTrunkLocked = false
+        case .locate: await loadLocation()
+        case .deepRefresh, .chargeNow: await refreshStatus()
+        default: break
+        }
     }
 
     private func setLastPreheat(_ date: Date?) {

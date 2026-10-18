@@ -78,3 +78,41 @@ final class ScheduleTests: XCTestCase {
         XCTAssertNil(UconnectClient.parseResult("pending"))
     }
 }
+
+final class RemoteTests: XCTestCase {
+    func testCommandsGoWherePyUconnectSendsThem() {
+        XCTAssertEqual(RemoteCommand.lock.endpoint, .init(command: "RDL", version: "v1", path: "remote"))
+        XCTAssertEqual(RemoteCommand.trunkUnlock.endpoint, .init(command: "ROTRUNKUNLOCK", version: "v2", path: "remote"))
+        XCTAssertEqual(RemoteCommand.chargeNow.endpoint, .init(command: "CNOW", version: "v1", path: "ev/chargenow"))
+        XCTAssertEqual(RemoteCommand.chargeNow.fallback, .init(command: "START_CHARGE", version: "v4", path: "ev/chargenow"))
+        XCTAssertEqual(RemoteCommand.deepRefresh.fallback, .init(command: "DEEPREFRESH2", version: "v2", path: "ev"))
+        XCTAssertEqual(RemoteCommand.locate.endpoint, .init(command: "VF", version: "v1", path: "location/"))
+        XCTAssertNil(RemoteCommand.preconditionOn.fallback)
+    }
+
+    func testLocationParsesStringsAndMilliseconds() throws {
+        let location = try XCTUnwrap(CarLocation(json: [
+            "latitude": "55.6805", "longitude": 12.5853, "timeStamp": 1_760_000_000_000, "isLocationApprox": true,
+        ]))
+        XCTAssertEqual(location.latitude, 55.6805, accuracy: 0.0001)
+        XCTAssertEqual(location.longitude, 12.5853, accuracy: 0.0001)
+        XCTAssertEqual(location.updatedAt, Date(timeIntervalSince1970: 1_760_000_000))
+        XCTAssertTrue(location.isApproximate)
+        XCTAssertNil(CarLocation(json: ["latitude": 0, "longitude": 0]))
+    }
+
+    func testDoorsAreLockedOnlyWhenEveryDoorIs() {
+        var status = VehicleStatus(updatedAt: .now)
+        status.applyRemoteStatus(["doors": ["driver": ["status": "LOCKED"], "passenger": ["status": "LOCKED"]],
+                                  "trunk": ["status": "UNLOCKED"]])
+        XCTAssertEqual(status.isLocked, true)
+        XCTAssertEqual(status.isTrunkLocked, false)
+        status.applyRemoteStatus(["doors": ["driver": ["status": "LOCKED"], "passenger": ["status": "UNLOCKED"]]])
+        XCTAssertEqual(status.isLocked, false)
+    }
+
+    func testMissingSubscriptionSaysSo() {
+        let error = UconnectError.requestFailed(400, #"{"name":"SERVICE_NOT_SUPPORTED"}"#)
+        XCTAssertTrue(error.localizedDescription.contains("My Remote"))
+    }
+}

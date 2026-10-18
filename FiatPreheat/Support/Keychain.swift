@@ -4,7 +4,7 @@ import Security
 /// Stores the Fiat account in the Keychain. Readable after first unlock so scheduled
 /// preheats can run from the background while the phone is locked.
 enum AccountStore {
-    private static let service = "dk.koster.FiatPreheat.account"
+    private static let service = "dk.koster.varme.account"
     private static let key = "uconnect"
 
     static func load() -> UconnectAccount? {

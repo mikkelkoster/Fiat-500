@@ -1,15 +1,19 @@
-# 500e Preheat
+# Varme
 
-A small iOS app that preheats (or cools) a Fiat 500e (registration **ED35079**) from your phone, by Siri, and on a schedule.
+Varme preheats (or cools) your car from your phone, by Siri, and on a schedule. It started as an app for one Fiat 500e (registration **ED35079**) and is being opened up to every car on Stellantis' Uconnect service: Fiat, Jeep, Alfa Romeo, Maserati and more.
 
 It talks to the same Stellantis Uconnect cloud service as the official Fiat app, so the car needs an active Uconnect Services subscription and you need your Fiat account email, password and 4-digit Uconnect PIN.
 
 ## What it does
 
 - **Preheat / Stop:** one large button. It sends the car's `ROPRECOND` / `ROPRECOND_OFF` command and waits for the car to confirm.
-- **Status:** battery %, range and whether the cable is plugged in. Pull down to refresh.
+- **Status:** battery %, range, whether the cable is plugged in and whether the doors are locked. Pull down to refresh, or tap **Update from car** to wake the car for fresh numbers.
+- **Car:** lock, unlock (asks first), lights, open boot and **Find car** (map of the last reported position, ask the car again, walking directions in Apple Maps).
+- **Charge now:** shown when the cable is in but the car isn't charging, to override its charging timer.
 - **Schedules:** set a "warm by" time (e.g. 07:30), the days, and how many minutes before to start.
-- **Siri & Shortcuts:** "Preheat my car with 500e Preheat", plus *Preheat Car* and *Stop Preheating Car* actions in Shortcuts.
+- **Siri & Shortcuts:** "Preheat my car with 500e Preheat", plus *Preheat Car*, *Stop Preheating Car*, *Lock Car*, *Unlock Car* (needs the phone unlocked and asks first) and *Turn On Car Lights* in Shortcuts.
+
+Everything except battery status needs Fiat's paid **My Remote** package on the account that owns the car. The app reads the car's service list from Fiat and only shows the commands the car has; ones it has but the account hasn't paid for are greyed out with a note. `swift run fiat-cli vehicles` prints that list.
 
 ## How scheduling works (and its limits)
 
@@ -52,6 +56,8 @@ swift run fiat-cli vehicles   # sign in, list the cars on the account
 swift run fiat-cli status     # battery, range, plug
 swift run fiat-cli preheat    # start climate and wait for the car to confirm
 swift run fiat-cli stop
+swift run fiat-cli where      # last known position, nothing sent to the car
+swift run fiat-cli lock       # also: unlock, lights, trunk, chargenow, refresh, locate
 ```
 
 It asks for your email, password and PIN (hidden as you type), or reads `FIAT_EMAIL`,
@@ -67,7 +73,11 @@ Gigya login (loginmyuconnect.fiat.com)
   → SigV4-signed calls to channels.sdpr-01.fcagcv.com
       GET  /v4/accounts/{uid}/vehicles
       GET  /v3/accounts/{uid}/vehicles/{vin}/status/
+      GET  /v1/accounts/{uid}/vehicles/{vin}/remote/status        doors, boot
+      GET  /v1/accounts/{uid}/vehicles/{vin}/location/lastknown
       POST /v1/accounts/{uid}/vehicles/{vin}/remote   {command, pinAuth}
+           ROPRECOND(_OFF), RDL, RDU, ROLIGHTS; ROTRUNKUNLOCK on /v2
+      POST /v1/…/ev/chargenow {CNOW} · /v1/…/ev {DEEPREFRESH} · /v1/…/location/ {VF}
   (pinAuth comes from POST mfa.fcl-01.fcagcv.com/v1/accounts/{uid}/ignite/pin/authenticate)
 ```
 

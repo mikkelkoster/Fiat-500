@@ -4,6 +4,7 @@ struct HomeView: View {
     @Environment(CarModel.self) private var model
     @State private var showSettings = false
     @State private var editing: PreheatSchedule?
+    @State private var showFindCar = false
     @State private var toast: ToastMessage?
 
     var body: some View {
@@ -13,6 +14,7 @@ struct HomeView: View {
                 CardStack {
                     BatteryCard(status: model.status, error: model.statusError)
                     ClimateCard()
+                    CarCard(showFindCar: $showFindCar)
                     SchedulesSection(editing: $editing)
                 }
                 .padding(.horizontal, Space.gutter)
@@ -32,12 +34,14 @@ struct HomeView: View {
         .animation(.easeOut(duration: Motion.normal), value: toast)
         .sheet(isPresented: $showSettings) { SettingsView() }
         .sheet(item: $editing) { schedule in ScheduleEditorView(schedule: schedule) }
+        .sheet(isPresented: $showFindCar) { FindCarView() }
         .onChange(of: model.commandState) { _, state in show(ToastMessage(state)) }
         .task {
             if Demo.isActive {
                 switch Demo.screen {
                 case "settings": showSettings = true
                 case "schedule": editing = model.schedules.first
+                case "find": showFindCar = true
                 default: break
                 }
                 return
@@ -85,21 +89,35 @@ private struct ToastMessage: Equatable {
             return nil
         case .failed(let message):
             title = "Couldn't reach the car"; detail = message; isError = true
-        case .done(_, .failed, _):
-            title = "The car didn't accept it"; detail = "Check it's parked with enough charge."; isError = true
-        case .done(.preconditionOn, .succeeded, _):
-            title = "Preheating"
-        case .done(.preconditionOn, .unknown, _):
-            title = "Preheat sent"; detail = "The car hasn't confirmed yet."
-        case .done(.preconditionOff, _, _):
-            title = "Climate off"
+        case .done(let command, .failed, _):
+            title = "The car didn't accept it"; isError = true
+            detail = command == .preconditionOn ? "Check it's parked with enough charge." : "It may be asleep or out of coverage. Try again in a minute."
+        case .done(let command, .succeeded, _):
+            title = Self.confirmed[command] ?? "Done"
+        case .done(let command, .unknown, _):
+            title = Self.sent[command] ?? "Sent"; detail = "The car hasn't confirmed yet."
         }
     }
+
+    private static let confirmed: [RemoteCommand: String] = [
+        .preconditionOn: "Preheating", .preconditionOff: "Climate off",
+        .lock: "Locked", .unlock: "Unlocked", .lights: "Lights on",
+        .trunkUnlock: "Boot unlocked", .chargeNow: "Charging started",
+        .deepRefresh: "Updated from the car", .locate: "Location updated",
+    ]
+
+    private static let sent: [RemoteCommand: String] = [
+        .preconditionOn: "Preheat sent", .preconditionOff: "Stop sent",
+        .lock: "Lock sent", .unlock: "Unlock sent", .lights: "Lights sent",
+        .trunkUnlock: "Boot unlock sent", .chargeNow: "Charge now sent",
+        .deepRefresh: "Update requested", .locate: "Location requested",
+    ]
 }
 
 // MARK: - Battery
 
 private struct BatteryCard: View {
+    @Environment(CarModel.self) private var model
     let status: VehicleStatus?
     let error: String?
 
@@ -130,9 +148,33 @@ private struct BatteryCard: View {
                         .lineLimit(2)
                         .padding(.top, 12)
                 }
+                if showsRefresh || showsChargeNow {
+                    HStack(spacing: 8) {
+                        if showsRefresh {
+                            SmallButton(title: "Update from car", icon: "arrow.clockwise") {
+                                Task { await model.perform(.deepRefresh) }
+                            }
+                        }
+                        if showsChargeNow {
+                            SmallButton(title: "Charge now", icon: "bolt.fill") {
+                                Task { await model.perform(.chargeNow) }
+                            }
+                        }
+                    }
+                    .disabled(model.isBusy)
+                    .padding(.top, 12)
+                }
             }
         }
         .animation(Motion.change, value: status)
+    }
+
+    /// Pull to refresh reads what Fiat's server last heard; this wakes the car for fresh numbers.
+    private var showsRefresh: Bool { model.availability(of: .deepRefresh) == .available }
+
+    /// Only when the cable is in but the car's own charging timer is holding back.
+    private var showsChargeNow: Bool {
+        model.availability(of: .chargeNow) == .available && status?.isPluggedIn == true && status?.isCharging != true
     }
 
     private var rangeLine: String {
@@ -195,6 +237,89 @@ private struct ClimateCard: View {
             return "Preheating since \(start.formatted(date: .omitted, time: .shortened)). The car stops by itself."
         }
         return "Heats or cools the cabin to the temperature last set in the car."
+    }
+}
+
+// MARK: - Car
+
+/// Doors, lights, boot and finding the car: Fiat's "My Remote" commands.
+private struct CarCard: View {
+    @Environment(CarModel.self) private var model
+    @Binding var showFindCar: Bool
+    @State private var confirmUnlock = false
+
+    private struct Action: Identifiable {
+        let command: RemoteCommand
+        let title: String
+        let icon: String
+        var id: String { command.rawValue }
+    }
+
+    private let actions = [
+        Action(command: .lock, title: "Lock", icon: "lock.fill"),
+        Action(command: .unlock, title: "Unlock", icon: "lock.open.fill"),
+        Action(command: .lights, title: "Lights", icon: "lightbulb.fill"),
+        Action(command: .trunkUnlock, title: "Open boot", icon: "car.side.rear.open"),
+        Action(command: .locate, title: "Find car", icon: "location.fill"),
+    ]
+
+    var body: some View {
+        let shown = actions.filter { model.availability(of: $0.command) != .unsupported }
+        if !shown.isEmpty {
+            Card {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
+                        Text("Car").font(Type.heading).tracking(-0.3).foregroundStyle(Ink.foreground)
+                        Spacer()
+                        if let locked = model.status?.isLocked {
+                            DayTag(text: locked ? "Locked" : "Unlocked", tone: locked ? .good : .caution)
+                        }
+                    }
+                    Text(line(shown))
+                        .font(Type.body).foregroundStyle(Ink.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 6)
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                        ForEach(shown) { action in
+                            PrimaryButton(title: title(action), icon: action.icon, outline: true) { tap(action.command) }
+                                .disabled(model.isBusy || !model.hasAccount
+                                          || model.availability(of: action.command) != .available)
+                        }
+                    }
+                    .padding(.top, 20)
+                }
+            }
+            .confirmationDialog("Unlock the car?", isPresented: $confirmUnlock, titleVisibility: .visible) {
+                Button("Unlock") { Task { await model.perform(.unlock) } }
+            } message: {
+                Text("The doors unlock wherever the car is.")
+            }
+        }
+    }
+
+    private func tap(_ command: RemoteCommand) {
+        switch command {
+        case .unlock: confirmUnlock = true
+        // Opens on the last known spot; asking the car for a new one happens inside.
+        case .locate: showFindCar = true
+        default: Task { await model.perform(command) }
+        }
+    }
+
+    /// The button that's working says so instead of its name.
+    private func title(_ action: Action) -> String {
+        switch model.commandState {
+        case .sending(action.command): "Sending…"
+        case .waitingForCar(action.command): "Waiting…"
+        default: action.title
+        }
+    }
+
+    private func line(_ shown: [Action]) -> String {
+        if shown.contains(where: { model.availability(of: $0.command) == .needsSubscription }) {
+            return "Some of these need Fiat's My Remote package. Buy it in the Fiat app, then pull down to refresh."
+        }
+        return "Each command asks the car through Fiat's servers and can take up to a minute."
     }
 }
 

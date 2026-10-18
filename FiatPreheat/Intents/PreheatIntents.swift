@@ -32,6 +32,55 @@ struct StopPreheatIntent: AppIntent {
     }
 }
 
+struct LockCarIntent: AppIntent {
+    static let title: LocalizedStringResource = "Lock Car"
+    static let description = IntentDescription("Locks the doors of your Fiat 500e.")
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let model = CarModel.shared
+        if case .failed(let message) = await model.perform(.lock, waitForCar: false) {
+            throw IntentError(message)
+        }
+        return .result(dialog: "Locking \(model.plate).")
+    }
+}
+
+struct UnlockCarIntent: AppIntent {
+    static let title: LocalizedStringResource = "Unlock Car"
+    static let description = IntentDescription("Unlocks the doors of your Fiat 500e.")
+    /// Never from a locked phone.
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let model = CarModel.shared
+        if #available(iOS 18.0, *) {
+            try await requestConfirmation(conditions: [], actionName: .go, dialog: "Unlock \(model.plate)?")
+        } else {
+            try await requestConfirmation(result: .result(dialog: "Unlock \(model.plate)?"))
+        }
+        if case .failed(let message) = await model.perform(.unlock, waitForCar: false) {
+            throw IntentError(message)
+        }
+        return .result(dialog: "Unlocking \(model.plate).")
+    }
+}
+
+struct FlashLightsIntent: AppIntent {
+    static let title: LocalizedStringResource = "Turn On Car Lights"
+    static let description = IntentDescription("Turns on the lights of your Fiat 500e for a moment, to spot it.")
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let model = CarModel.shared
+        if case .failed(let message) = await model.perform(.lights, waitForCar: false) {
+            throw IntentError(message)
+        }
+        return .result(dialog: "Turning on the lights of \(model.plate).")
+    }
+}
+
 struct IntentError: LocalizedError {
     let message: String
     init(_ message: String) { self.message = message }
@@ -42,7 +91,7 @@ struct PreheatShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: StartPreheatIntent(),
-            phrases: ["Preheat my car with \(.applicationName)", "\(.applicationName) preheat"],
+            phrases: ["Preheat my car with \(.applicationName)", "\(.applicationName) preheat", "Warm up my car with \(.applicationName)"],
             shortTitle: "Preheat",
             systemImageName: "thermometer.sun.fill"
         )
@@ -51,6 +100,24 @@ struct PreheatShortcuts: AppShortcutsProvider {
             phrases: ["Stop preheating with \(.applicationName)"],
             shortTitle: "Stop Preheat",
             systemImageName: "thermometer.snowflake"
+        )
+        AppShortcut(
+            intent: LockCarIntent(),
+            phrases: ["Lock my car with \(.applicationName)", "\(.applicationName) lock"],
+            shortTitle: "Lock",
+            systemImageName: "lock.fill"
+        )
+        AppShortcut(
+            intent: UnlockCarIntent(),
+            phrases: ["Unlock my car with \(.applicationName)", "\(.applicationName) unlock"],
+            shortTitle: "Unlock",
+            systemImageName: "lock.open.fill"
+        )
+        AppShortcut(
+            intent: FlashLightsIntent(),
+            phrases: ["Flash my car's lights with \(.applicationName)"],
+            shortTitle: "Lights",
+            systemImageName: "lightbulb.fill"
         )
     }
 }

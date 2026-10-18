@@ -16,7 +16,7 @@ import UserNotifications
 final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
     static let shared = ScheduleCoordinator()
 
-    static let backgroundTaskID = "dk.koster.FiatPreheat.schedule"
+    static let backgroundTaskID = "dk.koster.varme.schedule"
     private static let categoryID = "PREHEAT"
     private static let startActionID = "PREHEAT_NOW"
     private static let requestPrefix = "preheat-"
