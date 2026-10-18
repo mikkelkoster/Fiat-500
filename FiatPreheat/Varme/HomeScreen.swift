@@ -18,7 +18,7 @@ struct HomeScreen: View {
 
     /// Everything under the hero: the gauge (less its overlap), Heat cabin, the action row, the
     /// slider, the gaps, and a little air above the home indicator.
-    private static let belowHero: CGFloat = gaugeHeight - gaugeOverlap + 64 + 78 + 60 + V.cardGap * 4 + 6
+    private static let belowHero: CGFloat = gaugeHeight - gaugeOverlap + 60 + 78 + 60 + V.cardGap * 4 + 6
 
     /// How far to pull before letting go refreshes.
     private let pullThreshold: CGFloat = 64
@@ -202,7 +202,7 @@ struct HomeScreen: View {
                 if isRunning(.chargeNow) { ProgressView().tint(V.positive) } else { PhIcon(name: "lightning", size: 24) }
             }
             .foregroundStyle(V.positive)
-            .frame(width: 64, height: 64)
+            .frame(width: 60, height: 60)
             .glassCircle()
             .contentShape(Circle())
         }
@@ -216,7 +216,7 @@ struct HomeScreen: View {
             HeatingButton(phase: phase, minutesLeft: model.preheatMinutesLeft) { Task { await model.stopPreheat() } }
         } else {
             let connecting = model.commandState == .sending(.preconditionOn)
-            VButton(title: connecting ? "Connecting…" : "Heat cabin", icon: "flame", height: 64, loading: connecting, glass: true) {
+            VButton(title: connecting ? "Connecting…" : "Heat cabin", icon: "flame", height: 60, loading: connecting, glass: true) {
                 Task { await model.startPreheat() }
             }
             // Busy stays white (it's saying "Connecting…"); it just ignores taps.
@@ -637,7 +637,7 @@ struct HeatingButton: View {
             .opacity(phase == .stopping ? 0.5 : 1)
             .padding(.trailing, 10)
         }
-        .frame(height: 64)
+        .frame(height: 60)
         .background(
             GeometryReader { g in
                 ZStack {
