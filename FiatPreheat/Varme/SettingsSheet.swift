@@ -98,7 +98,7 @@ struct SettingsSheet: View {
                     .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
 
                     Button { confirmSignOut = true } label: {
-                        Text("Sign out").font(V.label).foregroundStyle(V.danger).frame(height: 44)
+                        Text(Demo.isSample ? "Leave sample car" : "Sign out").font(V.label).foregroundStyle(V.danger).frame(height: 44)
                     }
                     Text("Varme is an independent app, not affiliated with Stellantis or its brands.")
                         .font(V.label).foregroundStyle(V.textFaint).multilineTextAlignment(.center)
@@ -111,8 +111,8 @@ struct SettingsSheet: View {
         .background(V.surface.ignoresSafeArea())
         .varmeSheet()
         .sheet(isPresented: $showTrips) { TripsSheet() }
-        .confirmationDialog("Sign out of \(model.account?.brand.name ?? "the account")?", isPresented: $confirmSignOut, titleVisibility: .visible) {
-            Button("Sign out", role: .destructive) { Task { await model.signOut() }; dismiss() }
+        .confirmationDialog(Demo.isSample ? "Leave the sample car?" : "Sign out of \(model.account?.brand.name ?? "the account")?", isPresented: $confirmSignOut, titleVisibility: .visible) {
+            Button(Demo.isSample ? "Leave" : "Sign out", role: .destructive) { Task { await model.signOut() }; dismiss() }
         }
     }
 

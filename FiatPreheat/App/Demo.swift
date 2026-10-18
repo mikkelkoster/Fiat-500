@@ -1,7 +1,8 @@
 import Foundation
 
-/// Sample data: the app on a made-up 500e, with no account and no network, for simulator runs and
-/// screenshots.
+/// Sample data: the app on a made-up 500e, with no account and no network. Reached from
+/// "Try with a sample car" on the welcome screen (for anyone without a car, App Review included),
+/// or for simulator runs and screenshots:
 ///
 ///   -preheatDemo                  turn it on
 ///   -demoScreen home|preheating|charging|find|schedule|settings|onboarding   which screen to open on
@@ -9,7 +10,11 @@ import Foundation
 ///   -demoUnlocked YES              the car reports unlocked
 ///   -demoLoading YES               no numbers yet: the gauge shows it's loading
 enum Demo {
-    static let isActive = ProcessInfo.processInfo.arguments.contains("-preheatDemo")
+    static var isActive: Bool { launchedAsDemo || UserDefaults.standard.bool(forKey: sampleKey) }
+    /// The sample car was chosen on the welcome screen; it lasts until "Leave sample car".
+    static var isSample: Bool { !launchedAsDemo && UserDefaults.standard.bool(forKey: sampleKey) }
+    static let sampleKey = "sampleCar"
+    private static let launchedAsDemo = ProcessInfo.processInfo.arguments.contains("-preheatDemo")
     static let screen = UserDefaults.standard.string(forKey: "demoScreen") ?? "home"
 
     static let account = UconnectAccount(email: "driver@example.com", password: "password", pin: "1234")

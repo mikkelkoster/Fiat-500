@@ -104,6 +104,8 @@ final class CarModel {
     }
     var schedules: [PreheatSchedule] {
         didSet {
+            // The sample car's schedules are pretend: nothing saved, nothing scheduled.
+            guard !Demo.isActive else { return }
             defaults.set(try? JSONEncoder().encode(schedules), forKey: Keys.schedules)
             ScheduleCoordinator.shared.reschedule(schedules)
         }
@@ -233,21 +235,30 @@ final class CarModel {
         if let vin = selectedVIN { pictures[vin] = CarPicture.cached(vin: vin) }
         status = Self.savedStatus(selectedVIN, defaults)
 
-        if Demo.isActive {
-            hasAccount = true
-            onboarded = Demo.screen != "onboarding"
-            vehicles = Demo.vehicles
-            selectedVIN = Demo.vehicle.vin
-            plate = "ED 35079"
-            carName = UserDefaults.standard.string(forKey: "demoName") ?? "500e"
-            ownerName = "Mikkel"
-            carColorHex = UserDefaults.standard.string(forKey: "demoColor") ?? "#18181b"
-            status = UserDefaults.standard.bool(forKey: "demoLoading") ? nil : Demo.status
-            defaults.set(300.0, forKey: "bestFullRange.\(Demo.vehicle.vin)")
-            schedules = Demo.schedules
-            location = Demo.location
-            lastPreheatStart = Demo.screen == "preheating" ? Date().addingTimeInterval(-6 * 60) : nil
-        }
+        if Demo.isActive { loadSample() }
+    }
+
+    /// The made-up 500e, with its numbers, schedules and position.
+    private func loadSample() {
+        hasAccount = true
+        onboarded = Demo.screen != "onboarding"
+        vehicles = Demo.vehicles
+        selectedVIN = Demo.vehicle.vin
+        plate = "ED 35079"
+        carName = UserDefaults.standard.string(forKey: "demoName") ?? "Fiat 500e"
+        carColorHex = UserDefaults.standard.string(forKey: "demoColor") ?? "#18181b"
+        status = UserDefaults.standard.bool(forKey: "demoLoading") ? nil : Demo.status
+        defaults.set(300.0, forKey: "bestFullRange.\(Demo.vehicle.vin)")
+        schedules = Demo.schedules
+        location = Demo.location
+        lastPreheatStart = Demo.screen == "preheating" ? Date().addingTimeInterval(-6 * 60) : nil
+    }
+
+    /// "Try with a sample car": the whole app on pretend data, nothing sent anywhere.
+    func startSampleCar() {
+        defaults.set(true, forKey: Demo.sampleKey)
+        loadSample()
+        onboarded = true
     }
 
     // MARK: Account
@@ -276,6 +287,19 @@ final class CarModel {
     }
 
     func signOut() async {
+        if Demo.isSample {
+            // Back to the welcome screen with the owner's own things as they were.
+            defaults.removeObject(forKey: Demo.sampleKey)
+            hasAccount = false
+            onboarded = false
+            vehicles = []
+            status = nil
+            location = nil
+            lastPreheatStart = nil
+            selectedVIN = nil
+            schedules = defaults.data(forKey: Keys.schedules).flatMap { try? JSONDecoder().decode([PreheatSchedule].self, from: $0) } ?? []
+            return
+        }
         AccountStore.delete()
         await client.setAccount(nil)
         hasAccount = false

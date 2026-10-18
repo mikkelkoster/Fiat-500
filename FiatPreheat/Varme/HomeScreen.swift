@@ -136,6 +136,11 @@ struct HomeScreen: View {
     }
 
     private var updatedText: String {
+        if Demo.isSample { return "Sample car" }
+        return statusText
+    }
+
+    private var statusText: String {
         guard let updated = model.status.map({ $0.reportedAt ?? $0.updatedAt }) else {
             return model.statusError == nil ? "Loading…" : "Couldn't reach the car · pull to retry"
         }
@@ -701,13 +706,17 @@ struct UnlockSlider: View {
             ZStack(alignment: .leading) {
                 // Unlocked is the state to notice: knob, words and edge turn amber.
                 Color.clear.glassCapsule(tint: nil)
-                    .overlay(Capsule().strokeBorder(locked ? .clear : V.amber.opacity(0.5), lineWidth: 1))
+                    .overlay(Capsule().strokeBorder(locked ? .clear : V.amber.opacity(0.7), lineWidth: 1.5))
+                    .background(Capsule().fill(V.amber.opacity(locked ? 0 : 0.10)))
+                    .shadow(color: V.amber.opacity(locked ? 0 : 0.35), radius: 14)
                 Text(locked ? "SWIPE TO UNLOCK" : "SWIPE TO LOCK").font(V.eyebrow).tracking(3).foregroundStyle(locked ? V.textMuted : V.amber)
                     .frame(maxWidth: .infinity).opacity(1 - Double(drag / travel) * 1.5)
                 PhIcon(name: locked ? "lock" : "lock-open", size: 20).foregroundStyle(V.ground)
                     .frame(width: 50, height: 50)
                     // The same frosted treatment as Heat cabin, in white (amber when unlocked).
-                    .glassCapsule(tint: (locked ? V.text : V.amber).opacity(0.95))
+                    .glassCapsule(tint: locked ? V.text : V.amber)
+                    // Glass mixes in what's behind it; the true colour on top keeps white white and amber amber.
+                    .background(Capsule().fill(locked ? V.text : V.amber))
                     .overlay(GlassSheen())
                     .offset(x: 5 + drag)
                     .gesture(DragGesture()

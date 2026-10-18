@@ -33,15 +33,22 @@ struct OnboardingFlow: View {
     private var welcome: some View {
         ZStack(alignment: .top) {
             RadialGradient(colors: [V.outline, V.surface, V.ground], center: UnitPoint(x: 0.5, y: 0.4), startRadius: 0, endRadius: 320).ignoresSafeArea()
-            CarLineup().padding(.top, 150)
-            LinearGradient(colors: [V.ground.opacity(0), V.ground], startPoint: .top, endPoint: .bottom).frame(height: 220).padding(.top, 330)
-            VStack { Text("Varme").font(V.sora(56, .ultraLight)).tracking(-2).foregroundStyle(V.text).padding(.top, 76); Spacer() }
+            CarLineup().padding(.top, 104)
+            LinearGradient(colors: [V.ground.opacity(0), V.ground], startPoint: .top, endPoint: .bottom).frame(height: 220).padding(.top, 284)
+            V.ground.frame(maxHeight: .infinity).padding(.top, 503)
+            VStack { Text("Varme").font(V.sora(56, .ultraLight)).tracking(-2).foregroundStyle(V.text).padding(.top, 40); Spacer() }
             VStack(spacing: 10) {
                 Spacer()
                 Text("A warm car\nwhen you leave.").font(V.sora(34, .light)).tracking(-1).multilineTextAlignment(.center).foregroundStyle(V.text)
                 Text("Heat it, lock it, find it and charge it from your phone, by Siri and on a schedule.")
                     .font(V.body).foregroundStyle(V.textMuted).multilineTextAlignment(.center).padding(.bottom, 8)
                 VButton(title: "Get started") { step = 1 }
+                // No car on hand (or App Review): the whole app on a made-up 500e.
+                Button { Haptics.select(); model.startSampleCar() } label: {
+                    Text("Try with a sample car").font(V.body).foregroundStyle(V.textMuted)
+                        .frame(maxWidth: .infinity).frame(height: 44)
+                }
+                .buttonStyle(.plain)
                 VStack(spacing: 10) {
                     Text("Works with").eyebrowStyle()
                     Text(Brand.allCases.map(\.name).joined(separator: "  ·  ")).font(V.label).foregroundStyle(V.textMuted).multilineTextAlignment(.center)
