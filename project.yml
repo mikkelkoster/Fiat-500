@@ -21,6 +21,8 @@ targets:
         embed: true
     entitlements:
       path: FiatPreheat/Support/Varme.entitlements
+      properties:
+        com.apple.security.application-groups: [group.dk.koster.varme]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dk.koster.varme
@@ -53,6 +55,8 @@ targets:
       - FiatPreheat/Resources/Fonts
     entitlements:
       path: VarmeWidgets/VarmeWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.dk.koster.varme]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dk.koster.varme.widgets
