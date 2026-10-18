@@ -17,8 +17,8 @@ enum V {
     static let positive = Color(hex: 0x4ade80)     // green-400: battery ≥ 40 %, charging, locked, switch on
     static let heat = Color(hex: 0xfb923c)         // orange-400: heating
     static let cool = Color(hex: 0x38bdf8)         // sky-400: cooling, position, route
-    static let amber = Color(hex: 0xfbbf24)        // amber-400: battery 15–39 %, unlocked, lights on
-    static let danger = Color(hex: 0xf87171)       // red-400: battery < 15 %, failed, delete
+    static let amber = Color(hex: 0xfbbf24)        // amber-400: battery 15–39 %, lights on
+    static let danger = Color(hex: 0xf87171)       // red-400: battery < 15 %, unlocked, failed, delete
     static let scrim = Color(hex: 0x09090b).opacity(0.55)
 
     /// An active fill: the state colour at 12 % behind a 1.5 pt border of the full colour.

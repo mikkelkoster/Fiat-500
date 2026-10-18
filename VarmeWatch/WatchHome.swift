@@ -65,7 +65,7 @@ struct WatchHome: View {
                 }
                 HStack(spacing: 4) {
                     if let locked = car.isLocked {
-                        Circle().fill(locked ? V.positive : V.amber).frame(width: 6, height: 6)
+                        Circle().fill(locked ? V.positive : V.danger).frame(width: 6, height: 6)
                     }
                     Text(car.rangeText).font(V.sora(12)).foregroundStyle(V.textMuted)
                 }

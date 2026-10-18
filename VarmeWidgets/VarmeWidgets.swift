@@ -115,7 +115,7 @@ struct BatteryWidgetView: View {
                             WidgetIcon(name: locked ? "lock" : "lock-open", size: 11)
                             Text(locked ? "Locked" : "Unlocked").font(V.sora(11))
                         }
-                        .foregroundStyle(locked ? V.positive : V.amber)
+                        .foregroundStyle(locked ? V.positive : V.danger)
                     }
                 }
                 Spacer()

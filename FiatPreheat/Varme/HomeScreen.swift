@@ -694,46 +694,95 @@ struct ActionTile: View {
 
 /// A 60 pt track with a white knob; drag it to the far end to unlock (or lock). The knob is
 /// white whatever the state; the state reads in the status line.
+/// A switch you slide: the knob rests left while the car is locked (white) and right while it's
+/// unlocked (red), so where it sits is the car's state. Slide it across to change it; the colour
+/// follows the knob, and a finished slide holds there until the car answers.
 struct UnlockSlider: View {
     let locked: Bool
     let busy: Bool
     let onComplete: (_ unlock: Bool) -> Void
+    /// How far the finger has moved the knob from where it rests.
     @State private var drag: CGFloat = 0
+    /// After a completed slide, the state it's heading for, held until the car answers.
+    @State private var heading: Bool?
 
     var body: some View {
         GeometryReader { g in
             let travel = g.size.width - 50 - 10
+            // Where the knob rests: by the state it's heading for, else the car's.
+            let unlockedSide = heading.map { $0 } ?? !locked
+            let rest: CGFloat = unlockedSide ? travel : 0
+            let position = min(travel, max(0, rest + drag))
+            let red = travel > 0 ? position / travel : 0
+            let away = travel > 0 ? abs(position - rest) / travel : 0
             ZStack(alignment: .leading) {
-                // Unlocked is the state to notice: knob, words and edge turn amber.
                 Color.clear.glassCapsule(tint: nil)
-                    .overlay(Capsule().strokeBorder(locked ? .clear : V.amber.opacity(0.7), lineWidth: 1.5))
-                    .background(Capsule().fill(V.amber.opacity(locked ? 0 : 0.10)))
-                    .shadow(color: V.amber.opacity(locked ? 0 : 0.35), radius: 14)
-                Text(locked ? "SWIPE TO UNLOCK" : "SWIPE TO LOCK").font(V.eyebrow).tracking(3).foregroundStyle(locked ? V.textMuted : V.amber)
-                    .frame(maxWidth: .infinity).opacity(1 - Double(drag / travel) * 1.5)
-                PhIcon(name: locked ? "lock" : "lock-open", size: 20).foregroundStyle(V.ground)
-                    .frame(width: 50, height: 50)
-                    // The same frosted treatment as Heat cabin, in white (amber when unlocked).
-                    .glassCapsule(tint: locked ? V.text : V.amber)
-                    // Glass mixes in what's behind it; the true colour on top keeps white white and amber amber.
-                    .background(Capsule().fill(locked ? V.text : V.amber))
-                    .overlay(GlassSheen())
-                    .offset(x: 5 + drag)
-                    .gesture(DragGesture()
-                        .onChanged { drag = min(travel, max(0, $0.translation.width)) }
-                        .onEnded { _ in
-                            if drag >= travel * 0.85 { Haptics.notify(.success); onComplete(locked) }
+                    .overlay(Capsule().strokeBorder(V.danger.opacity(0.7 * red), lineWidth: 1.5))
+                    .background(Capsule().fill(V.danger.opacity(0.10 * red)))
+                    .shadow(color: V.danger.opacity(0.35 * red), radius: 14)
+                ZStack {
+                    Text("SWIPE TO UNLOCK").foregroundStyle(V.textMuted).opacity(unlockedSide ? 0 : 1)
+                    Text("SWIPE TO LOCK").foregroundStyle(V.danger).opacity(unlockedSide ? 1 : 0)
+                }
+                .font(V.eyebrow).tracking(3)
+                // The words sit in the space the knob isn't in.
+                .frame(maxWidth: .infinity)
+                .padding(.leading, unlockedSide ? 0 : 50).padding(.trailing, unlockedSide ? 50 : 0)
+                .opacity(1 - Double(away) * 1.6)
+                ZStack {
+                    PhIcon(name: "lock", size: 20).opacity(red < 0.5 ? 1 : 0)
+                    PhIcon(name: "lock-open", size: 20).opacity(red < 0.5 ? 0 : 1)
+                }
+                .foregroundStyle(V.ground)
+                .animation(.easeOut(duration: 0.15), value: red < 0.5)
+                .frame(width: 50, height: 50)
+                // The same frosted treatment as Heat cabin, its colour mixed white→red with the knob.
+                .glassCapsule(tint: Self.mix(red))
+                .background(Capsule().fill(Self.mix(red)))
+                .overlay(GlassSheen())
+                .offset(x: 5 + position)
+                .gesture(DragGesture()
+                    .onChanged { value in
+                        guard heading == nil else { return }
+                        drag = value.translation.width
+                    }
+                    .onEnded { _ in
+                        guard heading == nil else { return }
+                        let end = min(travel, max(0, rest + drag))
+                        let done = locked ? end >= travel * 0.85 : end <= travel * 0.15
+                        if done {
+                            Haptics.notify(.success)
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { heading = locked; drag = 0 }
+                            onComplete(locked)
+                            // If nothing comes of it (the confirmation was cancelled), go back.
+                            Task {
+                                try? await Task.sleep(for: .seconds(4))
+                                if !busy, heading != nil { withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) { heading = nil } }
+                            }
+                        } else {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = 0 }
-                        })
+                        }
+                    })
             }
         }
         .frame(height: 60)
-        .opacity(busy ? 0.5 : 1)
+        .opacity(busy ? 0.75 : 1)
         .disabled(busy)
+        .onChange(of: locked) { _, _ in withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) { heading = nil } }
+        .onChange(of: busy) { _, isBusy in
+            if !isBusy { withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) { heading = nil } }
+        }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(locked ? "Unlock" : "Lock")
+        .accessibilityLabel(locked ? "Locked. Unlock" : "Unlocked. Lock")
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { onComplete(locked) }
+    }
+
+    /// White (zinc-100) at 0 to red (red-400) at 1.
+    static func mix(_ t: CGFloat) -> Color {
+        let t = Double(min(1, max(0, t)))
+        func lerp(_ a: Double, _ b: Double) -> Double { (a + (b - a) * t) / 255 }
+        return Color(red: lerp(244, 248), green: lerp(244, 113), blue: lerp(245, 113))
     }
 }
 
