@@ -155,7 +155,8 @@ struct CarHero: View {
                             .accessibilityHint("Wakes the car for fresh numbers")
                         }
                     }
-                    .padding(.top, 4)
+                    // The name's line box leaves room for descenders it rarely has; tuck the row up into it.
+                    .padding(.top, -8)
                 }
                 .padding(.horizontal, V.gutter)
                 .padding(.top, 60)
