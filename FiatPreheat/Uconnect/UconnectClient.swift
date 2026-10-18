@@ -24,7 +24,7 @@ struct Vehicle: Sendable, Identifiable, Hashable, Codable {
     var id: String { vin }
 }
 
-struct VehicleStatus: Sendable, Equatable {
+struct VehicleStatus: Sendable, Equatable, Codable {
     var stateOfCharge: Double?
     var range: Double?
     var rangeUnit: String?

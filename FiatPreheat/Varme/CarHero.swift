@@ -28,9 +28,11 @@ struct CarHero: View {
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
-            let imageWidth = w * 620 / 390 * 1.18
+            // A little narrower than the screen leaves air either side; the top moves down so the
+            // wheels stay where the gauge overlaps them.
+            let imageWidth = w * 620 / 390 * 1.08
             let imageHeight = imageWidth * 640 / 1200
-            let imageTop = 63 * w / 390 + max(0, geo.size.height - 420) * 0.3
+            let imageTop = 88 * w / 390 + max(0, geo.size.height - 420) * 0.3
             ZStack(alignment: .topLeading) {
                 spotlight
                 if let image {

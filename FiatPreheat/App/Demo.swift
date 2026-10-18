@@ -7,6 +7,7 @@ import Foundation
 ///   -demoScreen home|preheating|charging|find|schedule|settings|onboarding   which screen to open on
 ///   -demoSoc 24  -demoName "…"     battery level and car name, for checking layouts
 ///   -demoUnlocked YES              the car reports unlocked
+///   -demoLoading YES               no numbers yet: the gauge shows it's loading
 enum Demo {
     static let isActive = ProcessInfo.processInfo.arguments.contains("-preheatDemo")
     static let screen = UserDefaults.standard.string(forKey: "demoScreen") ?? "home"

@@ -196,6 +196,13 @@ final class CarModel {
         carColorHex = defaults.string(forKey: carKey(Keys.carColor)) ?? "#18181b"
         carTimers = nil
         location = nil
+        status = Self.savedStatus(selectedVIN, defaults)
+    }
+
+    /// The last numbers read for a car, shown (with their time) until fresh ones arrive.
+    private static func savedStatus(_ vin: String?, _ defaults: UserDefaults) -> VehicleStatus? {
+        guard let vin, let data = defaults.data(forKey: "status.\(vin)") else { return nil }
+        return try? JSONDecoder().decode(VehicleStatus.self, from: data)
     }
 
     private init() {
@@ -224,6 +231,7 @@ final class CarModel {
         carName = defaults.string(forKey: carKey(Keys.carName)) ?? "My car"
         carColorHex = defaults.string(forKey: carKey(Keys.carColor)) ?? "#18181b"
         if let vin = selectedVIN { pictures[vin] = CarPicture.cached(vin: vin) }
+        status = Self.savedStatus(selectedVIN, defaults)
 
         if Demo.isActive {
             hasAccount = true
@@ -234,7 +242,7 @@ final class CarModel {
             carName = UserDefaults.standard.string(forKey: "demoName") ?? "500e"
             ownerName = "Mikkel"
             carColorHex = UserDefaults.standard.string(forKey: "demoColor") ?? "#18181b"
-            status = Demo.status
+            status = UserDefaults.standard.bool(forKey: "demoLoading") ? nil : Demo.status
             defaults.set(300.0, forKey: "bestFullRange.\(Demo.vehicle.vin)")
             schedules = Demo.schedules
             location = Demo.location
@@ -274,6 +282,7 @@ final class CarModel {
         onboarded = false
         vehicles = []
         defaults.removeObject(forKey: Keys.vehicles)
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("status.") { defaults.removeObject(forKey: key) }
         status = nil
         location = nil
         selectedVIN = nil
@@ -297,6 +306,7 @@ final class CarModel {
             guard let vin = selectedVIN else { return }
             let fresh = try await client.status(vin: vin)
             status = fresh
+            defaults.set(try? JSONEncoder().encode(fresh), forKey: "status.\(vin)")
             statusError = nil
             learnFullRange()
             CarAlerts.evaluate(fresh, carName: carName, rangeText: rangeText(fresh))
@@ -336,7 +346,6 @@ final class CarModel {
     func switchCar(to vin: String) async {
         guard vin != selectedVIN else { return }
         selectedVIN = vin
-        status = nil
         if Demo.isActive { status = Demo.status; return }
         await refreshStatus()
         await loadLocation()

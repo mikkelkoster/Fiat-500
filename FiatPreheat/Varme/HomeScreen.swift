@@ -321,6 +321,7 @@ struct HomeScreen: View {
 struct ArcGauge: View {
     let fraction: Double
     let color: Color
+    /// Nil while there's nothing to show yet: the gauge shows it's loading.
     let value: Double?
     let unit: String
     let caption: String
@@ -340,40 +341,33 @@ struct ArcGauge: View {
             Circle().trim(from: 0, to: 0.75)
                 .stroke(V.outline.opacity(0.7), style: StrokeStyle(lineWidth: 7, lineCap: .round))
                 .rotationEffect(.degrees(135))
-            // The glow: a wide, soft copy of the arc under it, then the arc with a tight halo.
-            Circle().trim(from: 0, to: 0.75 * max(0.01, min(1, fraction * progress)))
-                .stroke(color, style: StrokeStyle(lineWidth: 16, lineCap: .round))
-                .rotationEffect(.degrees(135))
-                .blur(radius: 14)
-                .opacity(0.75)
-            Circle().trim(from: 0, to: 0.75 * max(0.01, min(1, fraction * progress)))
-                .stroke(color, style: StrokeStyle(lineWidth: 7, lineCap: .round))
-                .rotationEffect(.degrees(135))
-                .shadow(color: color.opacity(0.9), radius: 5)
-                .shadow(color: color.opacity(0.5), radius: 12)
-            // A marker where the arc ends, riding along it as it fills.
-            ArcKnob(fraction: max(0.01, min(1, fraction * progress)))
-                .fill(V.text)
-                .shadow(color: color.opacity(0.8), radius: 6)
-                .shadow(color: .black.opacity(0.5), radius: 1.5)
+            if value == nil {
+                LoadingArc()
+            } else {
+                filledArc(progress: progress)
+            }
             VStack(spacing: 0) {
-                HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    // The final number, hidden, holds the width; the counting one sits over it.
-                    Text(value == nil ? "–" : "\(Int(target.rounded()))")
-                        .font(V.sora(52, .ultraLight)).tracking(-2).monospacedDigit()
-                        .hidden()
-                        .overlay(alignment: .trailing) {
-                            Color.clear.modifier(CountUp(value: shown, placeholder: value == nil)).fixedSize()
-                        }
-                    Text(unit).font(V.sora(17)).foregroundStyle(V.textMuted)
+                if value == nil {
+                    LoadingNumber()
+                } else {
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        // The final number, hidden, holds the width; the counting one sits over it.
+                        Text("\(Int(target.rounded()))")
+                            .font(V.sora(52, .ultraLight)).tracking(-2).monospacedDigit()
+                            .hidden()
+                            .overlay(alignment: .trailing) {
+                                Color.clear.modifier(CountUp(value: shown)).fixedSize()
+                            }
+                        Text(unit).font(V.sora(17)).foregroundStyle(V.textMuted)
+                    }
                 }
                 Text(caption).font(V.label).foregroundStyle(captionColor)
             }
             .offset(y: 4)
-
         }
         .frame(width: 148, height: 148)
         .frame(maxWidth: .infinity)
+        .animation(.easeOut(duration: 0.3), value: value == nil)
         // On opening, wait for the launch transition so the fill is seen.
         .onAppear { if active { replay(after: 0.35) } }
         .onChange(of: active) { _, isActive in
@@ -391,10 +385,31 @@ struct ArcGauge: View {
                 }
             }
         }
-        .onChange(of: value) { _, new in
+        .onChange(of: value) { old, new in
             guard active else { return }
-            withAnimation(Self.fill) { shown = new ?? 0 }
+            // The first numbers in (after loading) fill from empty; later ones move from where it is.
+            if old == nil { replay() } else { withAnimation(Self.fill) { shown = new ?? 0 } }
         }
+    }
+
+    /// The glow (a wide, soft copy of the arc under it), the arc with a tight halo, and a marker
+    /// where it ends, riding along it as it fills.
+    @ViewBuilder private func filledArc(progress: Double) -> some View {
+        let end = max(0.01, min(1, fraction * progress))
+        Circle().trim(from: 0, to: 0.75 * end)
+            .stroke(color, style: StrokeStyle(lineWidth: 16, lineCap: .round))
+            .rotationEffect(.degrees(135))
+            .blur(radius: 14)
+            .opacity(0.75)
+        Circle().trim(from: 0, to: 0.75 * end)
+            .stroke(color, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+            .rotationEffect(.degrees(135))
+            .shadow(color: color.opacity(0.9), radius: 5)
+            .shadow(color: color.opacity(0.5), radius: 12)
+        ArcKnob(fraction: end)
+            .fill(V.text)
+            .shadow(color: color.opacity(0.8), radius: 6)
+            .shadow(color: .black.opacity(0.5), radius: 1.5)
     }
 
     /// From empty to the value, again.
@@ -403,6 +418,45 @@ struct ArcGauge: View {
         reset.disablesAnimations = true
         withTransaction(reset) { shown = 0 }
         withAnimation(Self.fill.delay(delay)) { shown = value ?? 0 }
+    }
+}
+
+/// While the gauge waits for its first numbers: a short soft light sweeping along the empty arc.
+private struct LoadingArc: View {
+    var body: some View {
+        TimelineView(.animation) { context in
+            // One pass every 1.4 s, easing in and out, then on again from the start.
+            let t = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.4) / 1.4
+            let eased = t < 0.5 ? 2 * t * t : 1 - pow(-2 * t + 2, 2) / 2
+            let length = 0.22
+            let head = eased * (1 + length)
+            let from = max(0, head - length), to = min(1, head)
+            ZStack {
+                Circle().trim(from: 0.75 * from, to: 0.75 * to)
+                    .stroke(V.text.opacity(0.35), style: StrokeStyle(lineWidth: 14, lineCap: .round))
+                    .blur(radius: 10)
+                Circle().trim(from: 0.75 * from, to: 0.75 * to)
+                    .stroke(LinearGradient(colors: [V.text.opacity(0), V.text.opacity(0.7)], startPoint: .leading, endPoint: .trailing),
+                            style: StrokeStyle(lineWidth: 7, lineCap: .round))
+            }
+            .rotationEffect(.degrees(135))
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// Where the number will be: a soft bar, breathing.
+private struct LoadingNumber: View {
+    @State private var dim = false
+    var body: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(V.raised)
+            .frame(width: 76, height: 40)
+            .opacity(dim ? 0.45 : 0.9)
+            .padding(.vertical, 12)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { dim = true }
+            }
     }
 }
 
@@ -427,14 +481,13 @@ struct ArcKnob: Shape {
 /// The gauge's number, counting with the animation rather than jumping to its end.
 private struct CountUp: ViewModifier, Animatable {
     var value: Double
-    let placeholder: Bool
     var animatableData: Double {
         get { value }
         set { value = newValue }
     }
 
     func body(content: Content) -> some View {
-        Text(placeholder ? "–" : "\(Int(value.rounded()))")
+        Text("\(Int(value.rounded()))")
             .font(V.sora(52, .ultraLight)).tracking(-2).foregroundStyle(V.text)
             .monospacedDigit()
             // Each frame is its own number; no cross-fade between them.
@@ -458,27 +511,29 @@ struct GaugePager<Content: View>: View {
     @State private var head: CGFloat = 0
     @State private var tail: CGFloat = 0
 
-    /// The window the gauges slide through: a little wider than a gauge, fading at its sides.
+    /// How far a drag goes for a whole page.
     private let width: CGFloat = 230
 
     var body: some View {
         // The arc's opening is empty, so the dots sit up in it.
         VStack(spacing: -4) {
-            HStack(spacing: 0) {
+            // In place, not a strip: each page sits where it'd be (−1 left, 0 here, 1 right) and is
+            // shifted a little, shrunk a little and faded by that much.
+            ZStack {
                 ForEach(0..<count, id: \.self) { i in
-                    content(i, i == page).frame(width: width)
+                    let position = CGFloat(i - page) + drag / width
+                    let away = min(1, abs(position))
+                    // One out, then the other in: the leaving gauge is gone by halfway, the next
+                    // only shows past it, so they never overlap.
+                    content(i, i == page)
+                        .frame(width: width)
+                        .offset(x: position * 44)
+                        .scaleEffect(1 - 0.1 * away)
+                        .opacity(Double(max(0, 1 - away * 2)))
+                        .allowsHitTesting(i == page)
                 }
             }
-            .frame(width: width, alignment: .leading)
-            .offset(x: -CGFloat(page) * width + drag)
-            .frame(width: width, height: 160, alignment: .leading)
-            // Room above and below for the glow, so only the sides are cut (and faded).
-            .padding(.vertical, 28)
-            .clipped()
-            .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.14),
-                                         .init(color: .black, location: 0.86), .init(color: .clear, location: 1)],
-                                 startPoint: .leading, endPoint: .trailing))
-            .padding(.vertical, -28)
+            .frame(width: width, height: 160)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 8)
