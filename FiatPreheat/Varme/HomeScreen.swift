@@ -168,11 +168,11 @@ struct HomeScreen: View {
             if index == 0 {
                 ArcGauge(fraction: (soc ?? 0) / 100, color: color, value: soc, unit: "%",
                          caption: charging ? "Charging" : "Battery", captionColor: charging ? V.positive : V.textMuted,
-                         active: active)
+                         captionIcon: charging ? "lightning" : "battery", active: active)
             } else {
                 ArcGauge(fraction: model.rangeFraction, color: color, value: range,
                          unit: model.useMiles ? "mi" : "km", caption: "Range", captionColor: V.textMuted,
-                         active: active)
+                         captionIcon: "road", active: active)
             }
         }
         .frame(maxWidth: .infinity)
@@ -347,6 +347,8 @@ struct ArcGauge: View {
     let unit: String
     let caption: String
     let captionColor: Color
+    /// A small sign before the caption: what the number is.
+    var captionIcon: String? = nil
     /// The page on show: it fills and counts up when the app opens and each time it's swiped to.
     var active = true
 
@@ -382,7 +384,11 @@ struct ArcGauge: View {
                         Text(unit).font(V.sora(17)).foregroundStyle(V.textMuted)
                     }
                 }
-                Text(caption).font(V.label).foregroundStyle(captionColor)
+                HStack(spacing: 5) {
+                    if let captionIcon { PhIcon(name: captionIcon, size: 14) }
+                    Text(caption).font(V.label)
+                }
+                .foregroundStyle(captionColor)
             }
             .offset(y: 4)
         }
