@@ -355,6 +355,11 @@ struct ArcGauge: View {
                 .stroke(color, style: StrokeStyle(lineWidth: 7, lineCap: .round))
                 .rotationEffect(.degrees(135))
                 .shadow(color: color.opacity(0.35), radius: 8)
+            // A marker where the arc ends, riding along it as it fills.
+            ArcKnob(fraction: max(0.01, min(1, fraction * progress)))
+                .fill(V.text)
+                .shadow(color: color.opacity(0.8), radius: 6)
+                .shadow(color: .black.opacity(0.5), radius: 1.5)
             VStack(spacing: 0) {
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     // The final number, hidden, holds the width; the counting one sits over it.
@@ -403,6 +408,24 @@ struct ArcGauge: View {
         reset.disablesAnimations = true
         withTransaction(reset) { shown = 0 }
         withAnimation(Self.fill.delay(delay)) { shown = value ?? 0 }
+    }
+}
+
+/// A dot on a 270° arc (open at the bottom, filling clockwise from the lower left), at `fraction` of
+/// the way along. A shape, so it's animated along the curve rather than straight across.
+struct ArcKnob: Shape {
+    var fraction: Double
+    var size: CGFloat = 14
+    var animatableData: Double {
+        get { fraction }
+        set { fraction = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let radius = min(rect.width, rect.height) / 2
+        let angle = (135 + 270 * fraction) * .pi / 180
+        let centre = CGPoint(x: rect.midX + radius * cos(angle), y: rect.midY + radius * sin(angle))
+        return Path(ellipseIn: CGRect(x: centre.x - size / 2, y: centre.y - size / 2, width: size, height: size))
     }
 }
 
