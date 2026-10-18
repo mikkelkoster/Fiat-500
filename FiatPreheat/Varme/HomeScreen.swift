@@ -136,7 +136,9 @@ struct HomeScreen: View {
     }
 
     private var updatedText: String {
-        guard let updated = model.status.map({ $0.reportedAt ?? $0.updatedAt }) else { return model.statusError == nil ? "Pull down to load" : "Couldn't reach the car" }
+        guard let updated = model.status.map({ $0.reportedAt ?? $0.updatedAt }) else {
+            return model.statusError == nil ? "Loading…" : "Couldn't reach the car · pull to retry"
+        }
         let time = updated.formatted(date: .omitted, time: .shortened)
         return Calendar.current.isDateInToday(updated) ? "Updated \(time)" : "Updated \(updated.formatted(.dateTime.day().month(.abbreviated))) \(time)"
     }
@@ -162,11 +164,15 @@ struct HomeScreen: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: Self.gaugeHeight)
-        // A soft dark pool behind the gauge, so it reads where it overlaps the car.
-        .background(
-            RadialGradient(colors: [V.ground.opacity(0.95), V.ground.opacity(0)], center: .center, startRadius: 40, endRadius: 150)
+        // A soft dark pool behind the gauge, so it reads where it overlaps the car. Drawn larger
+        // than the gauge and gone well before its own edge, so it never ends in a line.
+        .background {
+            RadialGradient(colors: [V.ground.opacity(0.92), V.ground.opacity(0.5), V.ground.opacity(0)],
+                           center: .center, startRadius: 30, endRadius: 150)
+                .frame(width: 380, height: 340)
                 .offset(y: -6)
-        )
+                .allowsHitTesting(false)
+        }
         // VoiceOver hears both, without swiping.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(gaugeSummary)

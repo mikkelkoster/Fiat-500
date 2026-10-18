@@ -297,6 +297,12 @@ final class CarModel {
             return
         }
         await client.setAccount(account)
+        // Fiat can be slow, but not this slow: past 40 s it's stuck, and saying so beats waiting.
+        let watchdog = Task { [weak self] in
+            try await Task.sleep(for: .seconds(40))
+            self?.statusError = "Fiat didn't answer. Pull down to try again."
+        }
+        defer { watchdog.cancel() }
         do {
             // Fetched every time: the service list changes when a brand subscription starts or ends.
             vehicles = try await client.vehicles()

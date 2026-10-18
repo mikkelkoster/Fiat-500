@@ -32,7 +32,7 @@ struct CarHero: View {
             // wheels stay where the gauge overlaps them.
             let imageWidth = w * 620 / 390 * 1.08
             let imageHeight = imageWidth * 640 / 1200
-            let imageTop = 88 * w / 390 + max(0, geo.size.height - 420) * 0.3
+            let imageTop = 78 * w / 390 + max(0, geo.size.height - 420) * 0.3
             ZStack(alignment: .topLeading) {
                 spotlight
                 if let image {

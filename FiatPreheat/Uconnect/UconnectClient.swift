@@ -135,6 +135,8 @@ actor UconnectClient {
         uid = nil
         aws = nil
         ownerFirstName = nil
+        signingIn?.cancel()
+        signingIn = nil
         session = Self.makeSession()
     }
 
@@ -340,11 +342,23 @@ actor UconnectClient {
 
     // MARK: Authentication
 
+    /// The sign-in under way, if any. The status, the location and the car's picture are all
+    /// asked for at launch; without this each would sign in at once, tripping over the others'
+    /// cookies. Now the first signs in and the rest wait for it.
+    private var signingIn: Task<Void, Error>?
+
     private func authenticatedUID() async throws -> String {
         if let uid, let aws, aws.expiration.timeIntervalSinceNow > 5 * 60 {
             return uid
         }
-        try await login()
+        if let signingIn {
+            try await signingIn.value
+        } else {
+            let task = Task { try await login() }
+            signingIn = task
+            defer { signingIn = nil }
+            try await task.value
+        }
         guard let uid else { throw UconnectError.loginFailed("no account id") }
         return uid
     }
