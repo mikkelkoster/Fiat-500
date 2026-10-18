@@ -615,12 +615,12 @@ struct HeatingButton: View {
         HStack {
             HStack(spacing: 10) {
                 if phase == .running {
-                    Circle().fill(V.heat).frame(width: 10, height: 10)
+                    Circle().fill(V.heatSoft).frame(width: 10, height: 10)
                         .scaleEffect(pulse ? 1.08 : 0.92).opacity(pulse ? 1 : 0.55)
                 } else {
-                    ProgressView().controlSize(.small).tint(V.heat)
+                    ProgressView().controlSize(.small).tint(V.heatSoft)
                 }
-                Text(text).font(V.button).foregroundStyle(V.heat)
+                Text(text).font(V.button).foregroundStyle(V.heatSoft)
                     .lineLimit(1).minimumScaleFactor(0.8)
                     .contentTransition(.opacity)
             }
@@ -630,7 +630,7 @@ struct HeatingButton: View {
             Button(action: stop) {
                 Text("Stop").font(V.body).foregroundStyle(V.ground)
                     .padding(.horizontal, 16).frame(height: 44)
-                    .background(Capsule().fill(V.heat))
+                    .background(Capsule().fill(V.heatSoft))
             }
             .buttonStyle(PressStyle())
             .disabled(phase == .stopping)
@@ -641,8 +641,8 @@ struct HeatingButton: View {
         .background(
             GeometryReader { g in
                 ZStack {
-                    Capsule().fill(V.activeFill(V.heat))
-                    LinearGradient(colors: [V.heat.opacity(0), V.heat.opacity(0.07), Color(hex: 0xfed7aa).opacity(0.12), V.heat.opacity(0.07), V.heat.opacity(0)], startPoint: .leading, endPoint: .trailing)
+                    Capsule().fill(V.activeFill(V.heatSoft))
+                    LinearGradient(colors: [V.heatSoft.opacity(0), V.heatSoft.opacity(0.07), Color(hex: 0xfed7aa).opacity(0.12), V.heatSoft.opacity(0.07), V.heatSoft.opacity(0)], startPoint: .leading, endPoint: .trailing)
                         .frame(width: g.size.width * 0.55)
                         .offset(x: sweep ? g.size.width * 1.1 : -g.size.width * 0.6)
                         .opacity(sweep ? 0 : 1)
@@ -650,7 +650,7 @@ struct HeatingButton: View {
                 .clipShape(Capsule())
             }
         )
-        .overlay(Capsule().strokeBorder(V.heat, lineWidth: 1.5))
+        .overlay(Capsule().strokeBorder(V.heatSoft, lineWidth: 1.5))
         .onAppear {
             withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 5.2).repeatForever(autoreverses: false)) { sweep = true }
             withAnimation(.timingCurve(0.45, 0, 0.55, 1, duration: 2.4).repeatForever(autoreverses: true)) { pulse = true }
