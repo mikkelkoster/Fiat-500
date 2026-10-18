@@ -84,3 +84,51 @@ enum CarPicture {
         return CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
     }
 }
+
+extension CarPicture {
+    /// Where a placed picture meets the ground: the lower hull of its silhouette (the line through
+    /// its lowest points) and the tyres, found as bumps in the lower edge that stand at least 10 pt
+    /// below the edge on either side.
+    static func ground(of image: UIImage) -> GroundShape? {
+        guard let cg = image.cgImage else { return nil }
+        let w = Int(canvas.width), h = Int(canvas.height)
+        var alpha = [UInt8](repeating: 0, count: w * h)
+        guard let ctx = CGContext(data: &alpha, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                                  space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.alphaOnly.rawValue) else { return nil }
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+        // Lowest solid pixel per column (row 0 of the buffer is the top of the picture).
+        var bottom = [Int](repeating: -1, count: w)
+        for x in 0..<w {
+            for y in stride(from: h - 1, through: 0, by: -1) where alpha[y * w + x] > 128 { bottom[x] = y; break }
+        }
+        let xs = (0..<w).filter { bottom[$0] >= 0 }
+        guard let minX = xs.first, let maxX = xs.last else { return nil }
+
+        // Lower hull (y grows downward), sampled every 6 columns.
+        var hull: [CGPoint] = []
+        for x in stride(from: minX, through: maxX, by: 6) where bottom[x] >= 0 {
+            let p = CGPoint(x: x, y: bottom[x])
+            while hull.count >= 2 {
+                let a = hull[hull.count - 2], b = hull[hull.count - 1]
+                if (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x) >= 0 { hull.removeLast() } else { break }
+            }
+            hull.append(p)
+        }
+
+        var tyres: [CGRect] = []
+        var used = Set<Int>()
+        for x in xs.sorted(by: { bottom[$0] > bottom[$1] }) where !used.contains(x) {
+            let lo = max(minX, x - 70), hi = min(maxX, x + 70)
+            let window = (lo...hi).map { bottom[$0] }
+            defer { used.formUnion(lo...hi) }
+            guard bottom[x] >= window.max() ?? 0 else { continue }
+            let sides = min(bottom[max(minX, x - 90)], bottom[min(maxX, x + 90)])
+            guard bottom[x] - sides >= 10 else { continue }
+            let cols = (lo...hi).filter { bottom[$0] >= bottom[x] - 4 }
+            let cx = CGFloat(cols.reduce(0, +)) / CGFloat(cols.count)
+            let width = CGFloat((cols.max() ?? x) - (cols.min() ?? x)) * 1.3
+            tyres.append(CGRect(x: cx - width / 2, y: CGFloat(bottom[x]) - 7, width: width, height: 13))
+        }
+        return GroundShape(hull: hull, tyres: tyres)
+    }
+}

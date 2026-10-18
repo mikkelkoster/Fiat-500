@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The top of the home screen: the owner's car in a pool of light, the car's name over it with the plate and when it last reported, the status line at the foot.
+/// The top of the home screen: the plate and when the car last reported, settings, the car's name,
+/// and the car itself in a pool of light, large enough that the battery gauge below overlaps it.
 struct CarHero: View {
     let carName: String
     let plate: String
@@ -8,27 +9,16 @@ struct CarHero: View {
     let image: Image?
     let heating: Bool
     let lightsOn: Bool
-    /// The picture is one of the 500e renders, whose lamp position is known.
+    /// The picture is one of the 500e renders, whose lamp and tyre positions are known.
     var lampsKnown = false
-    let status: [StatusItem]
+    /// Where any other picture meets the ground, worked out from its silhouette.
+    var ground: GroundShape? = nil
     var updated: String? = nil
     var height: CGFloat = 420
     var onSettings: (() -> Void)? = nil
     /// Other cars on the account (VIN, name); with more than one, the plate opens a switcher.
     var cars: [(vin: String, name: String)] = []
     var onSwitchCar: ((String) -> Void)? = nil
-    /// Wakes the car for fresh numbers; shown on the "Updated" time.
-    var onWake: (() -> Void)? = nil
-    var waking = false
-    /// Shown at the end of the status line when the car is plugged in and not charging.
-    var onChargeNow: (() -> Void)? = nil
-    var chargeBusy = false
-
-    struct StatusItem: Identifiable, Equatable {
-        let text: String
-        var color: Color? = nil
-        var id: String { text }
-    }
 
     @State private var breathe = false
     @State private var shimmer = false
@@ -36,14 +26,14 @@ struct CarHero: View {
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
-            let imageWidth = w * 620 / 390
+            let imageWidth = w * 620 / 390 * 1.18
             let imageHeight = imageWidth * 640 / 1200
-            let imageTop = 104 * w / 390 + max(0, geo.size.height - 420) * 0.55
+            let imageTop = 63 * w / 390 + max(0, geo.size.height - 420) * 0.3
             ZStack(alignment: .topLeading) {
                 spotlight
                 if let image {
                     // The picture has no ground of its own: a lit floor and shadows put the car on it.
-                    CarGround(knownWheels: lampsKnown)
+                    CarGround(knownWheels: lampsKnown, shape: ground)
                         .frame(width: imageWidth, height: imageHeight)
                         .position(x: w / 2, y: imageTop + imageHeight / 2)
                     if heating {
@@ -119,20 +109,8 @@ struct CarHero: View {
                                     .overlay(Capsule().strokeBorder(V.outline, lineWidth: 1))
                             }
                             if let updated {
-                                Button { onWake?() } label: {
-                                    HStack(spacing: 5) {
-                                        Text(waking ? "Asking the car…" : updated).font(V.label).foregroundStyle(V.textMuted).lineLimit(1)
-                                        if onWake != nil {
-                                            PhIcon(name: "arrows-clockwise", size: 11).foregroundStyle(V.textMuted)
-                                                .rotationEffect(.degrees(waking ? 360 : 0))
-                                                .animation(waking ? .linear(duration: 1.2).repeatForever(autoreverses: false) : .default, value: waking)
-                                        }
-                                    }
-                                    .frame(height: 24).contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(onWake == nil || waking)
-                                .accessibilityHint("Wakes the car for fresh numbers")
+                                // Pulling the page down refreshes; this only says when.
+                                Text(updated).font(V.label).foregroundStyle(V.textMuted).lineLimit(1)
                             }
                         }
                         Spacer(minLength: 8)
@@ -150,39 +128,14 @@ struct CarHero: View {
                     }
                     .frame(height: 44)
                     // A long name shrinks to fit one line rather than running under the car.
-                    Text(carName).font(V.display).tracking(-3).foregroundStyle(V.text)
-                        .lineLimit(1).minimumScaleFactor(0.4)
+                    Text(carName).font(V.sora(48, .ultraLight)).tracking(-1.5).foregroundStyle(V.text)
+                        .lineLimit(1).minimumScaleFactor(0.5)
                         .padding(.top, 2)
 
                 }
                 .padding(.horizontal, V.gutter)
                 .padding(.top, 54)
 
-                HStack(spacing: 8) {
-                    statusLine
-                    if let onChargeNow {
-                        Button(action: onChargeNow) {
-                            // A text button, the same size as the status beside it, so the line
-                            // keeps one height and one distance to the box with or without it.
-                            HStack(spacing: 4) {
-                                if chargeBusy { ProgressView().controlSize(.mini).tint(V.positive) }
-                                else { PhIcon(name: "lightning", size: 12) }
-                                Text(chargeBusy ? "Starting…" : "Charge now").font(V.sora(13, .semibold))
-                            }
-                            .foregroundStyle(V.positive)
-                            .frame(height: 20)
-                            .padding(.vertical, 12).padding(.leading, 12)
-                            .contentShape(Rectangle())
-                            .padding(.vertical, -12)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(chargeBusy)
-                    }
-                }
-                .frame(height: 20)
-                .padding(.horizontal, V.gutter)
-                .frame(maxHeight: .infinity, alignment: .bottom)
-                .padding(.bottom, 0)
             }
         }
         .frame(height: height)
@@ -221,21 +174,6 @@ struct CarHero: View {
     private var plateChipText: some View {
         Text(plate.isEmpty ? carName : plate).font(V.sora(12, .medium)).tracking(0.5).foregroundStyle(V.text).lineLimit(1)
     }
-
-    private var statusLine: some View {
-        HStack(spacing: 8) {
-            ForEach(Array(status.enumerated()), id: \.element.id) { index, item in
-                if index > 0 { Text("·").font(V.label).foregroundStyle(V.textFaint) }
-                HStack(spacing: 6) {
-                    if let color = item.color { Circle().fill(color).frame(width: 8, height: 8) }
-                    Text(item.text).font(V.label).foregroundStyle(item.color ?? V.textMuted).fixedSize()
-                }
-            }
-        }
-        .lineLimit(1)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .clipped()
-    }
 }
 
 /// A plain side-view car, for a car we have no picture of.
@@ -273,11 +211,20 @@ enum SVGPath {
     }
 }
 
+/// Where a car picture meets the ground, on the 1200×640 picture canvas: the line through its
+/// lowest points (in perspective, the far wheels sit higher) and the tyres along it.
+struct GroundShape: Equatable {
+    var hull: [CGPoint]
+    var tyres: [CGRect]
+}
+
 /// The floor under the car, drawn on the same 1200×640 canvas as the car pictures: a faint pool of
-/// light on the floor, a soft shadow under the body, and dark contact shadows where the tyres touch.
+/// light on the floor, a soft shadow along where the car meets it, and dark spots under the tyres.
 struct CarGround: View {
-    /// The 500e pictures, whose tyre positions were measured; other cars get a general shadow.
+    /// The 500e pictures, whose tyre positions were measured.
     let knownWheels: Bool
+    /// For any other picture: worked out from its silhouette.
+    var shape: GroundShape? = nil
 
     /// Where the tyres touch down in the 500e pictures: rear, front, far front (x, y, width).
     private static let tyres: [(CGFloat, CGFloat, CGFloat)] = [(348, 466, 84), (600, 486, 116), (830, 479, 82)]
@@ -287,6 +234,29 @@ struct CarGround: View {
             let s = size.width / 1200
             func oval(_ cx: CGFloat, _ cy: CGFloat, _ w: CGFloat, _ h: CGFloat) -> Path {
                 Path(ellipseIn: CGRect(x: (cx - w / 2) * s, y: (cy - h / 2) * s, width: w * s, height: h * s))
+            }
+            if let shape, !knownWheels, let first = shape.hull.first, let last = shape.hull.last {
+                let cy = shape.hull.map(\.y).reduce(0, +) / CGFloat(shape.hull.count)
+                ctx.drawLayer { floor in
+                    floor.addFilter(.blur(radius: 34 * s))
+                    floor.fill(oval((first.x + last.x) / 2, cy, 920, 120), with: .color(.white.opacity(0.08)))
+                }
+                // A band from the ground line up into the car, then a darker line right at it.
+                ctx.drawLayer { band in
+                    band.addFilter(.blur(radius: 9 * s))
+                    var p = Path()
+                    p.addLines(shape.hull.map { CGPoint(x: $0.x * s, y: ($0.y + 4) * s) } + shape.hull.reversed().map { CGPoint(x: $0.x * s, y: ($0.y - 26) * s) })
+                    p.closeSubpath()
+                    band.fill(p, with: .color(.black.opacity(0.6)))
+                    for t in shape.tyres { band.fill(oval(t.midX, t.midY, t.width, t.height), with: .color(.black)) }
+                }
+                ctx.drawLayer { core in
+                    core.addFilter(.blur(radius: 3 * s))
+                    var p = Path()
+                    p.addLines(shape.hull.map { CGPoint(x: $0.x * s, y: ($0.y + 1) * s) })
+                    core.stroke(p, with: .color(.black.opacity(0.9)), lineWidth: 10 * s)
+                }
+                return
             }
             ctx.drawLayer { floor in
                 floor.addFilter(.blur(radius: 30 * s))

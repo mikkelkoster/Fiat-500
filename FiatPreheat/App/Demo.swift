@@ -6,6 +6,7 @@ import Foundation
 ///   -preheatDemo                  turn it on
 ///   -demoScreen home|preheating|charging|find|schedule|settings|onboarding   which screen to open on
 ///   -demoSoc 24  -demoName "…"     battery level and car name, for checking layouts
+///   -demoUnlocked YES              the car reports unlocked
 enum Demo {
     static let isActive = ProcessInfo.processInfo.arguments.contains("-preheatDemo")
     static let screen = UserDefaults.standard.string(forKey: "demoScreen") ?? "home"
@@ -33,7 +34,7 @@ enum Demo {
     static var status: VehicleStatus {
         let charging = screen == "charging"
         let soc = UserDefaults.standard.string(forKey: "demoSoc").flatMap(Double.init)
-        return VehicleStatus(stateOfCharge: soc ?? (charging ? 76 : 100), range: soc.map { $0 * 2.6 } ?? (charging ? 198 : 260), rangeUnit: "km", isCharging: charging, isPluggedIn: true, updatedAt: Date(), isLocked: true)
+        return VehicleStatus(stateOfCharge: soc ?? (charging ? 76 : 100), range: soc.map { $0 * 2.6 } ?? (charging ? 198 : 260), rangeUnit: "km", isCharging: charging, isPluggedIn: true, updatedAt: Date(), isLocked: !UserDefaults.standard.bool(forKey: "demoUnlocked"))
     }
     /// Kongens Nytorv, Copenhagen.
     static var location: CarLocation {

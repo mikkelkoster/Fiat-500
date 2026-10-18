@@ -53,7 +53,35 @@ final class CarModel {
         didSet { defaults.set(carColorHex, forKey: carKey(Keys.carColor)); publishSnapshot() }
     }
     /// Pictures made for cars without bundled ones, by VIN.
-    private(set) var pictures: [String: UIImage] = [:]
+    private(set) var pictures: [String: UIImage] = [:] {
+        didSet {
+            for (vin, picture) in pictures where grounds[vin] == nil { grounds[vin] = CarPicture.ground(of: picture) }
+        }
+    }
+    /// Where each of those pictures meets the ground, for its shadow.
+    private(set) var grounds: [String: GroundShape] = [:]
+    var carGround: GroundShape? { selectedVIN.flatMap { grounds[$0] } }
+
+    /// The longest range a full charge has given this car, learned from status reads, so the range
+    /// gauge can show this charge against the car's best (cold weather shortens the arc).
+    var bestFullRangeKm: Double? {
+        get { selectedVIN.flatMap { defaults.object(forKey: "bestFullRange.\($0)") as? Double } }
+        set { if let vin = selectedVIN { defaults.set(newValue, forKey: "bestFullRange.\(vin)") } }
+    }
+
+    /// Range left in km, from the status in whatever unit Fiat sent.
+    var rangeKm: Double? {
+        guard var km = status?.range else { return nil }
+        if status?.rangeUnit?.lowercased().hasPrefix("mi") == true { km *= 1.609 }
+        return km
+    }
+
+    /// Range as a share of the best full-charge range seen; falls back to the battery level.
+    var rangeFraction: Double {
+        guard let km = rangeKm, let soc = status?.stateOfCharge, soc > 0 else { return (status?.stateOfCharge ?? 0) / 100 }
+        let full = max(bestFullRangeKm ?? 0, km * 100 / soc)
+        return full > 0 ? min(1, km / full) : soc / 100
+    }
     private var picturesTried: Set<String> = []
     /// The car's own timers, once read.
     private(set) var carTimers: CarTimers?
@@ -197,6 +225,7 @@ final class CarModel {
             ownerName = "Mikkel"
             carColorHex = UserDefaults.standard.string(forKey: "demoColor") ?? "#18181b"
             status = Demo.status
+            defaults.set(300.0, forKey: "bestFullRange.\(Demo.vehicle.vin)")
             schedules = Demo.schedules
             location = Demo.location
             lastPreheatStart = Demo.screen == "preheating" ? Date().addingTimeInterval(-6 * 60) : nil
@@ -255,12 +284,26 @@ final class CarModel {
             let fresh = try await client.status(vin: vin)
             status = fresh
             statusError = nil
+            learnFullRange()
             CarAlerts.evaluate(fresh, carName: carName, rangeText: rangeText(fresh))
         } catch {
             statusError = error.localizedDescription
         }
         publishSnapshot()
         await loadPictureIfNeeded()
+    }
+
+    /// Above 30 % the projection to a full charge is steady enough to learn from.
+    private func learnFullRange() {
+        guard let km = rangeKm, let soc = status?.stateOfCharge, soc >= 30 else { return }
+        let full = km * 100 / soc
+        if full > (bestFullRangeKm ?? 0) { bestFullRangeKm = full }
+    }
+
+    /// The car's own report is older than this, so a refresh should wake it.
+    var isStale: Bool {
+        guard let reported = status?.reportedAt ?? status?.updatedAt else { return true }
+        return Date().timeIntervalSince(reported) > 30 * 60
     }
 
     private func rangeText(_ status: VehicleStatus) -> String {

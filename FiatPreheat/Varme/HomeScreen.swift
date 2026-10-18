@@ -7,12 +7,18 @@ struct HomeScreen: View {
     @State private var confirmUnlock = false
     @State private var pull: CGFloat = 0
     @State private var refreshing = false
+    /// Which gauge shows, battery or range; kept between launches.
+    @AppStorage("gaugePage") private var gaugePage = 0
 
     enum Sheet: String, Identifiable { case find, schedule, settings, trips; var id: String { rawValue } }
 
-    /// Everything under the hero: tiles, Heat cabin, the action row, the slider, the gaps, and a
-    /// little air above the home indicator.
-    private static let belowHero: CGFloat = V.tileHeight + 64 + 78 + 60 + V.cardGap * 4 + 6
+    /// The gauge's height and how far it reaches up over the car.
+    private static let gaugeHeight: CGFloat = 184
+    private static let gaugeOverlap: CGFloat = 104
+
+    /// Everything under the hero: the gauge (less its overlap), Heat cabin, the action row, the
+    /// slider, the gaps, and a little air above the home indicator.
+    private static let belowHero: CGFloat = gaugeHeight - gaugeOverlap + 64 + 78 + 60 + V.cardGap * 4 + 6
 
     /// How far to pull before letting go refreshes.
     private let pullThreshold: CGFloat = 64
@@ -23,11 +29,15 @@ struct HomeScreen: View {
             // The page fits the screen, so it doesn't scroll: it only moves when pulled down to refresh.
             GeometryReader { geo in
                 VStack(spacing: V.cardGap) {
-                    // The status line ends the hero; 14 pt to the readout box below.
-                    hero(height: min(560, max(330, geo.size.height + geo.safeAreaInsets.top - Self.belowHero - 2)))
-                        .padding(.bottom, 2)
-                    tiles.padding(.horizontal, V.gutter)
-                    preheatButton.padding(.horizontal, V.gutter)
+                    hero(height: min(640, max(380, geo.size.height + geo.safeAreaInsets.top - Self.belowHero)))
+                    // Free on the page, reaching up over the car's wheels.
+                    gauges.padding(.top, -Self.gaugeOverlap)
+                    HStack(spacing: 10) {
+                        preheatButton
+                        if canChargeNow { chargeButton.transition(.scale.combined(with: .opacity)) }
+                    }
+                    .animation(.easeOut(duration: 0.25), value: canChargeNow)
+                    .padding(.horizontal, V.gutter)
                     actionTiles.padding(.horizontal, V.gutter)
                     UnlockSlider(locked: model.status?.isLocked ?? true, busy: model.isBusy || model.availability(of: .lock) != .available) { unlock in
                         if unlock { confirmUnlock = true } else { Task { await model.perform(.lock) } }
@@ -38,7 +48,8 @@ struct HomeScreen: View {
                 .offset(y: refreshing ? 64 : pull)
                 .animation(.timingCurve(0.2, 0.8, 0.2, 1, duration: 0.35), value: refreshing)
                 .contentShape(Rectangle())
-                .gesture(
+                // Alongside the gauge's own sideways paging, not instead of it.
+                .simultaneousGesture(
                     DragGesture(minimumDistance: 12)
                         .onChanged { drag in
                             guard !refreshing, drag.translation.height > 0, drag.translation.height > abs(drag.translation.width) else { return }
@@ -102,16 +113,12 @@ struct HomeScreen: View {
             heating: model.isPreheating,
             lightsOn: model.isLightsOn,
             lampsKnown: !model.paints.isEmpty,
-            status: statusItems,
+            ground: model.carGround,
             updated: updatedText,
             height: height,
             onSettings: { sheet = .settings },
             cars: model.vehicles.map { v in (v.vin, v.vin == model.selectedVIN ? model.carName : (model.savedName(for: v) ?? v.nickname ?? v.model ?? "Car")) },
-            onSwitchCar: { vin in Task { await model.switchCar(to: vin) } },
-            onWake: model.availability(of: .deepRefresh) == .available ? { Task { await model.perform(.deepRefresh) } } : nil,
-            waking: isRunning(.deepRefresh),
-            onChargeNow: canChargeNow ? { Task { await model.perform(.chargeNow) } } : nil,
-            chargeBusy: isRunning(.chargeNow)
+            onSwitchCar: { vin in Task { await model.switchCar(to: vin) } }
         )
     }
 
@@ -133,29 +140,77 @@ struct HomeScreen: View {
         return Calendar.current.isDateInToday(updated) ? "Updated \(time)" : "Updated \(updated.formatted(.dateTime.day().month(.abbreviated))) \(time)"
     }
 
-    private var statusItems: [CarHero.StatusItem] {
-        var items: [CarHero.StatusItem] = []
-        if model.isPreheating { items.append(.init(text: "Warming", color: V.heat)) }
-        if let locked = model.status?.isLocked {
-            items.append(.init(text: locked ? "Locked" : "Unlocked", color: model.isPreheating ? nil : (locked ? V.positive : V.amber)))
+    /// Battery and range as two gauges you swipe between, free on the page: read-only, so nothing
+    /// like the glass buttons below. Both colour by charge; range is measured against the best
+    /// full-charge range this car has shown.
+    private var gauges: some View {
+        let soc = model.status?.stateOfCharge
+        let charging = model.status?.isCharging == true
+        let color = charging ? V.positive : V.batteryColor(soc)
+        let range = model.rangeKm.map { model.useMiles ? $0 / 1.609 : $0 }
+        let note: ArcGauge.Note? = charging ? .text("Full \(fullBy)") : V.batteryWord(soc).map { .badge($0, color) }
+        return VStack(spacing: 8) {
+            TabView(selection: $gaugePage) {
+                ArcGauge(fraction: (soc ?? 0) / 100, color: color, value: soc.map { "\(Int($0))" } ?? "–", unit: "%",
+                         caption: charging ? "Charging" : "Battery", captionColor: charging ? V.positive : V.textMuted, note: note)
+                    .tag(0)
+                ArcGauge(fraction: model.rangeFraction, color: color, value: range.map { "\(Int($0))" } ?? "–",
+                         unit: model.useMiles ? "mi" : "km", caption: "Range", captionColor: V.textMuted, note: nil)
+                    .tag(1)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(width: 200, height: 160)
+            .onChange(of: gaugePage) { _, _ in Haptics.select() }
+            HStack(spacing: 7) {
+                ForEach(0..<2, id: \.self) { i in
+                    Circle().fill(i == gaugePage ? V.text : V.outline).frame(width: 6, height: 6)
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: gaugePage)
         }
-        if model.status?.isCharging == true { items.append(.init(text: "Charging")) }
-        else if model.status?.isPluggedIn == true { items.append(.init(text: "Plugged in")) }
-        return items
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.gaugeHeight)
+        // A soft dark pool behind the gauge, so it reads where it overlaps the car.
+        .background(
+            RadialGradient(colors: [V.ground.opacity(0.95), V.ground.opacity(0)], center: .center, startRadius: 40, endRadius: 150)
+                .offset(y: -6)
+        )
+        // VoiceOver hears both, without swiping.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(gaugeSummary)
     }
 
-    /// Battery and range in one outlined box, no fill: read-only, so it doesn't look like the glass
-    /// buttons below. A hairline splits the two.
-    private var tiles: some View {
-        HStack(spacing: 18) {
-            BatteryTile(status: model.status)
-            // Full height, the same line as the outline, so the box reads as two halves.
-            Rectangle().fill(V.text.opacity(0.16)).frame(width: 1).padding(.vertical, 1)
-            RangeTile(status: model.status, useMiles: model.useMiles)
+    private var gaugeSummary: String {
+        var parts: [String] = []
+        if let soc = model.status?.stateOfCharge { parts.append("Battery \(Int(soc)) percent") }
+        if let km = model.rangeKm { parts.append(model.useMiles ? "range \(Int(km / 1.609)) miles" : "range \(Int(km)) kilometres") }
+        if model.status?.isCharging == true { parts.append("charging, full \(fullBy)") }
+        return parts.isEmpty ? "Battery not loaded yet" : parts.joined(separator: ", ")
+    }
+
+    /// Fiat's own estimate when it sends one; otherwise a rough guess from the gap to full at 7 kW.
+    private var fullBy: String {
+        if let minutes = model.status?.minutesToFull {
+            return (model.status?.reportedAt ?? Date()).addingTimeInterval(minutes * 60).formatted(date: .omitted, time: .shortened)
         }
-        .padding(.horizontal, 18)
-        .frame(height: V.tileHeight)
-        .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.text.opacity(0.16), lineWidth: 1))
+        let soc = model.status?.stateOfCharge ?? 0
+        return Date().addingTimeInterval((100 - soc) / 100 * 42 / 7 * 3600).formatted(date: .omitted, time: .shortened)
+    }
+
+    /// Next to Heat cabin while the car is plugged in and not charging.
+    private var chargeButton: some View {
+        Button { Task { await model.perform(.chargeNow) } } label: {
+            Group {
+                if isRunning(.chargeNow) { ProgressView().tint(V.positive) } else { PhIcon(name: "lightning", size: 24) }
+            }
+            .foregroundStyle(V.positive)
+            .frame(width: 64, height: 64)
+            .glassCircle()
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(isRunning(.chargeNow))
+        .accessibilityLabel("Charge now")
     }
 
     @ViewBuilder private var preheatButton: some View {
@@ -249,6 +304,11 @@ struct HomeScreen: View {
         async let minimum: () = { try? await Task.sleep(for: .seconds(1)) }()
         _ = await (status, location, minimum)
         refreshing = false
+        // The numbers are only as new as the car's last report; if that's old, ask the car itself.
+        // That takes a minute or so; a note says when it's in.
+        if !Demo.isActive, model.isStale, model.availability(of: .deepRefresh) == .available, !model.isBusy {
+            Task { await model.perform(.deepRefresh) }
+        }
     }
 
     private func show(_ item: ToastItem?) {
@@ -262,106 +322,56 @@ struct HomeScreen: View {
     }
 }
 
-// MARK: - Tiles
+// MARK: - Gauge
 
-struct BatteryTile: View {
-    let status: VehicleStatus?
-    @State private var sheen = false
+/// A 270° arc, open at the bottom: the value large in the middle, what it is under it, and a note
+/// (a "Low" badge, or when charging will finish) in the opening.
+struct ArcGauge: View {
+    enum Note { case badge(String, Color), text(String) }
 
-    var body: some View {
-        let soc = status?.stateOfCharge
-        let charging = status?.isCharging == true
-        let color = charging ? V.positive : V.batteryColor(soc)
-        // Number first, then the bar, then what it is: big, line, small.
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(soc.map { "\(Int($0))" } ?? "–").font(V.number).tracking(-2).foregroundStyle(V.text)
-                    .contentTransition(.numericText(value: soc ?? 0)).animation(.smooth, value: soc)
-                Text("%").font(V.body).foregroundStyle(V.textMuted)
-                Spacer(minLength: 4)
-                if charging {
-                    Text("Full \(fullBy)").font(V.label).foregroundStyle(V.textMuted).lineLimit(1).minimumScaleFactor(0.8)
-                } else if let word = V.batteryWord(soc) {
-                    Text(word).font(V.sora(11, .medium)).foregroundStyle(V.ground)
-                        .lineLimit(1).minimumScaleFactor(0.8)
-                        .padding(.horizontal, 7).padding(.vertical, 3)
-                        .background(Capsule().fill(color))
-                }
-            }
-            GeometryReader { g in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(V.outline)
-                    Capsule().fill(color)
-                        .frame(width: g.size.width * CGFloat(min(100, max(0, soc ?? 0))) / 100)
-                        .overlay(alignment: .leading) {
-                            if charging {
-                                LinearGradient(colors: [.white.opacity(0), .white.opacity(0.35), .white.opacity(0)], startPoint: .leading, endPoint: .trailing)
-                                    .frame(width: g.size.width * 0.24)
-                                    .offset(x: sheen ? g.size.width : -g.size.width * 0.24)
-                            }
-                        }
-                        .clipShape(Capsule())
-                        .shadow(color: charging ? V.positive.opacity(sheen ? 0.5 : 0.25) : .clear, radius: charging ? (sheen ? 10 : 6) : 0)
-                }
-            }
-            .frame(height: 5)
-            HStack(spacing: 5) {
-                if charging { PhIcon(name: "lightning", size: 12).foregroundStyle(V.positive).opacity(sheen ? 1 : 0.6) }
-                Text(charging ? "Charging" : "Battery").font(V.label).foregroundStyle(charging ? V.positive : V.textMuted)
-            }
-        }
-        .padding(.vertical, 20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .onAppear { if charging { withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 4.8).repeatForever(autoreverses: false)) { sheen = true } } }
-        .onChange(of: charging) { _, on in
-            sheen = false
-            if on { withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 4.8).repeatForever(autoreverses: false)) { sheen = true } }
-        }
-    }
-
-    private var fullBy: String {
-        // Fiat's own estimate when it sends one; otherwise a rough guess from the gap to full at 7 kW.
-        if let minutes = status?.minutesToFull {
-            return (status?.reportedAt ?? Date()).addingTimeInterval(minutes * 60).formatted(date: .omitted, time: .shortened)
-        }
-        let soc = status?.stateOfCharge ?? 0
-        let hours = (100 - soc) / 100 * 42 / 7
-        return Date().addingTimeInterval(hours * 3600).formatted(date: .omitted, time: .shortened)
-    }
-}
-
-struct RangeTile: View {
-    let status: VehicleStatus?
-    let useMiles: Bool
+    let fraction: Double
+    let color: Color
+    let value: String
+    let unit: String
+    let caption: String
+    let captionColor: Color
+    let note: Note?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(rangeValue).font(V.number).tracking(-2).foregroundStyle(V.text)
-                    .contentTransition(.numericText()).animation(.smooth, value: rangeValue)
-                Text(useMiles ? "mi" : "km").font(V.body).foregroundStyle(V.textMuted)
-            }
-            // How much of a full charge's range is left. White: green belongs to the battery.
-            GeometryReader { g in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(V.outline)
-                    Capsule().fill(V.text.opacity(0.85))
-                        .frame(width: g.size.width * CGFloat(min(100, max(0, status?.stateOfCharge ?? 0))) / 100)
+        ZStack {
+            Circle().trim(from: 0, to: 0.75)
+                .stroke(V.outline.opacity(0.7), style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                .rotationEffect(.degrees(135))
+            Circle().trim(from: 0, to: 0.75 * max(0.01, min(1, fraction)))
+                .stroke(color, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                .rotationEffect(.degrees(135))
+                .shadow(color: color.opacity(0.35), radius: 8)
+                .animation(.timingCurve(0.2, 0.8, 0.2, 1, duration: 0.8), value: fraction)
+            VStack(spacing: 0) {
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text(value).font(V.sora(52, .ultraLight)).tracking(-2).foregroundStyle(V.text)
+                        .contentTransition(.numericText()).animation(.smooth, value: value)
+                    Text(unit).font(V.sora(17)).foregroundStyle(V.textMuted)
                 }
+                Text(caption).font(V.label).foregroundStyle(captionColor)
             }
-            .frame(height: 5)
-            Text("Range").font(V.label).foregroundStyle(V.textMuted)
+            .offset(y: 4)
+            if let note {
+                Group {
+                    switch note {
+                    case .text(let text):
+                        Text(text).font(V.label).foregroundStyle(V.textMuted)
+                    case .badge(let text, let tint):
+                        Text(text).font(V.sora(11, .medium)).foregroundStyle(V.ground)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Capsule().fill(tint))
+                    }
+                }
+                .offset(y: 62)
+            }
         }
-        .padding(.vertical, 20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var rangeValue: String {
-        guard let range = status?.range else { return "–" }
-        let unit = status?.rangeUnit?.lowercased() ?? "km"
-        var km = range
-        if unit.hasPrefix("mi") { km = range * 1.609 }
-        return "\(Int(useMiles ? km / 1.609 : km))"
+        .frame(width: 148, height: 148)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -470,12 +480,14 @@ struct UnlockSlider: View {
         GeometryReader { g in
             let travel = g.size.width - 50 - 10
             ZStack(alignment: .leading) {
+                // Unlocked is the state to notice: knob, words and edge turn amber.
                 Color.clear.glassCapsule(tint: nil)
-                Text(locked ? "SWIPE TO UNLOCK" : "SWIPE TO LOCK").font(V.eyebrow).tracking(3).foregroundStyle(V.textMuted)
+                    .overlay(Capsule().strokeBorder(locked ? .clear : V.amber.opacity(0.5), lineWidth: 1))
+                Text(locked ? "SWIPE TO UNLOCK" : "SWIPE TO LOCK").font(V.eyebrow).tracking(3).foregroundStyle(locked ? V.textMuted : V.amber)
                     .frame(maxWidth: .infinity).opacity(1 - Double(drag / travel) * 1.5)
                 PhIcon(name: locked ? "lock" : "lock-open", size: 20).foregroundStyle(V.ground)
                     .frame(width: 50, height: 50)
-                    .glassCapsule(tint: V.text)
+                    .glassCapsule(tint: locked ? V.text : V.amber)
                     .offset(x: 5 + drag)
                     .gesture(DragGesture()
                         .onChanged { drag = min(travel, max(0, $0.translation.width)) }
