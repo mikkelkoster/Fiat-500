@@ -142,15 +142,17 @@ struct HomeScreen: View {
         return items
     }
 
-    /// Battery and range: a readout on the page itself, no box, so it can't be mistaken for the
-    /// glass buttons below. A hairline splits the two.
+    /// Battery and range in one outlined box, no fill: read-only, so it doesn't look like the glass
+    /// buttons below. A hairline splits the two.
     private var tiles: some View {
-        HStack(spacing: 20) {
+        HStack(spacing: 18) {
             BatteryTile(status: model.status)
-            Rectangle().fill(V.outline).frame(width: 1).padding(.vertical, 10)
+            Rectangle().fill(V.text.opacity(0.18)).frame(width: 1).padding(.vertical, 6)
             RangeTile(status: model.status, useMiles: model.useMiles)
         }
+        .padding(.horizontal, 18)
         .frame(height: V.tileHeight)
+        .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.text.opacity(0.3), lineWidth: 1))
     }
 
     @ViewBuilder private var preheatButton: some View {

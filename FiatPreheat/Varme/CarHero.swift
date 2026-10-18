@@ -38,7 +38,7 @@ struct CarHero: View {
             let w = geo.size.width
             let imageWidth = w * 620 / 390
             let imageHeight = imageWidth * 640 / 1200
-            let imageTop = 100 * w / 390 + max(0, geo.size.height - 420) * 0.4
+            let imageTop = 118 * w / 390 + max(0, geo.size.height - 420) * 0.4
             ZStack(alignment: .topLeading) {
                 spotlight
                 if let image {
@@ -94,11 +94,9 @@ struct CarHero: View {
                     .frame(maxHeight: .infinity, alignment: .bottom)
 
                 VStack(alignment: .leading, spacing: 0) {
-                    // The name, with settings beside it; a long name shrinks to fit rather than running under the car.
-                    HStack(alignment: .center, spacing: 12) {
-                        Text(carName).font(V.display).tracking(-3).foregroundStyle(V.text)
-                            .lineLimit(1).minimumScaleFactor(0.4)
-                        Spacer(minLength: 0)
+                    // Settings alone at the top right, clear of the Dynamic Island; the name below it.
+                    HStack {
+                        Spacer()
                         if let onSettings {
                             Button(action: onSettings) {
                                 PhIcon(name: "gear", size: 20).foregroundStyle(V.text)
@@ -111,7 +109,11 @@ struct CarHero: View {
                             .accessibilityLabel("Settings")
                         }
                     }
-
+                    .frame(height: 44)
+                    // A long name shrinks to fit one line rather than running under the car.
+                    Text(carName).font(V.display).tracking(-3).foregroundStyle(V.text)
+                        .lineLimit(1).minimumScaleFactor(0.4)
+                        .padding(.top, -8)
                     HStack(spacing: 10) {
                         if cars.count > 1, let onSwitchCar {
                             Menu {
@@ -156,7 +158,7 @@ struct CarHero: View {
                     .padding(.top, -8)
                 }
                 .padding(.horizontal, V.gutter)
-                .padding(.top, 60)
+                .padding(.top, 54)
 
                 HStack(spacing: 8) {
                     statusLine
