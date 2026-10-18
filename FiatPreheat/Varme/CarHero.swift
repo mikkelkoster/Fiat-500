@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// The top of the home screen: the owner's car in a pool of light, the greeting and the car's
-/// name over it with the plate and when it last reported, the status line at the foot.
+/// The top of the home screen: the owner's car in a pool of light, the car's name over it with the plate and when it last reported, the status line at the foot.
 struct CarHero: View {
-    let greeting: String
     let carName: String
     let plate: String
     let carColor: Color
@@ -40,7 +38,7 @@ struct CarHero: View {
             let w = geo.size.width
             let imageWidth = w * 620 / 390
             let imageHeight = imageWidth * 640 / 1200
-            let imageTop = 126 * w / 390 + max(0, geo.size.height - 420) * 0.4
+            let imageTop = 100 * w / 390 + max(0, geo.size.height - 420) * 0.4
             ZStack(alignment: .topLeading) {
                 spotlight
                 if let image {
@@ -96,9 +94,11 @@ struct CarHero: View {
                     .frame(maxHeight: .infinity, alignment: .bottom)
 
                 VStack(alignment: .leading, spacing: 0) {
-                    HStack(alignment: .center) {
-                        Text(greeting).eyebrowStyle().lineLimit(1).minimumScaleFactor(0.7)
-                        Spacer(minLength: 12)
+                    // The name, with settings beside it; a long name shrinks to fit rather than running under the car.
+                    HStack(alignment: .center, spacing: 12) {
+                        Text(carName).font(V.display).tracking(-3).foregroundStyle(V.text)
+                            .lineLimit(1).minimumScaleFactor(0.4)
+                        Spacer(minLength: 0)
                         if let onSettings {
                             Button(action: onSettings) {
                                 PhIcon(name: "gear", size: 20).foregroundStyle(V.text)
@@ -111,10 +111,7 @@ struct CarHero: View {
                             .accessibilityLabel("Settings")
                         }
                     }
-                    .frame(height: 44)
-                    // A long name shrinks to fit one line rather than running under the car.
-                    Text(carName).font(V.display).tracking(-3).foregroundStyle(V.text)
-                        .lineLimit(1).minimumScaleFactor(0.4)
+
                     HStack(spacing: 10) {
                         if cars.count > 1, let onSwitchCar {
                             Menu {

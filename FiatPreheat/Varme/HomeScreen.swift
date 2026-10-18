@@ -23,8 +23,7 @@ struct HomeScreen: View {
             // The page fits the screen, so it doesn't scroll: it only moves when pulled down to refresh.
             GeometryReader { geo in
                 VStack(spacing: V.cardGap) {
-                    hero(height: min(560, max(330, geo.size.height + geo.safeAreaInsets.top - Self.belowHero + 6)))
-                        .padding(.bottom, -6)
+                    hero(height: min(560, max(330, geo.size.height + geo.safeAreaInsets.top - Self.belowHero)))
                     tiles.padding(.horizontal, V.gutter)
                     preheatButton.padding(.horizontal, V.gutter)
                     actionTiles.padding(.horizontal, V.gutter)
@@ -94,7 +93,6 @@ struct HomeScreen: View {
 
     private func hero(height: CGFloat) -> some View {
         CarHero(
-            greeting: Greeting.text(name: model.ownerName),
             carName: model.carName,
             plate: model.plate,
             carColor: Color(hexString: model.carColorHex),
@@ -269,29 +267,22 @@ struct BatteryTile: View {
         let soc = status?.stateOfCharge
         let charging = status?.isCharging == true
         let color = charging ? V.positive : V.batteryColor(soc)
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 5) {
-                if charging { PhIcon(name: "lightning", size: 13).foregroundStyle(V.positive).opacity(sheen ? 1 : 0.6) }
-                Text(charging ? "Charging" : "Battery").font(V.label).foregroundStyle(charging ? V.positive : V.textMuted)
-                    .fixedSize()
-                if charging {
-                    Spacer(minLength: 4)
-                    Text("Full \(fullBy)").font(V.label).foregroundStyle(V.textMuted).lineLimit(1).minimumScaleFactor(0.8)
-                } else if let word = V.batteryWord(soc) {
-                    Spacer(minLength: 4)
-                    Text(word).font(V.sora(11, .medium)).foregroundStyle(V.ground)
-                        .lineLimit(1).minimumScaleFactor(0.8)
-                        .padding(.horizontal, 7).frame(height: 20)
-                        .background(Capsule().fill(color))
-                }
-            }
-            Spacer(minLength: 0)
+        // Number first, then the bar, then what it is: big, line, small.
+        VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(soc.map { "\(Int($0))" } ?? "–").font(V.number).tracking(-2).foregroundStyle(V.text)
                     .contentTransition(.numericText(value: soc ?? 0)).animation(.smooth, value: soc)
                 Text("%").font(V.body).foregroundStyle(V.textMuted)
+                Spacer(minLength: 4)
+                if charging {
+                    Text("Full \(fullBy)").font(V.label).foregroundStyle(V.textMuted).lineLimit(1).minimumScaleFactor(0.8)
+                } else if let word = V.batteryWord(soc) {
+                    Text(word).font(V.sora(11, .medium)).foregroundStyle(V.ground)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                        .padding(.horizontal, 7).padding(.vertical, 3)
+                        .background(Capsule().fill(color))
+                }
             }
-            Spacer(minLength: 0)
             GeometryReader { g in
                 ZStack(alignment: .leading) {
                     Capsule().fill(V.outline)
@@ -309,6 +300,10 @@ struct BatteryTile: View {
                 }
             }
             .frame(height: 5)
+            HStack(spacing: 5) {
+                if charging { PhIcon(name: "lightning", size: 12).foregroundStyle(V.positive).opacity(sheen ? 1 : 0.6) }
+                Text(charging ? "Charging" : "Battery").font(V.label).foregroundStyle(charging ? V.positive : V.textMuted)
+            }
         }
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -335,17 +330,15 @@ struct RangeTile: View {
     let useMiles: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Range").font(V.label).foregroundStyle(V.textMuted)
-            Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(rangeValue).font(V.number).tracking(-2).foregroundStyle(V.text)
                     .contentTransition(.numericText()).animation(.smooth, value: rangeValue)
                 Text(useMiles ? "mi" : "km").font(V.body).foregroundStyle(V.textMuted)
             }
-            Spacer(minLength: 0)
-            // Level with the battery bar, so the two numbers line up.
+            // Level with the battery bar, so the captions line up.
             Color.clear.frame(height: 5)
+            Text("Range").font(V.label).foregroundStyle(V.textMuted)
         }
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)

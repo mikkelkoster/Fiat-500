@@ -18,8 +18,6 @@ struct SettingsSheet: View {
                         field("Vehicle name", text: $model.carName)
                         Divider().overlay(V.outline).padding(.leading, 18)
                         field("Plate", text: $model.plate, caps: true)
-                        Divider().overlay(V.outline).padding(.leading, 18)
-                        field("Your name", text: Binding(get: { model.ownerName ?? "" }, set: { model.ownerName = $0.isEmpty ? nil : $0 }))
                     }
                     .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
 
