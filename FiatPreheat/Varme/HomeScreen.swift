@@ -157,7 +157,7 @@ struct HomeScreen: View {
             } else {
                 ArcGauge(fraction: model.rangeFraction, color: color, value: range,
                          unit: model.useMiles ? "mi" : "km", caption: "Range", captionColor: V.textMuted,
-                         active: active)
+                         footnote: fullRangeText, active: active)
             }
         }
         .frame(maxWidth: .infinity)
@@ -172,10 +172,18 @@ struct HomeScreen: View {
         .accessibilityLabel(gaugeSummary)
     }
 
+    /// What a full charge reaches: the measure of the range arc.
+    private var fullRangeText: String? {
+        guard let km = model.rangeKm, let soc = model.status?.stateOfCharge, soc > 0 else { return nil }
+        let full = max(model.bestFullRangeKm ?? 0, km * 100 / soc)
+        return model.useMiles ? "of \(Int(full / 1.609)) mi" : "of \(Int(full)) km"
+    }
+
     private var gaugeSummary: String {
         var parts: [String] = []
         if let soc = model.status?.stateOfCharge { parts.append("Battery \(Int(soc)) percent") }
         if let km = model.rangeKm { parts.append(model.useMiles ? "range \(Int(km / 1.609)) miles" : "range \(Int(km)) kilometres") }
+        if let full = fullRangeText { parts.append(full.replacingOccurrences(of: "km", with: "kilometres").replacingOccurrences(of: " mi", with: " miles")) }
         if model.status?.isCharging == true { parts.append("charging, full \(fullBy)") }
         return parts.isEmpty ? "Battery not loaded yet" : parts.joined(separator: ", ")
     }
@@ -325,6 +333,8 @@ struct ArcGauge: View {
     let unit: String
     let caption: String
     let captionColor: Color
+    /// A quiet line in the opening at the bottom, plain text.
+    var footnote: String? = nil
     /// The page on show: it fills and counts up when the app opens and each time it's swiped to.
     var active = true
 
@@ -370,6 +380,11 @@ struct ArcGauge: View {
                 Text(caption).font(V.label).foregroundStyle(captionColor)
             }
             .offset(y: 4)
+            if let footnote {
+                Text(footnote).font(V.label).foregroundStyle(V.textFaint)
+                    .offset(y: 62)
+                    .opacity(progress)
+            }
         }
         .frame(width: 148, height: 148)
         .frame(maxWidth: .infinity)
