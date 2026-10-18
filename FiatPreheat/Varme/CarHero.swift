@@ -16,6 +16,15 @@ struct CarHero: View {
     var updated: String? = nil
     var height: CGFloat = 420
     var onSettings: (() -> Void)? = nil
+    /// Other cars on the account (VIN, name); with more than one, the plate opens a switcher.
+    var cars: [(vin: String, name: String)] = []
+    var onSwitchCar: ((String) -> Void)? = nil
+    /// Wakes the car for fresh numbers; shown on the "Updated" time.
+    var onWake: (() -> Void)? = nil
+    var waking = false
+    /// Shown at the end of the status line when the car is plugged in and not charging.
+    var onChargeNow: (() -> Void)? = nil
+    var chargeBusy = false
 
     struct StatusItem: Identifiable, Equatable {
         let text: String
@@ -107,23 +116,70 @@ struct CarHero: View {
                     Text(carName).font(V.display).tracking(-3).foregroundStyle(V.text)
                         .lineLimit(1).minimumScaleFactor(0.4)
                     HStack(spacing: 10) {
-                        if !plate.isEmpty {
-                            Text(plate).font(V.sora(12, .medium)).tracking(0.5).foregroundStyle(V.text)
+                        if cars.count > 1, let onSwitchCar {
+                            Menu {
+                                ForEach(cars, id: \.vin) { car in
+                                    Button(car.name) { onSwitchCar(car.vin) }
+                                }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    plateChipText
+                                    PhIcon(name: "caret-down", size: 10)
+                                }
+                                .foregroundStyle(V.text)
+                                .padding(.horizontal, 10).frame(height: 24)
+                                .background(Capsule().fill(V.scrim))
+                                .overlay(Capsule().strokeBorder(V.outline, lineWidth: 1))
+                            }
+                            .accessibilityLabel("Switch car")
+                        } else if !plate.isEmpty {
+                            plateChipText
                                 .padding(.horizontal, 10).frame(height: 24)
                                 .background(Capsule().fill(V.scrim))
                                 .overlay(Capsule().strokeBorder(V.outline, lineWidth: 1))
                         }
-                        if let updated { Text(updated).font(V.label).foregroundStyle(V.textMuted).lineLimit(1) }
+                        if let updated {
+                            Button { onWake?() } label: {
+                                HStack(spacing: 5) {
+                                    Text(waking ? "Asking the car…" : updated).font(V.label).foregroundStyle(V.textMuted).lineLimit(1)
+                                    if onWake != nil {
+                                        PhIcon(name: "arrows-clockwise", size: 11).foregroundStyle(V.textMuted)
+                                            .rotationEffect(.degrees(waking ? 360 : 0))
+                                            .animation(waking ? .linear(duration: 1.2).repeatForever(autoreverses: false) : .default, value: waking)
+                                    }
+                                }
+                                .frame(height: 24).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(onWake == nil || waking)
+                            .accessibilityHint("Wakes the car for fresh numbers")
+                        }
                     }
                     .padding(.top, 4)
                 }
                 .padding(.horizontal, V.gutter)
                 .padding(.top, 46)
 
-                statusLine
-                    .padding(.leading, V.gutter)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-                    .padding(.bottom, 2)
+                HStack(spacing: 8) {
+                    statusLine
+                    if let onChargeNow {
+                        Button(action: onChargeNow) {
+                            HStack(spacing: 5) {
+                                if chargeBusy { ProgressView().controlSize(.mini).tint(V.positive) }
+                                else { PhIcon(name: "lightning", size: 12) }
+                                Text(chargeBusy ? "Starting…" : "Charge now").font(V.label)
+                            }
+                            .foregroundStyle(V.positive)
+                            .padding(.horizontal, 12).frame(height: 30)
+                            .glassCapsule(tint: nil)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(chargeBusy)
+                    }
+                }
+                .padding(.horizontal, V.gutter)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, 2)
             }
         }
         .frame(height: height)
@@ -157,6 +213,10 @@ struct CarHero: View {
             .blendMode(.screen)
             .opacity(breathe ? 0.95 : 0.45)
             .scaleEffect(x: breathe ? 1.06 : 1)
+    }
+
+    private var plateChipText: some View {
+        Text(plate.isEmpty ? carName : plate).font(V.sora(12, .medium)).tracking(0.5).foregroundStyle(V.text).lineLimit(1)
     }
 
     private var statusLine: some View {

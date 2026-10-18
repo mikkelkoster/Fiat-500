@@ -178,7 +178,7 @@ struct CarWidgetView: View {
     var body: some View {
         HStack(spacing: 6) {
             if car.hasCarImage {
-                Image(car.carImage).resizable().aspectRatio(contentMode: .fit).frame(width: 150)
+                car.carPicture.resizable().aspectRatio(contentMode: .fit).frame(width: 150)
             }
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
@@ -230,7 +230,7 @@ struct PreheatLiveActivity: Widget {
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     if CarSnapshot.load()?.hasCarImage ?? true {
-                        Image(CarSnapshot.load()?.carImage ?? "car-fiat-500e-601").resizable().aspectRatio(contentMode: .fit).frame(width: 92)
+                        (CarSnapshot.load() ?? .placeholder).carPicture.resizable().aspectRatio(contentMode: .fit).frame(width: 92)
                     } else {
                         WidgetIcon(name: "flame", size: 28).foregroundStyle(V.heat).padding(.top, 8)
                     }

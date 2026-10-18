@@ -5,6 +5,8 @@ struct SettingsSheet: View {
     @Environment(CarModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var confirmSignOut = false
+    @State private var showTrips = false
+    @State private var alerts: [CarAlerts.Kind: Bool] = Dictionary(uniqueKeysWithValues: CarAlerts.Kind.allCases.map { ($0, CarAlerts.isOn($0)) })
 
     var body: some View {
         @Bindable var model = model
@@ -37,16 +39,43 @@ struct SettingsSheet: View {
                     VMenuRow(title: "Distance", options: [(false, "Kilometres"), (true, "Miles")], selection: $model.useMiles)
                         .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
 
+                    Button { showTrips = true } label: {
+                        HStack {
+                            Text("Trips").font(V.body).foregroundStyle(V.text)
+                            Spacer()
+                            PhIcon(name: "caret-right", size: 12).foregroundStyle(V.textMuted)
+                        }
+                        .padding(.horizontal, 18).frame(height: 56)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Alerts").font(V.label).foregroundStyle(V.textMuted)
+                            .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 4)
+                        ForEach(CarAlerts.Kind.allCases) { kind in
+                            if kind != CarAlerts.Kind.allCases.first { Divider().overlay(V.outline).padding(.leading, 18) }
+                            HStack {
+                                Text(kind.title).font(V.body).foregroundStyle(V.text)
+                                Spacer()
+                                VSwitch(isOn: alertBinding(kind))
+                            }
+                            .padding(.leading, 18).padding(.trailing, 12).frame(height: 56)
+                        }
+                    }
+                    .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
+
                     if model.vehicles.count > 1 {
                         VStack(spacing: 0) {
                             ForEach(model.vehicles) { vehicle in
                                 Button {
-                                    model.selectedVIN = vehicle.vin
-                                    Task { await model.refreshStatus() }
+                                    Task { await model.switchCar(to: vehicle.vin) }
                                 } label: {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 2) {
-                                            Text(vehicle.nickname ?? vehicle.model ?? "Car").font(V.body).foregroundStyle(V.text)
+                                            Text(vehicle.vin == model.selectedVIN ? model.carName : (model.savedName(for: vehicle) ?? vehicle.nickname ?? vehicle.model ?? "Car"))
+                                                .font(V.body).foregroundStyle(V.text)
                                             Text(vehicle.vin).font(V.label).foregroundStyle(V.textFaint)
                                         }
                                         Spacer()
@@ -83,9 +112,19 @@ struct SettingsSheet: View {
         }
         .background(V.surface.ignoresSafeArea())
         .varmeSheet()
+        .sheet(isPresented: $showTrips) { TripsSheet() }
         .confirmationDialog("Sign out of \(model.account?.brand.name ?? "the account")?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button("Sign out", role: .destructive) { Task { await model.signOut() }; dismiss() }
         }
+    }
+
+    private func alertBinding(_ kind: CarAlerts.Kind) -> Binding<Bool> {
+        Binding(get: { alerts[kind] ?? false }, set: { on in
+            alerts[kind] = on
+            CarAlerts.set(kind, on)
+            ScheduleCoordinator.shared.reschedule(model.schedules)
+            if on { Task { await ScheduleCoordinator.shared.requestPermission() } }
+        })
     }
 
     private func field(_ title: String, text: Binding<String>, caps: Bool = false) -> some View {

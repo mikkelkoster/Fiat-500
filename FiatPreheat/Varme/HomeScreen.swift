@@ -9,7 +9,7 @@ struct HomeScreen: View {
     @State private var refreshing = false
     @State private var wheelSpin = false
 
-    enum Sheet: String, Identifiable { case find, schedule, settings; var id: String { rawValue } }
+    enum Sheet: String, Identifiable { case find, schedule, settings, trips; var id: String { rawValue } }
 
     /// How far to pull before letting go refreshes.
     private let pullThreshold: CGFloat = 64
@@ -60,6 +60,7 @@ struct HomeScreen: View {
             case .find: FindCarSheet()
             case .schedule: ScheduleSheet()
             case .settings: SettingsSheet()
+            case .trips: TripsSheet()
             }
         }
         .confirmationDialog("Unlock \(model.carName)?", isPresented: $confirmUnlock, titleVisibility: .visible) {
@@ -75,6 +76,7 @@ struct HomeScreen: View {
                 case "find": sheet = .find
                 case "schedule": sheet = .schedule
                 case "settings": sheet = .settings
+                case "trips": sheet = .trips
                 default: break
                 }
                 return
@@ -98,12 +100,30 @@ struct HomeScreen: View {
             status: statusItems,
             updated: updatedText,
             height: height,
-            onSettings: { sheet = .settings }
+            onSettings: { sheet = .settings },
+            cars: model.vehicles.map { v in (v.vin, v.vin == model.selectedVIN ? model.carName : (model.savedName(for: v) ?? v.nickname ?? v.model ?? "Car")) },
+            onSwitchCar: { vin in Task { await model.switchCar(to: vin) } },
+            onWake: model.availability(of: .deepRefresh) == .available ? { Task { await model.perform(.deepRefresh) } } : nil,
+            waking: isRunning(.deepRefresh),
+            onChargeNow: canChargeNow ? { Task { await model.perform(.chargeNow) } } : nil,
+            chargeBusy: isRunning(.chargeNow)
         )
     }
 
+    private func isRunning(_ command: RemoteCommand) -> Bool {
+        switch model.commandState {
+        case .sending(command), .waitingForCar(command): true
+        default: false
+        }
+    }
+
+    private var canChargeNow: Bool {
+        guard let s = model.status, s.isPluggedIn == true, s.isCharging != true, (s.stateOfCharge ?? 0) < 100 else { return isRunning(.chargeNow) }
+        return model.availability(of: .chargeNow) == .available
+    }
+
     private var updatedText: String {
-        guard let updated = model.status?.updatedAt else { return model.statusError == nil ? "Pull down to load" : "Couldn't reach the car" }
+        guard let updated = model.status.map({ $0.reportedAt ?? $0.updatedAt }) else { return model.statusError == nil ? "Pull down to load" : "Couldn't reach the car" }
         let time = updated.formatted(date: .omitted, time: .shortened)
         return Calendar.current.isDateInToday(updated) ? "Updated \(time)" : "Updated \(updated.formatted(.dateTime.day().month(.abbreviated))) \(time)"
     }
@@ -287,7 +307,10 @@ struct BatteryTile: View {
     }
 
     private var fullBy: String {
-        // Fiat doesn't send a finish time for every car; a rough guess from the gap to full at 7 kW.
+        // Fiat's own estimate when it sends one; otherwise a rough guess from the gap to full at 7 kW.
+        if let minutes = status?.minutesToFull {
+            return (status?.reportedAt ?? Date()).addingTimeInterval(minutes * 60).formatted(date: .omitted, time: .shortened)
+        }
         let soc = status?.stateOfCharge ?? 0
         let hours = (100 - soc) / 100 * 42 / 7
         return Date().addingTimeInterval(hours * 3600).formatted(date: .omitted, time: .shortened)

@@ -36,18 +36,28 @@ final class CarModel {
     private(set) var locationError: String?
 
     var selectedVIN: String? {
-        didSet { defaults.set(selectedVIN, forKey: Keys.vin) }
+        didSet {
+            defaults.set(selectedVIN, forKey: Keys.vin)
+            if oldValue != selectedVIN { loadCarSettings() }
+        }
     }
+    // Name, plate and colour belong to the car, so each car on the account keeps its own.
     var plate: String {
-        didSet { defaults.set(plate, forKey: Keys.plate) }
+        didSet { defaults.set(plate, forKey: carKey(Keys.plate)) }
     }
     var carName: String {
-        didSet { defaults.set(carName, forKey: Keys.carName) }
+        didSet { defaults.set(carName, forKey: carKey(Keys.carName)) }
     }
-    /// The owner's own choice, as `#rrggbb`; tints the light around the car.
+    /// The owner's own choice, as `#rrggbb`: picks the 500e's paint, tints the light around the car.
     var carColorHex: String {
-        didSet { defaults.set(carColorHex, forKey: Keys.carColor); publishSnapshot() }
+        didSet { defaults.set(carColorHex, forKey: carKey(Keys.carColor)); publishSnapshot() }
     }
+    /// Pictures made for cars without bundled ones, by VIN.
+    private(set) var pictures: [String: UIImage] = [:]
+    private var picturesTried: Set<String> = []
+    /// The car's own timers, once read.
+    private(set) var carTimers: CarTimers?
+    private(set) var carTimersError: String?
     var ownerName: String? {
         didSet { defaults.set(ownerName, forKey: Keys.ownerName) }
     }
@@ -103,7 +113,8 @@ final class CarModel {
 
     /// The picture of the car. For now the one render we have; other cars get a silhouette.
     var carImage: Image? {
-        paints.isEmpty ? nil : Image(CarPaint.fiat500e(matching: carColorHex).imageName)
+        if !paints.isEmpty { return Image(CarPaint.fiat500e(matching: carColorHex).imageName) }
+        return selectedVIN.flatMap { pictures[$0] }.map { Image(uiImage: $0) }
     }
 
     /// The factory paints we have pictures of for this car; empty when we only have a silhouette.
@@ -137,11 +148,32 @@ final class CarModel {
         static let lastPreheat = "lastPreheatStart"
     }
 
+    private func carKey(_ base: String) -> String {
+        selectedVIN.map { "\(base).\($0)" } ?? base
+    }
+
+    /// The selected car's name, plate and colour; a car seen for the first time takes its
+    /// nickname or model.
+    private func loadCarSettings() {
+        plate = defaults.string(forKey: carKey(Keys.plate)) ?? ""
+        carName = defaults.string(forKey: carKey(Keys.carName)) ?? vehicle.map { $0.nickname ?? $0.model ?? "My car" } ?? "My car"
+        carColorHex = defaults.string(forKey: carKey(Keys.carColor)) ?? "#18181b"
+        carTimers = nil
+        location = nil
+    }
+
     private init() {
-        selectedVIN = defaults.string(forKey: Keys.vin)
-        plate = defaults.string(forKey: Keys.plate) ?? ""
-        carName = defaults.string(forKey: Keys.carName) ?? "My car"
-        carColorHex = defaults.string(forKey: Keys.carColor) ?? "#18181b"
+        let savedVIN = defaults.string(forKey: Keys.vin)
+        selectedVIN = savedVIN
+        // Settings saved before they were kept per car move to the selected car.
+        if let vin = savedVIN {
+            for key in [Keys.plate, Keys.carName, Keys.carColor] where defaults.object(forKey: "\(key).\(vin)") == nil {
+                if let old = defaults.string(forKey: key) { defaults.set(old, forKey: "\(key).\(vin)") }
+            }
+        }
+        plate = ""
+        carName = "My car"
+        carColorHex = "#18181b"
         ownerName = defaults.string(forKey: Keys.ownerName)
         useMiles = defaults.bool(forKey: Keys.useMiles)
         onboarded = defaults.bool(forKey: Keys.onboarded)
@@ -150,11 +182,15 @@ final class CarModel {
         lastPreheatStart = defaults.object(forKey: Keys.lastPreheat) as? Date
 
         hasAccount = AccountStore.load() != nil
+        plate = defaults.string(forKey: carKey(Keys.plate)) ?? ""
+        carName = defaults.string(forKey: carKey(Keys.carName)) ?? "My car"
+        carColorHex = defaults.string(forKey: carKey(Keys.carColor)) ?? "#18181b"
+        if let vin = selectedVIN { pictures[vin] = CarPicture.cached(vin: vin) }
 
         if Demo.isActive {
             hasAccount = true
             onboarded = Demo.screen != "onboarding"
-            vehicles = [Demo.vehicle]
+            vehicles = Demo.vehicles
             selectedVIN = Demo.vehicle.vin
             plate = "ED 35079"
             carName = UserDefaults.standard.string(forKey: "demoName") ?? "500e"
@@ -216,12 +252,92 @@ final class CarModel {
             vehicles = try await client.vehicles()
             if selectedVIN == nil || vehicle == nil { selectedVIN = vehicles.first?.vin }
             guard let vin = selectedVIN else { return }
-            status = try await client.status(vin: vin)
+            let fresh = try await client.status(vin: vin)
+            status = fresh
             statusError = nil
+            CarAlerts.evaluate(fresh, carName: carName, rangeText: rangeText(fresh))
         } catch {
             statusError = error.localizedDescription
         }
         publishSnapshot()
+        await loadPictureIfNeeded()
+    }
+
+    private func rangeText(_ status: VehicleStatus) -> String {
+        guard var km = status.range else { return "–" }
+        if status.rangeUnit?.lowercased().hasPrefix("mi") == true { km *= 1.609 }
+        return useMiles ? "\(Int(km / 1.609)) mi" : "\(Int(km)) km"
+    }
+
+    // MARK: Cars
+
+    /// The name given to another car on the account, for the switcher.
+    func savedName(for vehicle: Vehicle) -> String? {
+        defaults.string(forKey: "\(Keys.carName).\(vehicle.vin)")
+    }
+
+    /// Shows another car on the account.
+    func switchCar(to vin: String) async {
+        guard vin != selectedVIN else { return }
+        selectedVIN = vin
+        status = nil
+        if Demo.isActive { status = Demo.status; return }
+        await refreshStatus()
+        await loadLocation()
+    }
+
+    /// For cars without a bundled picture: the brand's picture, cut out on the phone, once.
+    private func loadPictureIfNeeded() async {
+        guard paints.isEmpty, let vin = selectedVIN, pictures[vin] == nil, !picturesTried.contains(vin) else { return }
+        picturesTried.insert(vin)
+        if let cached = CarPicture.cached(vin: vin) { pictures[vin] = cached; return }
+        var url = vehicle?.imageURL
+        if url == nil { url = try? await client.imageURL(vin: vin) }
+        guard let url, let made = await CarPicture.make(vin: vin, from: url) else { return }
+        pictures[vin] = made
+        publishSnapshot()
+    }
+
+    // MARK: The car's own timers
+
+    func loadCarTimers() async {
+        guard hasAccount, let vin = selectedVIN else { return }
+        if Demo.isActive { carTimers = CarTimers(reply: Demo.carTimers); return }
+        await client.setAccount(account)
+        do {
+            carTimers = CarTimers(reply: try await client.carSchedules(vin: vin))
+            carTimersError = carTimers == nil ? "This car has no timers to show." : nil
+        } catch {
+            carTimersError = error.localizedDescription
+        }
+    }
+
+    /// Writes one changed timer to the car and waits for it to confirm.
+    func saveCarTimer(_ timer: CarTimer) async -> CommandState {
+        guard var timers = carTimers, let vin = selectedVIN else { return .failed("Timers not loaded.") }
+        timers.update(timer)
+        let before = carTimers
+        carTimers = timers
+        if Demo.isActive { return .done(.preconditionOn, .succeeded, Date()) }
+        await client.setAccount(account)
+        do {
+            let id = try await client.setCarSchedules(vin: vin, body: timers.body)
+            let result = await client.waitForResult(vin: vin, correlationId: id)
+            if result == .failed { carTimers = before }
+            return .done(.preconditionOn, result, Date())
+        } catch {
+            carTimers = before
+            return .failed(error.localizedDescription)
+        }
+    }
+
+    // MARK: Trips
+
+    func loadTrips() async throws -> [Trip] {
+        guard hasAccount, let vin = selectedVIN else { return [] }
+        if Demo.isActive { return Demo.trips }
+        await client.setAccount(account)
+        return Trip.list(from: try await client.trips(vin: vin))
     }
 
     // MARK: Location
@@ -368,10 +484,11 @@ final class CarModel {
         var rangeKm = status?.range
         if let r = rangeKm, status?.rangeUnit?.lowercased().hasPrefix("mi") == true { rangeKm = r * 1.609 }
         let next = nextSchedule?.ready.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+        if let vin = selectedVIN, paints.isEmpty, let picture = pictures[vin] { CarPicture.shareWithWidgets(picture) }
         CarSnapshot(carName: carName, plate: plate, stateOfCharge: status?.stateOfCharge, rangeKm: rangeKm, useMiles: useMiles,
                     isCharging: status?.isCharging == true, isPluggedIn: status?.isPluggedIn == true, isLocked: status?.isLocked,
                     preheatStartedAt: isPreheating ? lastPreheatStart : nil, nextSchedule: next, hasCarImage: carImage != nil,
-                    updatedAt: Date(), carImageName: paints.isEmpty ? nil : CarPaint.fiat500e(matching: carColorHex).imageName).save()
+                    updatedAt: Date(), carImageName: paints.isEmpty ? (carImage == nil ? nil : CarSnapshot.sharedPictureName) : CarPaint.fiat500e(matching: carColorHex).imageName).save()
         if let snapshot = CarSnapshot.load() { WatchLink.shared.publish(snapshot) }
         WidgetCenter.shared.reloadAllTimelines()
         if #available(iOS 18.0, *) { ControlCenter.shared.reloadAllControls() }

@@ -34,6 +34,12 @@ struct CarSnapshot: Codable, Equatable {
 
     var carImage: String { carImageName ?? "car-fiat-500e-601" }
 
+    /// Marks a picture made on the phone and left in the App Group, not one in the asset catalog.
+    static let sharedPictureName = "group:car.png"
+    static var sharedPictureURL: URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: VarmeGroup.id)?.appending(path: "car.png")
+    }
+
     static let placeholder = CarSnapshot(carName: "500e", plate: "ED 35079", stateOfCharge: 100, rangeKm: 260, useMiles: false,
                                          isCharging: false, isPluggedIn: true, isLocked: true, preheatStartedAt: nil,
                                          nextSchedule: "Mon 07:30", hasCarImage: true, updatedAt: Date())
@@ -69,6 +75,20 @@ struct PreheatActivityAttributes: ActivityAttributes {
     }
     var carName: String
     var plate: String
+}
+#endif
+
+#if os(iOS)
+import SwiftUI
+
+extension CarSnapshot {
+    /// The car's picture for a widget, from the asset catalog or the App Group.
+    var carPicture: Image {
+        if carImage == Self.sharedPictureName, let url = Self.sharedPictureURL, let image = UIImage(contentsOfFile: url.path) {
+            return Image(uiImage: image)
+        }
+        return Image(carImage == Self.sharedPictureName ? "car-fiat-500e-601" : carImage)
+    }
 }
 #endif
 

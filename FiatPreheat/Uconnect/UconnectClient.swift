@@ -34,6 +34,10 @@ struct VehicleStatus: Sendable, Equatable {
     /// All doors locked, from the car's last remote status report. Nil when it hasn't said.
     var isLocked: Bool? = nil
     var isTrunkLocked: Bool? = nil
+    /// When the car itself last reported, which can be long before `updatedAt` while it sleeps.
+    var reportedAt: Date? = nil
+    /// Fiat's estimate while charging, in minutes, when it sends one.
+    var minutesToFull: Double? = nil
 
     /// Reads the doors and boot out of `/remote/status`.
     mutating func applyRemoteStatus(_ json: [String: Any]) {
@@ -175,6 +179,10 @@ actor UconnectClient {
             isPluggedIn: battery?["plugInStatus"] as? Bool,
             updatedAt: Date()
         )
+        status.reportedAt = number(json["timestamp"]).map { Date(timeIntervalSince1970: $0 / 1000) }
+        // Some cars send -1 for the levels they can't charge at.
+        status.minutesToFull = ["timeToFullyChargeL2", "timeToFullyChargeL3", "timeToFullyChargeL1"]
+            .compactMap { number(battery?[$0]) }.first { $0 > 0 }
         // Doors and boot come from a second endpoint; the battery is the part that matters, so
         // a failure here leaves the lock state unknown instead of failing the refresh.
         if let remote = try? await signedRequest("GET", "/v1/accounts/\(uid)/vehicles/\(vin)/remote/status") {
@@ -183,11 +191,51 @@ actor UconnectClient {
         return status
     }
 
-    /// The car's own charging and departure schedules, as Fiat sends them. Read-only for now: the
-    /// format isn't documented, so this is for looking before the app writes one.
+    /// The car's own charging and climate timers, as Fiat sends them.
     func carSchedules(vin: String) async throws -> [String: Any] {
         let uid = try await authenticatedUID()
         return try await signedRequest("GET", "/v4/accounts/\(uid)/vehicles/\(vin)/ev/schedule/")
+    }
+
+    /// Writes the car's timers back (the same shape `carSchedules` returned) and returns the
+    /// correlation id to wait on; the car confirms like a remote command.
+    func setCarSchedules(vin: String, body: [String: Any]) async throws -> String {
+        let uid = try await authenticatedUID()
+        let pinToken = try await pinAuthToken(uid: uid)
+        let json = try await signedRequest(
+            "POST", "/v4/accounts/\(uid)/vehicles/\(vin)/ev/schedule/",
+            body: body.merging(["pinAuth": pinToken]) { _, new in new }
+        )
+        guard let correlationId = json["correlationId"] as? String else {
+            throw UconnectError.commandRejected((json["debugMsg"] as? String) ?? "\(json)")
+        }
+        return correlationId
+    }
+
+    /// The eco-coaching trip list, as Fiat sends it.
+    func trips(vin: String) async throws -> [String: Any] {
+        let uid = try await authenticatedUID()
+        return try await signedRequest("POST", "/v2/accounts/\(uid)/vehicles/\(vin)/ecocoaching/get-trips/")
+    }
+
+    /// Fiat's own picture of the car, as a PNG address, for cars the app has no picture of.
+    func imageURL(vin: String, width: Int = 1200, height: Int = 640) async throws -> URL? {
+        let uid = try await authenticatedUID()
+        let json = try await signedRequest(
+            "POST", "/v4/accounts/\(uid)/vehicles/\(vin)/image/",
+            body: ["imageURLs": [["id": vin, "width": width, "height": height, "resp": "png"]]]
+        )
+        return Self.firstURL(in: json)
+    }
+
+    /// The first web address anywhere in a response, for replies whose shape isn't documented.
+    static func firstURL(in value: Any) -> URL? {
+        switch value {
+        case let s as String where s.hasPrefix("http"): return URL(string: s)
+        case let d as [String: Any]: return d.values.lazy.compactMap { firstURL(in: $0) }.first
+        case let a as [Any]: return a.lazy.compactMap { firstURL(in: $0) }.first
+        default: return nil
+        }
     }
 
     /// The car's last reported position. Send `.locate` first to ask it for a fresh one.

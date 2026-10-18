@@ -32,8 +32,8 @@ let remoteCommands: [String: RemoteCommand] = [
     "chargenow": .chargeNow, "refresh": .deepRefresh, "locate": .locate,
 ]
 let command = CommandLine.arguments.dropFirst().first ?? "vehicles"
-guard ["vehicles", "status", "where", "schedules"].contains(command) || remoteCommands[command] != nil else {
-    print("Usage: fiat-cli vehicles | status | where | schedules | preheat | stop | lock | unlock | lights | trunk | chargenow | refresh | locate")
+guard ["vehicles", "status", "where", "schedules", "trips", "image"].contains(command) || remoteCommands[command] != nil else {
+    print("Usage: fiat-cli vehicles | status | where | schedules | trips | image | preheat | stop | lock | unlock | lights | trunk | chargenow | refresh | locate")
     exit(2)
 }
 
@@ -78,6 +78,28 @@ do {
         let json = try await client.carSchedules(vin: vin)
         let data = try JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys])
         print(String(decoding: data, as: UTF8.self))
+        if let timers = CarTimers(reply: json) {
+            for t in timers.timers { print("✓ \(t.title) \(t.timeText) \(t.daysText) \(t.isOn ? "on" : "off")") }
+        } else {
+            print("! The app can't read timers from this reply yet.")
+        }
+        exit(0)
+    }
+
+    if command == "trips" {
+        step("Reading trips")
+        let json = try await client.trips(vin: vin)
+        let data = try JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys])
+        print(String(decoding: data, as: UTF8.self))
+        let trips = Trip.list(from: json)
+        print("✓ \(trips.count) trips understood")
+        for t in trips.prefix(5) { print("  \(t.start.map { "\($0)" } ?? "?")  \(t.distanceKm.map { "\($0) km" } ?? "")  \(t.consumption.map { "\($0)" } ?? "")") }
+        exit(0)
+    }
+
+    if command == "image" {
+        step("Asking for the car's picture")
+        print(try await client.imageURL(vin: vin).map { "✓ \($0)" } ?? "! No picture address in the reply")
         exit(0)
     }
 

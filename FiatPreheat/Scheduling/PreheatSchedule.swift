@@ -39,28 +39,8 @@ struct PreheatSchedule: Codable, Identifiable, Hashable, Sendable {
         String(format: "%02d:%02d", readyHour, readyMinute)
     }
 
-    var daysText: String {
-        switch weekdays {
-        case [2, 3, 4, 5, 6]: return "Mon – Fri"
-        case [1, 7]: return "Weekends"
-        case Set(1...7): return "Every day"
-        default:
-            // Runs of three or more days read as a range: "Mon – Sat", "Mon – Wed, Fri".
-            let symbols = Calendar.current.shortWeekdaySymbols
-            var runs: [[Int]] = []
-            for day in Self.weekOrder where weekdays.contains(day) {
-                if let last = runs.last?.last, Self.weekOrder.firstIndex(of: last)! + 1 == Self.weekOrder.firstIndex(of: day)! {
-                    runs[runs.count - 1].append(day)
-                } else {
-                    runs.append([day])
-                }
-            }
-            return runs.map { run in
-                run.count >= 3 ? "\(symbols[run.first! - 1]) – \(symbols[run.last! - 1])" : run.map { symbols[$0 - 1] }.joined(separator: ", ")
-            }.joined(separator: ", ")
-        }
-    }
+    var daysText: String { Weekdays.text(weekdays) }
 
     /// Monday-first display order.
-    static let weekOrder = [2, 3, 4, 5, 6, 7, 1]
+    static let weekOrder = Weekdays.order
 }

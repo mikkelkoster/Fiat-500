@@ -31,8 +31,10 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
     func configure() {
         center.delegate = self
         let start = UNNotificationAction(identifier: Self.startActionID, title: "Heat now", options: [])
+        let lock = UNNotificationAction(identifier: CarAlerts.lockActionID, title: "Lock", options: [])
         center.setNotificationCategories([
-            UNNotificationCategory(identifier: Self.categoryID, actions: [start], intentIdentifiers: [])
+            UNNotificationCategory(identifier: Self.categoryID, actions: [start], intentIdentifiers: []),
+            UNNotificationCategory(identifier: CarAlerts.lockCategoryID, actions: [lock], intentIdentifiers: []),
         ])
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundTaskID, using: nil) { task in
             self.handleBackgroundRefresh(task as! BGAppRefreshTask)
@@ -54,7 +56,7 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
                 for weekday in schedule.weekdays {
                     let content = UNMutableNotificationContent()
                     content.title = "Warm by \(schedule.readyTimeText)"
-                    content.body = "Long-press and choose Preheat now. Skipped if it already started."
+                    content.body = "Long-press and choose Heat now. Skipped if it already started."
                     content.sound = .default
                     content.categoryIdentifier = Self.categoryID
                     content.userInfo = ["scheduleID": schedule.id.uuidString]
@@ -75,12 +77,20 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
         submitBackgroundRefresh(for: schedules)
     }
 
+    /// One request: just before the next schedule, or in half an hour when alerts need a look at
+    /// the car, whichever is sooner.
     private func submitBackgroundRefresh(for schedules: [PreheatSchedule]) {
         BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: Self.backgroundTaskID)
-        guard let next = schedules.flatMap({ $0.upcomingStarts(after: Date()) }).min() else { return }
+        let nextSchedule = schedules.flatMap { $0.upcomingStarts(after: Date()) }.min()?.addingTimeInterval(-Self.earlyWindow)
+        let alertsCheck = Self.alertsOn() ? Date().addingTimeInterval(30 * 60) : nil
+        guard let when = [nextSchedule, alertsCheck].compactMap({ $0 }).min() else { return }
         let request = BGAppRefreshTaskRequest(identifier: Self.backgroundTaskID)
-        request.earliestBeginDate = next.addingTimeInterval(-Self.earlyWindow)
+        request.earliestBeginDate = when
         try? BGTaskScheduler.shared.submit(request)
+    }
+
+    private static func alertsOn() -> Bool {
+        CarAlerts.Kind.allCases.contains { UserDefaults.standard.bool(forKey: "alert.\($0.rawValue)") }
     }
 
     // MARK: Firing
@@ -91,6 +101,9 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
             if let due = Self.due(in: model.schedules, now: Date()), !Self.alreadyFired(due.start) {
                 Self.markFired(due.start)
                 await model.scheduledPreheat(scheduleID: due.schedule.id)
+            } else if CarAlerts.anyOn {
+                // Reading the status runs the alert checks.
+                await model.refreshStatus()
             }
             self.submitBackgroundRefresh(for: model.schedules)
             task.setTaskCompleted(success: true)
@@ -130,6 +143,11 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
     }
 
     @MainActor
+    private static func lock() async {
+        await CarModel.shared.perform(.lock, waitForCar: false)
+    }
+
+    @MainActor
     private static func startPreheat(scheduleID: UUID?) async {
         await CarModel.shared.scheduledPreheat(scheduleID: scheduleID)
     }
@@ -151,6 +169,10 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
         didReceive response: UNNotificationResponse
     ) async {
         guard response.actionIdentifier != UNNotificationDismissActionIdentifier else { return }
+        if response.actionIdentifier == CarAlerts.lockActionID {
+            await Self.lock()
+            return
+        }
         await preheatFromNotification(response.notification)
     }
 }
