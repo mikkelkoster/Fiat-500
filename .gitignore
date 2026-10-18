@@ -6,3 +6,5 @@ DerivedData/
 build/
 screenshots/
 .build/
+# The store screenshots are deliverables, not scratch.
+!AppStore/screenshots/
