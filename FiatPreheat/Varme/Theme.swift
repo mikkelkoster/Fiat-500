@@ -21,6 +21,7 @@ enum V {
     static let danger = Color(hex: 0xf87171)       // red-400: battery < 15 %, failed, delete
     static let scrim = Color(hex: 0x09090b).opacity(0.55)
     static let tile = raised                         // zinc-800: tiles and buttons on the home screen
+    static let readTile = raised.opacity(0.6)        // zinc-800 at 60 %: read-only tiles (battery, range)
     static let tileLine = outline.opacity(0.6)      // zinc-700: their edge
 
     /// An active fill: the state colour at 12 % behind a 1.5 pt border of the full colour.

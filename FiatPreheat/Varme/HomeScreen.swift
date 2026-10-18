@@ -302,8 +302,8 @@ struct BatteryTile: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: V.tileHeight)
-        // Read-only: flat, no edge. Things you can press are glass.
-        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.tile))
+        // Read-only: flat, see-through, no edge. Things you can press are glass.
+        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.readTile))
         .onAppear { if charging { withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 4.8).repeatForever(autoreverses: false)) { sheen = true } } }
         .onChange(of: charging) { _, on in
             sheen = false
@@ -341,8 +341,8 @@ struct RangeTile: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: V.tileHeight)
-        // Read-only: flat, no edge. Things you can press are glass.
-        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.tile))
+        // Read-only: flat, see-through, no edge. Things you can press are glass.
+        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.readTile))
     }
 
     private var rangeValue: String {
