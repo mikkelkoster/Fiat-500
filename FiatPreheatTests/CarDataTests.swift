@@ -62,6 +62,13 @@ final class TripTests: XCTestCase {
         XCTAssertEqual(trips[1].start, Date(timeIntervalSince1970: 1_760_000_000))
     }
 
+    func testSingleLastTrip() {
+        let trips = Trip.list(from: ["trip": ["startTime": 1_760_000_000_000, "distance": 7.5, "duration": 900]])
+        XCTAssertEqual(trips.count, 1)
+        XCTAssertEqual(trips[0].distanceKm, 7.5)
+        XCTAssertEqual(trips[0].minutes, 15)
+    }
+
     func testNothingUnderstood() {
         XCTAssertTrue(Trip.list(from: ["trips": [["foo": 1]]]).isEmpty)
     }

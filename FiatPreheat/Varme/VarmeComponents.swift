@@ -301,20 +301,26 @@ struct VMenuRow<Value: Hashable>: View {
     @Binding var selection: Value
 
     var body: some View {
-        Menu {
-            Picker(title, selection: $selection) {
-                ForEach(options, id: \.value) { Text($0.label).tag($0.value) }
+        HStack(spacing: 8) {
+            Text(title).font(V.body).foregroundStyle(V.textMuted)
+            Spacer()
+            // Only the value is the menu button, so the menu opens from it, not from the whole row.
+            Menu {
+                Picker(title, selection: $selection) {
+                    ForEach(options, id: \.value) { Text($0.label).tag($0.value) }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Text(options.first { $0.value == selection }?.label ?? "").font(V.body).foregroundStyle(V.text)
+                        .contentTransition(.identity)
+                    PhIcon(name: "caret-down", size: 12).foregroundStyle(V.textMuted)
+                }
+                .frame(height: 44)
+                .contentShape(Rectangle())
             }
-        } label: {
-            HStack(spacing: 8) {
-                Text(title).font(V.body).foregroundStyle(V.textMuted)
-                Spacer()
-                Text(options.first { $0.value == selection }?.label ?? "").font(V.body).foregroundStyle(V.text)
-                PhIcon(name: "caret-down", size: 12).foregroundStyle(V.textMuted)
-            }
-            .padding(.horizontal, 18).frame(height: 56)
-            .contentShape(Rectangle())
+            .menuIndicator(.hidden)
         }
+        .padding(.horizontal, 18).frame(height: 56)
         .onChange(of: selection) { _, _ in Haptics.select() }
     }
 }

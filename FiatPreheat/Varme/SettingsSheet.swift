@@ -121,7 +121,12 @@ struct SettingsSheet: View {
             alerts[kind] = on
             CarAlerts.set(kind, on)
             ScheduleCoordinator.shared.reschedule(model.schedules)
-            if on { Task { await ScheduleCoordinator.shared.requestPermission() } }
+            if on {
+                Task {
+                    await ScheduleCoordinator.shared.requestPermission()
+                    await CarAlerts.confirm(kind)
+                }
+            }
         })
     }
 

@@ -7,37 +7,48 @@ import SwiftUI
 struct ScheduleSheet: View {
     @Environment(CarModel.self) private var model
     @Environment(\.dismiss) private var dismiss
-    /// The schedule being edited; nil shows the list.
-    @State private var draft: PreheatSchedule?
+    /// Which step shows. The editors work on their own copies (`draft`, `timerDraft`), which are
+    /// never empty, so a step sliding away can't read a value that's already gone.
+    private enum Page { case list, schedule, timer }
+    @State private var page: Page = .list
+    @State private var draft = PreheatSchedule()
     @State private var isNew = false
-    /// One of the car's own timers being edited.
-    @State private var timerDraft: CarTimer?
+    @State private var timerDraft = CarTimer.placeholder
     @State private var savingTimer: Int?
     @State private var timerError: String?
 
+    /// With no schedules yet the sheet opens straight on a new one, decided before it appears so
+    /// nothing slides in sideways as it rises.
+    init(startsEmpty: Bool = false) {
+        if startsEmpty {
+            _page = State(initialValue: .schedule)
+            _draft = State(initialValue: Self.newSchedule(after: []))
+            _isNew = State(initialValue: true)
+        }
+    }
+
     var body: some View {
         Group {
-            if let draft = Binding($draft) {
-                ScheduleEditor(draft: draft, isNew: isNew,
+            switch page {
+            case .schedule:
+                ScheduleEditor(draft: $draft, isNew: isNew,
                                onSave: { save($0) },
                                onDelete: { delete($0) },
                                onClose: { model.schedules.isEmpty ? dismiss() : close() })
                     .transition(.move(edge: .trailing).combined(with: .opacity))
-            } else if let timer = Binding($timerDraft) {
-                CarTimerEditor(timer: timer, saving: savingTimer != nil,
+            case .timer:
+                CarTimerEditor(timer: $timerDraft, saving: savingTimer != nil,
                                onSave: { saveTimer($0) },
-                               onClose: { timerDraft = nil })
+                               onClose: { close() })
                     .transition(.move(edge: .trailing).combined(with: .opacity))
-            } else {
+            case .list:
                 list.transition(.move(edge: .leading).combined(with: .opacity))
             }
         }
-        .animation(.timingCurve(0.2, 0.8, 0.2, 1, duration: 0.4), value: draft == nil && timerDraft == nil)
+        .animation(.timingCurve(0.2, 0.8, 0.2, 1, duration: 0.4), value: page)
         .background(V.surface.ignoresSafeArea())
-        .varmeSheet([.height(draft != nil ? 680 : timerDraft != nil ? 760 : listHeight)])
-        .onAppear {
-            if model.schedules.isEmpty && model.carTimers == nil { add() }
-        }
+        // One height for every step, so the sheet doesn't jump while it opens or as timers load.
+        .varmeSheet([.large])
         .task { await model.loadCarTimers() }
     }
 
@@ -54,6 +65,7 @@ struct ScheduleSheet: View {
                                 })) {
                         isNew = false
                         draft = schedule
+                        page = .schedule
                     }
                 }
             }
@@ -67,7 +79,7 @@ struct ScheduleSheet: View {
                         CarTimerRow(timer: timer, saving: savingTimer == timer.id,
                                     isOn: Binding(get: { timer.isOn }, set: { on in
                                         var changed = timer; changed.isOn = on; saveTimer(changed, close: false)
-                                    })) { timerDraft = timer }
+                                    })) { timerDraft = timer; page = .timer }
                     }
                     if let timerError {
                         Text(timerError).font(V.label).foregroundStyle(V.danger).padding(.leading, 4)
@@ -85,11 +97,6 @@ struct ScheduleSheet: View {
         }
     }
 
-    private var listHeight: CGFloat {
-        let timers = model.carTimers?.timers.count ?? 0
-        return min(820, 116 + CGFloat(model.schedules.count) * 98 + (timers > 0 ? 44 + CGFloat(timers) * 88 : 0) + 108)
-    }
-
     /// Writes a timer to the car; the switch shows a spinner until the car confirms.
     private func saveTimer(_ timer: CarTimer, close: Bool = true) {
         savingTimer = timer.id
@@ -100,7 +107,7 @@ struct ScheduleSheet: View {
             switch result {
             case .failed(let message): timerError = message; Haptics.notify(.error)
             case .done(_, .failed, _): timerError = "The car didn't accept the change."; Haptics.notify(.error)
-            default: Haptics.notify(.success); if close { timerDraft = nil }
+            default: Haptics.notify(.success); if close { page = .list }
             }
         }
     }
@@ -108,19 +115,24 @@ struct ScheduleSheet: View {
     // MARK: Actions
 
     private func add() {
+        isNew = true
+        draft = Self.newSchedule(after: model.schedules)
+        page = .schedule
+    }
+
+    /// A first schedule is weekday mornings; a second starts as the weekend one.
+    private static func newSchedule(after existing: [PreheatSchedule]) -> PreheatSchedule {
         var schedule = PreheatSchedule()
-        // A second schedule starts as the weekend one.
-        if model.schedules.contains(where: { $0.weekdays == [2, 3, 4, 5, 6] }) {
+        if existing.contains(where: { $0.weekdays == [2, 3, 4, 5, 6] }) {
             schedule.weekdays = [1, 7]
             schedule.readyHour = 9
             schedule.readyMinute = 0
         }
-        isNew = true
-        draft = schedule
+        return schedule
     }
 
     private func close() {
-        draft = nil
+        page = .list
     }
 
     private func save(_ schedule: PreheatSchedule) {
@@ -143,24 +155,22 @@ private struct ScheduleRow: View {
     let edit: () -> Void
 
     var body: some View {
+        // The switch has its own tap; anywhere else on the row opens the editor.
         HStack(spacing: 12) {
-            Button(action: edit) {
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(schedule.readyTimeText).font(V.sora(34, .light)).tracking(-1)
-                            .foregroundStyle(isOn ? V.text : V.textFaint)
-                            .monospacedDigit()
-                        Text(schedule.daysText).font(V.label).foregroundStyle(V.textMuted).lineLimit(1)
-                    }
-                    Spacer(minLength: 8)
-                    PhIcon(name: "caret-right", size: 14).foregroundStyle(V.textFaint)
-                }
-                .contentShape(Rectangle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(schedule.readyTimeText).font(V.sora(34, .light)).tracking(-1)
+                    .foregroundStyle(isOn ? V.text : V.textFaint)
+                    .monospacedDigit()
+                Text(schedule.daysText).font(V.label).foregroundStyle(V.textMuted).lineLimit(1)
             }
-            .buttonStyle(.plain)
+            Spacer(minLength: 8)
             VSwitch(isOn: $isOn)
+            PhIcon(name: "caret-right", size: 14).foregroundStyle(V.textFaint)
         }
-        .padding(.leading, 20).padding(.trailing, 12)
+        .padding(.leading, 20).padding(.trailing, 16)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: edit)
+        .accessibilityAction(named: "Edit", edit)
         .frame(height: 88)
         .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
     }
@@ -259,23 +269,20 @@ private struct CarTimerRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Button(action: edit) {
-                HStack(spacing: 12) {
-                    PhIcon(name: timer.kind == .charge ? "lightning" : "flame", size: 18)
-                        .foregroundStyle(isOn ? V.text : V.textFaint)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(timer.timeText).font(V.sora(22, .light)).foregroundStyle(isOn ? V.text : V.textFaint).monospacedDigit()
-                        Text("\(timer.title) · \(timer.daysText.isEmpty ? "No days" : timer.daysText)").font(V.label).foregroundStyle(V.textMuted).lineLimit(1)
-                    }
-                    Spacer(minLength: 8)
-                    PhIcon(name: "caret-right", size: 14).foregroundStyle(V.textFaint)
-                }
-                .contentShape(Rectangle())
+            PhIcon(name: timer.kind == .charge ? "lightning" : "flame", size: 18)
+                .foregroundStyle(isOn ? V.text : V.textFaint)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(timer.timeText).font(V.sora(22, .light)).foregroundStyle(isOn ? V.text : V.textFaint).monospacedDigit()
+                Text("\(timer.title) · \(timer.daysText.isEmpty ? "No days" : timer.daysText)").font(V.label).foregroundStyle(V.textMuted).lineLimit(1)
             }
-            .buttonStyle(.plain)
+            Spacer(minLength: 8)
             if saving { ProgressView().tint(V.text).frame(width: 51) } else { VSwitch(isOn: $isOn) }
+            PhIcon(name: "caret-right", size: 14).foregroundStyle(V.textFaint)
         }
-        .padding(.leading, 18).padding(.trailing, 12)
+        .padding(.leading, 18).padding(.trailing, 16)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: edit)
+        .accessibilityAction(named: "Edit", edit)
         .frame(height: 78)
         .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
     }

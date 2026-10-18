@@ -38,7 +38,7 @@ struct CarHero: View {
             let w = geo.size.width
             let imageWidth = w * 620 / 390
             let imageHeight = imageWidth * 640 / 1200
-            let imageTop = 104 * w / 390 + max(0, geo.size.height - 420) * 0.4
+            let imageTop = 104 * w / 390 + max(0, geo.size.height - 420) * 0.55
             ZStack(alignment: .topLeading) {
                 spotlight
                 if let image {
@@ -162,24 +162,27 @@ struct CarHero: View {
                     statusLine
                     if let onChargeNow {
                         Button(action: onChargeNow) {
-                            HStack(spacing: 5) {
+                            // A text button, the same size as the status beside it, so the line
+                            // keeps one height and one distance to the box with or without it.
+                            HStack(spacing: 4) {
                                 if chargeBusy { ProgressView().controlSize(.mini).tint(V.positive) }
                                 else { PhIcon(name: "lightning", size: 12) }
-                                Text(chargeBusy ? "Starting…" : "Charge now").font(V.label)
+                                Text(chargeBusy ? "Starting…" : "Charge now").font(V.sora(13, .semibold))
                             }
                             .foregroundStyle(V.positive)
-                            .padding(.horizontal, 12).frame(height: 30)
-                            .glassCapsule(tint: nil)
+                            .frame(height: 20)
+                            .padding(.vertical, 12).padding(.leading, 12)
+                            .contentShape(Rectangle())
+                            .padding(.vertical, -12)
                         }
                         .buttonStyle(.plain)
                         .disabled(chargeBusy)
                     }
                 }
-                // Same height with or without Charge now, so the line doesn't jump.
-                .frame(height: 30)
+                .frame(height: 20)
                 .padding(.horizontal, V.gutter)
                 .frame(maxHeight: .infinity, alignment: .bottom)
-                .padding(.bottom, 2)
+                .padding(.bottom, 0)
             }
         }
         .frame(height: height)

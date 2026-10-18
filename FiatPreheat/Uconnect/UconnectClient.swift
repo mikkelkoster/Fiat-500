@@ -212,10 +212,33 @@ actor UconnectClient {
         return correlationId
     }
 
-    /// The eco-coaching trip list, as Fiat sends it.
+    /// The eco-coaching trip list, as Fiat sends it. The request isn't documented and Fiat has
+    /// answered "parameter missing" to an empty one, so a few shapes are tried in turn, then the
+    /// last trip on its own.
     func trips(vin: String) async throws -> [String: Any] {
         let uid = try await authenticatedUID()
-        return try await signedRequest("POST", "/v2/accounts/\(uid)/vehicles/\(vin)/ecocoaching/get-trips/")
+        let path = "/v2/accounts/\(uid)/vehicles/\(vin)/ecocoaching/get-trips/"
+        let now = Date()
+        let from = now.addingTimeInterval(-30 * 86_400)
+        let ms = { (d: Date) in Int64(d.timeIntervalSince1970 * 1000) }
+        let iso = ISO8601DateFormatter()
+        let bodies: [[String: Any]] = [
+            [:],
+            ["vin": vin],
+            ["startTime": ms(from), "endTime": ms(now)],
+            ["startDate": iso.string(from: from), "endDate": iso.string(from: now)],
+            ["fromDate": iso.string(from: from), "toDate": iso.string(from: now)],
+        ]
+        var lastError: Error?
+        for body in bodies {
+            do { return try await signedRequest("POST", path, body: body) }
+            catch UconnectError.requestFailed(400, let text) { lastError = UconnectError.requestFailed(400, text) }
+        }
+        do {
+            return try await signedRequest("POST", "/v2/accounts/\(uid)/vehicles/\(vin)/ecocoaching/get-last-trip/", body: [:])
+        } catch {
+            throw lastError ?? error
+        }
     }
 
     /// Fiat's own picture of the car, as a PNG address, for cars the app has no picture of.

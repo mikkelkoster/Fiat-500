@@ -30,6 +30,13 @@ enum CarAlerts {
 
     static func isOn(_ kind: Kind) -> Bool { defaults.bool(forKey: "alert.\(kind.rawValue)") }
     static func set(_ kind: Kind, _ on: Bool) { defaults.set(on, forKey: "alert.\(kind.rawValue)") }
+
+    /// Posted when an alert is switched on, once notifications are allowed: proof they get through.
+    static func confirm(_ kind: Kind) async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
+        post(id: "confirm-\(kind.rawValue)", title: "\(kind.title) alerts are on", body: "This is how they'll arrive.")
+    }
     static var anyOn: Bool { Kind.allCases.contains(where: isOn) }
 
     private enum State {

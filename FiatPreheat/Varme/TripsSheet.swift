@@ -104,7 +104,7 @@ struct TripsSheet: View {
     }
 
     private static func explain(_ error: Error) -> String {
-        if case UconnectError.requestFailed(let code, _) = error, code == 404 || code == 403 {
+        if case UconnectError.requestFailed(let code, _) = error, code == 404 || code == 403 || code == 400 {
             return "Fiat doesn't share trips for this car or account."
         }
         return error.localizedDescription

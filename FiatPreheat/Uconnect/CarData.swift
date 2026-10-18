@@ -10,6 +10,9 @@ import Foundation
 struct CarTimer: Identifiable, Equatable {
     enum Kind: Equatable { case charge, climate, other(String) }
 
+    /// Stands in while no timer is being edited.
+    static let placeholder = CarTimer(id: -1, kind: .charge, startHour: 0, startMinute: 0, endHour: nil, endMinute: nil, isOn: false, weekdays: [])
+
     let id: Int
     var kind: Kind
     var startHour: Int
@@ -167,10 +170,17 @@ struct Trip: Identifiable, Equatable {
 
     /// Reads whichever list in the reply has distances in it.
     static func list(from reply: [String: Any]) -> [Trip] {
-        guard let items = firstList(in: reply) else { return [] }
+        // A single trip (the last-trip reply) counts as a list of one.
+        guard let items = firstList(in: reply) ?? singleTrip(in: reply).map({ [$0] }) else { return [] }
         return items.enumerated().map { index, item in trip(index, flatten(item)) }
             .filter { $0.distanceKm != nil || $0.start != nil }
             .sorted { ($0.start ?? .distantPast) > ($1.start ?? .distantPast) }
+    }
+
+    private static func singleTrip(in value: Any) -> [String: Any]? {
+        guard let d = value as? [String: Any] else { return nil }
+        if flatten(d).keys.contains(where: { $0.contains("distance") }) { return d }
+        return d.values.lazy.compactMap { singleTrip(in: $0) }.first
     }
 
     private static func firstList(in value: Any) -> [[String: Any]]? {

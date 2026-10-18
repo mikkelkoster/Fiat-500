@@ -23,7 +23,9 @@ struct HomeScreen: View {
             // The page fits the screen, so it doesn't scroll: it only moves when pulled down to refresh.
             GeometryReader { geo in
                 VStack(spacing: V.cardGap) {
-                    hero(height: min(560, max(330, geo.size.height + geo.safeAreaInsets.top - Self.belowHero)))
+                    // The status line ends the hero; 14 pt to the readout box below.
+                    hero(height: min(560, max(330, geo.size.height + geo.safeAreaInsets.top - Self.belowHero - 2)))
+                        .padding(.bottom, 2)
                     tiles.padding(.horizontal, V.gutter)
                     preheatButton.padding(.horizontal, V.gutter)
                     actionTiles.padding(.horizontal, V.gutter)
@@ -62,7 +64,7 @@ struct HomeScreen: View {
         .sheet(item: $sheet) { which in
             switch which {
             case .find: FindCarSheet()
-            case .schedule: ScheduleSheet()
+            case .schedule: ScheduleSheet(startsEmpty: model.schedules.isEmpty)
             case .settings: SettingsSheet()
             case .trips: TripsSheet()
             }
@@ -148,12 +150,12 @@ struct HomeScreen: View {
         HStack(spacing: 18) {
             BatteryTile(status: model.status)
             // Full height, the same line as the outline, so the box reads as two halves.
-            Rectangle().fill(V.text.opacity(0.3)).frame(width: 1)
+            Rectangle().fill(V.text.opacity(0.16)).frame(width: 1).padding(.vertical, 1)
             RangeTile(status: model.status, useMiles: model.useMiles)
         }
         .padding(.horizontal, 18)
         .frame(height: V.tileHeight)
-        .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.text.opacity(0.3), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.text.opacity(0.16), lineWidth: 1))
     }
 
     @ViewBuilder private var preheatButton: some View {
