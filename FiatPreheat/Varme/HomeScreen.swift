@@ -7,7 +7,6 @@ struct HomeScreen: View {
     @State private var confirmUnlock = false
     @State private var pull: CGFloat = 0
     @State private var refreshing = false
-    @State private var wheelSpin = false
 
     enum Sheet: String, Identifiable { case find, schedule, settings, trips; var id: String { rawValue } }
 
@@ -21,11 +20,11 @@ struct HomeScreen: View {
     var body: some View {
         ZStack(alignment: .top) {
             V.ground.ignoresSafeArea()
-            refreshWheel
             // The page fits the screen, so it doesn't scroll: it only moves when pulled down to refresh.
             GeometryReader { geo in
                 VStack(spacing: V.cardGap) {
-                    hero(height: min(560, max(330, geo.size.height + geo.safeAreaInsets.top - Self.belowHero)))
+                    hero(height: min(560, max(330, geo.size.height + geo.safeAreaInsets.top - Self.belowHero + 6)))
+                        .padding(.bottom, -6)
                     tiles.padding(.horizontal, V.gutter)
                     preheatButton.padding(.horizontal, V.gutter)
                     actionTiles.padding(.horizontal, V.gutter)
@@ -35,7 +34,7 @@ struct HomeScreen: View {
                     .padding(.horizontal, V.gutter)
                     Spacer(minLength: 0)
                 }
-                .offset(y: refreshing ? 56 : pull)
+                .offset(y: refreshing ? 64 : pull)
                 .animation(.timingCurve(0.2, 0.8, 0.2, 1, duration: 0.35), value: refreshing)
                 .contentShape(Rectangle())
                 .gesture(
@@ -53,6 +52,8 @@ struct HomeScreen: View {
                 )
             }
             .ignoresSafeArea(edges: .top)
+            // On top of the page, just under the Dynamic Island, in the gap the pull opens.
+            refreshWheel
         }
         .overlay(alignment: .bottom) {
             if let toast { VToast(title: toast.title, detail: toast.detail, isError: toast.isError).padding(.bottom, 16).id(toast.id) }
@@ -143,11 +144,15 @@ struct HomeScreen: View {
         return items
     }
 
+    /// Battery and range: a readout on the page itself, no box, so it can't be mistaken for the
+    /// glass buttons below. A hairline splits the two.
     private var tiles: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 20) {
             BatteryTile(status: model.status)
+            Rectangle().fill(V.outline).frame(width: 1).padding(.vertical, 10)
             RangeTile(status: model.status, useMiles: model.useMiles)
         }
+        .frame(height: V.tileHeight)
     }
 
     @ViewBuilder private var preheatButton: some View {
@@ -216,26 +221,31 @@ struct HomeScreen: View {
     }
 
     private var refreshWheel: some View {
-        PhIcon(name: "wheel", size: 22)
-            .foregroundStyle(V.text)
-            .rotationEffect(.degrees(refreshing ? (wheelSpin ? 360 : 0) : Double(pull) * 4))
-            .animation(refreshing ? .linear(duration: 0.9).repeatForever(autoreverses: false) : .default, value: wheelSpin)
-            .opacity(refreshing ? 1 : min(1, Double(pull) / pullThreshold))
-            .scaleEffect(refreshing ? 1 : 0.7 + 0.3 * min(1, pull / pullThreshold))
-            .padding(.top, 8)
-            .onChange(of: pull >= pullThreshold * 0.8) { _, armed in if armed { Haptics.select() } }
+        // Follows the finger while pulling; turns steadily, one turn a second, while refreshing.
+        TimelineView(.animation(paused: !refreshing)) { context in
+            let spin = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1) * 360
+            PhIcon(name: "wheel", size: 24)
+                .foregroundStyle(V.text)
+                .rotationEffect(.degrees(refreshing ? spin : Double(pull) * 4))
+        }
+        .opacity(refreshing ? 1 : min(1, Double(pull) / pullThreshold))
+        .scaleEffect(refreshing ? 1 : 0.6 + 0.4 * min(1, pull / pullThreshold))
+        .animation(.easeOut(duration: 0.2), value: refreshing)
+        .padding(.top, 14)
+        .allowsHitTesting(false)
+        .onChange(of: pull >= pullThreshold * 0.8) { _, armed in if armed { Haptics.select() } }
     }
 
     /// Battery, range, lock state and where the car is, all at once.
     private func refresh() async {
         refreshing = true
-        wheelSpin = true
         Haptics.tap()
         async let status: () = model.refreshStatus()
         async let location: () = model.loadLocation()
-        _ = await (status, location)
+        // At least one full turn, so a quick answer still reads as a refresh.
+        async let minimum: () = { try? await Task.sleep(for: .seconds(1)) }()
+        _ = await (status, location, minimum)
         refreshing = false
-        wheelSpin = false
     }
 
     private func show(_ item: ToastItem?) {
@@ -277,7 +287,8 @@ struct BatteryTile: View {
             }
             Spacer(minLength: 0)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(soc.map { "\(Int($0))" } ?? "–").font(V.number).tracking(-2).foregroundStyle(V.text).contentTransition(.numericText())
+                Text(soc.map { "\(Int($0))" } ?? "–").font(V.number).tracking(-2).foregroundStyle(V.text)
+                    .contentTransition(.numericText(value: soc ?? 0)).animation(.smooth, value: soc)
                 Text("%").font(V.body).foregroundStyle(V.textMuted)
             }
             Spacer(minLength: 0)
@@ -299,11 +310,8 @@ struct BatteryTile: View {
             }
             .frame(height: 5)
         }
-        .padding(16)
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: V.tileHeight)
-        // Read-only: flat, see-through, no edge. Things you can press are glass.
-        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.readTile))
         .onAppear { if charging { withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 4.8).repeatForever(autoreverses: false)) { sheen = true } } }
         .onChange(of: charging) { _, on in
             sheen = false
@@ -331,18 +339,16 @@ struct RangeTile: View {
             Text("Range").font(V.label).foregroundStyle(V.textMuted)
             Spacer(minLength: 0)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(rangeValue).font(V.number).tracking(-2).foregroundStyle(V.text).contentTransition(.numericText())
+                Text(rangeValue).font(V.number).tracking(-2).foregroundStyle(V.text)
+                    .contentTransition(.numericText()).animation(.smooth, value: rangeValue)
                 Text(useMiles ? "mi" : "km").font(V.body).foregroundStyle(V.textMuted)
             }
             Spacer(minLength: 0)
             // Level with the battery bar, so the two numbers line up.
             Color.clear.frame(height: 5)
         }
-        .padding(16)
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: V.tileHeight)
-        // Read-only: flat, see-through, no edge. Things you can press are glass.
-        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.readTile))
     }
 
     private var rangeValue: String {

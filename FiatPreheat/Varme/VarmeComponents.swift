@@ -70,11 +70,10 @@ struct VCloseButton: View {
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            PhIcon(name: "x", size: 16)
+            PhIcon(name: "x", size: 18)
                 .foregroundStyle(V.text)
-                .frame(width: 40, height: 40)
-                .glassCircle()
                 .frame(width: 44, height: 44)
+                .glassCircle()
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

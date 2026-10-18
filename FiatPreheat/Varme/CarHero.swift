@@ -101,13 +101,13 @@ struct CarHero: View {
                         Spacer(minLength: 12)
                         if let onSettings {
                             Button(action: onSettings) {
-                                PhIcon(name: "gear", size: 18).foregroundStyle(V.text)
-                                    .frame(width: 40, height: 40)
+                                PhIcon(name: "gear", size: 20).foregroundStyle(V.text)
+                                    .frame(width: 44, height: 44)
                                     .glassCircle()
-                                    .frame(width: 44, height: 44).contentShape(Rectangle())
+                                    .contentShape(Circle())
                             }
                             .buttonStyle(.plain)
-                            .padding(.trailing, -2)
+                            .padding(.trailing, -4)
                             .accessibilityLabel("Settings")
                         }
                     }
