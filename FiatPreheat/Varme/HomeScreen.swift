@@ -244,7 +244,7 @@ struct HomeScreen: View {
 
     private var actionTiles: some View {
         HStack(spacing: 8) {
-            ActionTile(icon: "lightbulb", title: model.isLightsOn ? "On" : "Lights", state: tileState(.lights, active: model.isLightsOn)) {
+            ActionTile(icon: "sun", title: model.isLightsOn ? "On" : "Lights", state: tileState(.lights, active: model.isLightsOn)) {
                 Task { await model.perform(.lights) }
             }
             ActionTile(icon: "map-pin", title: "Find", state: tileState(.locate)) { sheet = .find }

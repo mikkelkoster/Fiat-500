@@ -16,7 +16,7 @@ struct WatchHome: View {
                             tile(icon: car.isLocked == false ? "lock" : "lock-open",
                                  title: car.isLocked == false ? "Lock" : "Unlock",
                                  command: car.isLocked == false ? "lock" : "unlock")
-                            tile(icon: "lightbulb", title: "Lights", command: "lights")
+                            tile(icon: "sun", title: "Lights", command: "lights")
                         }
                     } else {
                         VStack(spacing: 8) {

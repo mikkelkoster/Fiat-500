@@ -65,7 +65,7 @@ struct FindCarSheet: View {
                     if let location = model.location { openURL(location.directionsURL) }
                 }
                 .disabled(model.location == nil)
-                VButton(title: model.isLightsOn ? "Lights on" : "Flash lights", icon: "lightbulb", prominent: false) {
+                VButton(title: model.isLightsOn ? "Lights on" : "Flash lights", icon: "sun", prominent: false) {
                     Task { await model.perform(.lights) }
                 }
                 .disabled(model.isBusy || model.availability(of: .lights) != .available)

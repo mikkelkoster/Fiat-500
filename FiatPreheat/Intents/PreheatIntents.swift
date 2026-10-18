@@ -117,7 +117,7 @@ struct PreheatShortcuts: AppShortcutsProvider {
             intent: FlashLightsIntent(),
             phrases: ["Flash my car's lights with \(.applicationName)"],
             shortTitle: "Lights",
-            systemImageName: "lightbulb.fill"
+            systemImageName: "sun.max.fill"
         )
     }
 }

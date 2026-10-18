@@ -32,14 +32,18 @@ struct OnboardingFlow: View {
 
     private var welcome: some View {
         ZStack(alignment: .top) {
-            RadialGradient(colors: [V.outline, V.surface, V.ground], center: UnitPoint(x: 0.5, y: 0.4), startRadius: 0, endRadius: 320).ignoresSafeArea()
-            CarLineup().padding(.top, 104)
-            LinearGradient(colors: [V.ground.opacity(0), V.ground], startPoint: .top, endPoint: .bottom).frame(height: 220).padding(.top, 284)
-            V.ground.frame(maxHeight: .infinity).padding(.top, 503)
-            VStack { Text("Varme").font(V.sora(56, .ultraLight)).tracking(-2).foregroundStyle(V.text).padding(.top, 40); Spacer() }
+            V.ground.ignoresSafeArea()
+            // VARME, then the covered car in its own studio light, edges faded into the page.
+            VStack(spacing: 0) {
+                Text("Varme").eyebrowStyle().padding(.top, 28)
+                Image("intro-covered").resizable().aspectRatio(contentMode: .fit)
+                    .padding(.top, -4)
+                Spacer()
+            }
+            .ignoresSafeArea(edges: .horizontal)
             VStack(spacing: 10) {
                 Spacer()
-                Text("A warm car\nwhen you leave.").font(V.sora(34, .light)).tracking(-1).multilineTextAlignment(.center).foregroundStyle(V.text)
+                Text("Your EV.\nIn your hands.").font(V.sora(34, .light)).tracking(-1).multilineTextAlignment(.center).foregroundStyle(V.text)
                 Text("Heat it, lock it, find it and charge it from your phone, by Siri and on a schedule.")
                     .font(V.body).foregroundStyle(V.textMuted).multilineTextAlignment(.center).padding(.bottom, 8)
                 VButton(title: "Get started") { step = 1 }
