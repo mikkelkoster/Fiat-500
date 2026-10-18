@@ -40,7 +40,7 @@ struct CarHero: View {
             let w = geo.size.width
             let imageWidth = w * 620 / 390
             let imageHeight = imageWidth * 640 / 1200
-            let imageTop = 126 * w / 390
+            let imageTop = 126 * w / 390 + max(0, geo.size.height - 420) * 0.4
             ZStack(alignment: .topLeading) {
                 spotlight
                 if let image {
@@ -158,7 +158,7 @@ struct CarHero: View {
                     .padding(.top, 4)
                 }
                 .padding(.horizontal, V.gutter)
-                .padding(.top, 46)
+                .padding(.top, 60)
 
                 HStack(spacing: 8) {
                     statusLine
@@ -177,6 +177,8 @@ struct CarHero: View {
                         .disabled(chargeBusy)
                     }
                 }
+                // Same height with or without Charge now, so the line doesn't jump.
+                .frame(height: 30)
                 .padding(.horizontal, V.gutter)
                 .frame(maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, 2)

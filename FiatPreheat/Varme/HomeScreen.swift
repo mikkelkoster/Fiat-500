@@ -11,6 +11,10 @@ struct HomeScreen: View {
 
     enum Sheet: String, Identifiable { case find, schedule, settings, trips; var id: String { rawValue } }
 
+    /// Everything under the hero: tiles, Heat cabin, the action row, the slider, the gaps, and a
+    /// little air above the home indicator.
+    private static let belowHero: CGFloat = V.tileHeight + 64 + 78 + 60 + V.cardGap * 4 + 6
+
     /// How far to pull before letting go refreshes.
     private let pullThreshold: CGFloat = 64
 
@@ -21,7 +25,7 @@ struct HomeScreen: View {
             // The page fits the screen, so it doesn't scroll: it only moves when pulled down to refresh.
             GeometryReader { geo in
                 VStack(spacing: V.cardGap) {
-                    hero(height: min(440, max(330, geo.size.height + geo.safeAreaInsets.top - 404)))
+                    hero(height: min(560, max(330, geo.size.height + geo.safeAreaInsets.top - Self.belowHero)))
                     tiles.padding(.horizontal, V.gutter)
                     preheatButton.padding(.horizontal, V.gutter)
                     actionTiles.padding(.horizontal, V.gutter)
@@ -260,7 +264,10 @@ struct BatteryTile: View {
                 if charging { PhIcon(name: "lightning", size: 13).foregroundStyle(V.positive).opacity(sheen ? 1 : 0.6) }
                 Text(charging ? "Charging" : "Battery").font(V.label).foregroundStyle(charging ? V.positive : V.textMuted)
                     .fixedSize()
-                if let word = V.batteryWord(soc), !charging {
+                if charging {
+                    Spacer(minLength: 4)
+                    Text("Full \(fullBy)").font(V.label).foregroundStyle(V.textMuted).lineLimit(1).minimumScaleFactor(0.8)
+                } else if let word = V.batteryWord(soc) {
                     Spacer(minLength: 4)
                     Text(word).font(V.sora(11, .medium)).foregroundStyle(V.ground)
                         .lineLimit(1).minimumScaleFactor(0.8)
@@ -291,8 +298,6 @@ struct BatteryTile: View {
                 }
             }
             .frame(height: 5)
-            // Only while charging; otherwise the line stays empty so the number sits level with Range.
-            Text(charging ? "Full by \(fullBy)" : " ").font(V.label).foregroundStyle(V.textFaint).padding(.top, 8)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -330,8 +335,8 @@ struct RangeTile: View {
                 Text(useMiles ? "mi" : "km").font(V.body).foregroundStyle(V.textMuted)
             }
             Spacer(minLength: 0)
+            // Level with the battery bar, so the two numbers line up.
             Color.clear.frame(height: 5)
-            Text(" ").font(V.label).padding(.top, 8)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

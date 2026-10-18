@@ -43,7 +43,7 @@ enum V {
 
     static let gutter: CGFloat = 20
     static let cardGap: CGFloat = 12
-    static let tileHeight: CGFloat = 118
+    static let tileHeight: CGFloat = 96
     static let buttonHeight: CGFloat = 60
     static let control: CGFloat = 44
     static let radiusCard: CGFloat = 24
@@ -58,7 +58,7 @@ enum V {
 
     static func batteryWord(_ soc: Double?) -> String? {
         guard let soc else { return nil }
-        return soc >= 40 ? nil : soc >= 15 ? "Getting low" : "Low"
+        return soc >= 40 ? nil : soc >= 15 ? "Low" : "Very low"
     }
 }
 
