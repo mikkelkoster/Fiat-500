@@ -149,24 +149,16 @@ struct HomeScreen: View {
         let color = charging ? V.positive : V.batteryColor(soc)
         let range = model.rangeKm.map { model.useMiles ? $0 / 1.609 : $0 }
         let note: ArcGauge.Note? = charging ? .text("Full \(fullBy)") : V.batteryWord(soc).map { .badge($0, color) }
-        return VStack(spacing: 8) {
-            TabView(selection: $gaugePage) {
-                ArcGauge(fraction: (soc ?? 0) / 100, color: color, value: soc.map { "\(Int($0))" } ?? "–", unit: "%",
-                         caption: charging ? "Charging" : "Battery", captionColor: charging ? V.positive : V.textMuted, note: note)
-                    .tag(0)
-                ArcGauge(fraction: model.rangeFraction, color: color, value: range.map { "\(Int($0))" } ?? "–",
-                         unit: model.useMiles ? "mi" : "km", caption: "Range", captionColor: V.textMuted, note: nil)
-                    .tag(1)
+        return GaugePager(page: $gaugePage, count: 2) { index, active in
+            if index == 0 {
+                ArcGauge(fraction: (soc ?? 0) / 100, color: color, value: soc, unit: "%",
+                         caption: charging ? "Charging" : "Battery", captionColor: charging ? V.positive : V.textMuted,
+                         note: note, active: active)
+            } else {
+                ArcGauge(fraction: model.rangeFraction, color: color, value: range,
+                         unit: model.useMiles ? "mi" : "km", caption: "Range", captionColor: V.textMuted,
+                         note: nil, active: active)
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .frame(width: 200, height: 160)
-            .onChange(of: gaugePage) { _, _ in Haptics.select() }
-            HStack(spacing: 7) {
-                ForEach(0..<2, id: \.self) { i in
-                    Circle().fill(i == gaugePage ? V.text : V.outline).frame(width: 6, height: 6)
-                }
-            }
-            .animation(.easeOut(duration: 0.2), value: gaugePage)
         }
         .frame(maxWidth: .infinity)
         .frame(height: Self.gaugeHeight)
@@ -331,26 +323,39 @@ struct ArcGauge: View {
 
     let fraction: Double
     let color: Color
-    let value: String
+    let value: Double?
     let unit: String
     let caption: String
     let captionColor: Color
     let note: Note?
+    /// The page on show: it fills and counts up when the app opens and each time it's swiped to.
+    var active = true
+
+    @State private var shown: Double = 0
+
+    /// Fill and count share one spring, so the number lands with the arc.
+    private static let fill = Animation.spring(response: 1.1, dampingFraction: 0.86)
 
     var body: some View {
+        let target = value ?? 0
+        let progress = target > 0 ? shown / target : 0
         ZStack {
             Circle().trim(from: 0, to: 0.75)
                 .stroke(V.outline.opacity(0.7), style: StrokeStyle(lineWidth: 7, lineCap: .round))
                 .rotationEffect(.degrees(135))
-            Circle().trim(from: 0, to: 0.75 * max(0.01, min(1, fraction)))
+            Circle().trim(from: 0, to: 0.75 * max(0.01, min(1, fraction * progress)))
                 .stroke(color, style: StrokeStyle(lineWidth: 7, lineCap: .round))
                 .rotationEffect(.degrees(135))
                 .shadow(color: color.opacity(0.35), radius: 8)
-                .animation(.timingCurve(0.2, 0.8, 0.2, 1, duration: 0.8), value: fraction)
             VStack(spacing: 0) {
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    Text(value).font(V.sora(52, .ultraLight)).tracking(-2).foregroundStyle(V.text)
-                        .contentTransition(.numericText()).animation(.smooth, value: value)
+                    // The final number, hidden, holds the width; the counting one sits over it.
+                    Text(value == nil ? "–" : "\(Int(target.rounded()))")
+                        .font(V.sora(52, .ultraLight)).tracking(-2).monospacedDigit()
+                        .hidden()
+                        .overlay(alignment: .trailing) {
+                            Color.clear.modifier(CountUp(value: shown, placeholder: value == nil)).fixedSize()
+                        }
                     Text(unit).font(V.sora(17)).foregroundStyle(V.textMuted)
                 }
                 Text(caption).font(V.label).foregroundStyle(captionColor)
@@ -368,10 +373,115 @@ struct ArcGauge: View {
                     }
                 }
                 .offset(y: 62)
+                .opacity(progress)
             }
         }
         .frame(width: 148, height: 148)
         .frame(maxWidth: .infinity)
+        // On opening, wait for the launch transition so the fill is seen.
+        .onAppear { if active { replay(after: 0.35) } }
+        .onChange(of: active) { _, isActive in
+            if isActive { replay() } else { shown = 0 }
+        }
+        .onChange(of: value) { _, new in
+            guard active else { return }
+            withAnimation(Self.fill) { shown = new ?? 0 }
+        }
+    }
+
+    /// From empty to the value, again.
+    private func replay(after delay: Double = 0.05) {
+        var reset = Transaction()
+        reset.disablesAnimations = true
+        withTransaction(reset) { shown = 0 }
+        withAnimation(Self.fill.delay(delay)) { shown = value ?? 0 }
+    }
+}
+
+/// The gauge's number, counting with the animation rather than jumping to its end.
+private struct CountUp: ViewModifier, Animatable {
+    var value: Double
+    let placeholder: Bool
+    var animatableData: Double {
+        get { value }
+        set { value = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        Text(placeholder ? "–" : "\(Int(value.rounded()))")
+            .font(V.sora(52, .ultraLight)).tracking(-2).foregroundStyle(V.text)
+            .monospacedDigit()
+    }
+}
+
+// MARK: - Gauge pager
+
+/// Pages you swipe between, with a little spring as they settle and a dot that stretches across to
+/// the next one and draws itself in after it.
+struct GaugePager<Content: View>: View {
+    @Binding var page: Int
+    let count: Int
+    @ViewBuilder let content: (_ index: Int, _ active: Bool) -> Content
+
+    @State private var drag: CGFloat = 0
+    /// The dot indicator's two ends, in page units: the head leads, the tail follows.
+    @State private var head: CGFloat = 0
+    @State private var tail: CGFloat = 0
+
+    private static var settle: Animation { .spring(response: 0.45, dampingFraction: 0.7) }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            GeometryReader { geo in
+                let width = geo.size.width
+                HStack(spacing: 0) {
+                    ForEach(0..<count, id: \.self) { i in
+                        content(i, i == page).frame(width: width)
+                    }
+                }
+                .offset(x: -CGFloat(page) * width + drag)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 10)
+                        .onChanged { value in
+                            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                            var dx = value.translation.width
+                            // Past either end it gives, but grudgingly.
+                            if (page == 0 && dx > 0) || (page == count - 1 && dx < 0) { dx /= 3 }
+                            drag = dx
+                            head = CGFloat(page) + max(-1, min(1, -dx / width))
+                        }
+                        .onEnded { value in
+                            let flung = value.predictedEndTranslation.width
+                            var next = page
+                            if flung < -width * 0.3 { next = min(count - 1, page + 1) }
+                            if flung > width * 0.3 { next = max(0, page - 1) }
+                            if next != page { Haptics.select() }
+                            withAnimation(Self.settle) { page = next; drag = 0 }
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { head = CGFloat(next) }
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.72).delay(0.06)) { tail = CGFloat(next) }
+                        }
+                )
+            }
+            .frame(height: 160)
+            dots
+        }
+        .onAppear { head = CGFloat(page); tail = CGFloat(page) }
+    }
+
+    /// Inactive dots, and over them one white capsule spanning from tail to head.
+    private var dots: some View {
+        let dot: CGFloat = 6, gap: CGFloat = 7, step = dot + gap
+        return ZStack(alignment: .leading) {
+            HStack(spacing: gap) {
+                ForEach(0..<count, id: \.self) { _ in Circle().fill(V.outline).frame(width: dot, height: dot) }
+            }
+            Capsule().fill(V.text)
+                .frame(width: dot + abs(head - tail) * step, height: dot)
+                .offset(x: min(head, tail) * step)
+        }
+        .frame(height: dot)
+        .accessibilityHidden(true)
     }
 }
 
