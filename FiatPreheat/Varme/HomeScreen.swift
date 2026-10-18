@@ -147,7 +147,8 @@ struct HomeScreen: View {
     private var tiles: some View {
         HStack(spacing: 18) {
             BatteryTile(status: model.status)
-            Rectangle().fill(V.text.opacity(0.18)).frame(width: 1).padding(.vertical, 6)
+            // Full height, the same line as the outline, so the box reads as two halves.
+            Rectangle().fill(V.text.opacity(0.3)).frame(width: 1)
             RangeTile(status: model.status, useMiles: model.useMiles)
         }
         .padding(.horizontal, 18)
