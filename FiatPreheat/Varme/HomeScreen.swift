@@ -57,6 +57,9 @@ struct HomeScreen: View {
             Button("Unlock") { Task { await model.perform(.unlock) } }
         }
         .onChange(of: model.commandState) { _, state in show(ToastItem(state)) }
+        .onChange(of: model.pendingSheet) { _, which in
+            if which == "find" { sheet = .find; model.pendingSheet = nil }
+        }
         .task {
             if Demo.isActive {
                 switch Demo.screen {

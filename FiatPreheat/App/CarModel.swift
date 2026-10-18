@@ -1,6 +1,8 @@
+import ActivityKit
 import Foundation
 import Observation
 import SwiftUI
+import WidgetKit
 
 /// App state shared by the UI, App Intents (Siri/Shortcuts), notification actions and
 /// background refresh — one instance so they all see the same car and command state.
@@ -206,6 +208,7 @@ final class CarModel {
         } catch {
             statusError = error.localizedDescription
         }
+        publishSnapshot()
     }
 
     // MARK: Location
@@ -230,6 +233,7 @@ final class CarModel {
         } else {
             schedules = [schedule]
         }
+        publishSnapshot()
     }
 
     func deleteSchedule() {
@@ -308,8 +312,8 @@ final class CarModel {
     /// Reads back what a confirmed command changed, so the screen shows the car's new state.
     private func followUp(_ command: RemoteCommand) async {
         switch command {
-        case .lock: status?.isLocked = true
-        case .unlock: status?.isLocked = false
+        case .lock: status?.isLocked = true; publishSnapshot()
+        case .unlock: status?.isLocked = false; publishSnapshot()
         case .trunkUnlock: status?.isTrunkLocked = false
         case .locate: await loadLocation()
         case .deepRefresh, .chargeNow: await refreshStatus()
@@ -321,5 +325,66 @@ final class CarModel {
         lastPreheatStart = date
         guard !Demo.isActive else { return }
         defaults.set(date, forKey: Keys.lastPreheat)
+        if let date { PreheatActivity.start(model: self, startedAt: date) } else { PreheatActivity.end() }
+        publishSnapshot()
+    }
+
+    // MARK: Widgets
+
+    /// What the widgets show. Written after every refresh and command.
+    func publishSnapshot() {
+        guard !Demo.isActive else { return }
+        var rangeKm = status?.range
+        if let r = rangeKm, status?.rangeUnit?.lowercased().hasPrefix("mi") == true { rangeKm = r * 1.609 }
+        let next = schedule.flatMap { s -> String? in
+            guard s.isEnabled, let start = s.upcomingStarts(after: Date()).first else { return nil }
+            return start.addingTimeInterval(TimeInterval(s.leadMinutes * 60)).formatted(.dateTime.weekday(.abbreviated).hour().minute())
+        }
+        CarSnapshot(carName: carName, plate: plate, stateOfCharge: status?.stateOfCharge, rangeKm: rangeKm, useMiles: useMiles,
+                    isCharging: status?.isCharging == true, isPluggedIn: status?.isPluggedIn == true, isLocked: status?.isLocked,
+                    preheatStartedAt: isPreheating ? lastPreheatStart : nil, nextSchedule: next, hasCarImage: carImage != nil,
+                    updatedAt: Date()).save()
+        WidgetCenter.shared.reloadAllTimelines()
+        if #available(iOS 18.0, *) { ControlCenter.shared.reloadAllControls() }
+    }
+
+    /// A widget or the Live Activity opened the app with a command.
+    func handle(_ url: URL) {
+        guard url.scheme == "varme", hasAccount else { return }
+        switch url.host {
+        case "preheat": Task { await startPreheat() }
+        case "stop": Task { await stopPreheat() }
+        case "lock": Task { await perform(.lock) }
+        case "unlock": Task { await perform(.unlock) }
+        case "find": pendingSheet = "find"
+        default: break
+        }
+    }
+
+    /// A sheet the home screen should open next (from a deep link).
+    var pendingSheet: String?
+}
+
+/// The preheat Live Activity: starts when the car accepts the command, ends when it stops.
+@MainActor
+enum PreheatActivity {
+    static func start(model: CarModel, startedAt: Date) {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        end()
+        let end = startedAt.addingTimeInterval(CarModel.assumedPreheatDuration)
+        let state = PreheatActivityAttributes.ContentState(
+            endDate: end,
+            warmBy: end.formatted(date: .omitted, time: .shortened),
+            stateOfCharge: model.status?.stateOfCharge.map { Int($0) },
+            rangeText: model.status?.range.map { "\(Int($0)) \(model.status?.rangeUnit?.lowercased() ?? "km")" }
+        )
+        let attributes = PreheatActivityAttributes(carName: model.carName, plate: model.plate)
+        _ = try? Activity.request(attributes: attributes, content: .init(state: state, staleDate: end), pushType: nil)
+    }
+
+    static func end() {
+        for activity in Activity<PreheatActivityAttributes>.activities {
+            Task { await activity.end(nil, dismissalPolicy: .immediate) }
+        }
     }
 }

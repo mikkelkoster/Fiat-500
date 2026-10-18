@@ -9,6 +9,7 @@ struct FiatPreheatApp: App {
             RootView()
                 .environment(CarModel.shared)
                 .tint(V.text)
+                .onOpenURL { CarModel.shared.handle($0) }
         }
     }
 }

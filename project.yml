@@ -15,7 +15,12 @@ targets:
   FiatPreheat:
     type: application
     platform: iOS
-    sources: [FiatPreheat]
+    sources: [FiatPreheat, Shared]
+    dependencies:
+      - target: VarmeWidgets
+        embed: true
+    entitlements:
+      path: FiatPreheat/Support/Varme.entitlements
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dk.koster.varme
@@ -30,7 +35,39 @@ targets:
         UIBackgroundModes: [fetch]
         UIAppFonts: [Geist-Regular.ttf, Geist-Medium.ttf, Geist-SemiBold.ttf, Sora.ttf]
         BGTaskSchedulerPermittedIdentifiers: [dk.koster.varme.schedule]
+        ITSAppUsesNonExemptEncryption: false
+        NSSupportsLiveActivities: true
+        CFBundleURLTypes:
+          - CFBundleURLName: dk.koster.varme
+            CFBundleURLSchemes: [varme]
         NSLocationWhenInUseUsageDescription: "Varme uses your position to show how far away the car is and to give you walking directions to it."
+  VarmeWidgets:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - VarmeWidgets
+      - Shared
+      - FiatPreheat/Varme/Theme.swift
+      - FiatPreheat/Resources/Assets.xcassets
+      - FiatPreheat/Resources/Fonts
+    entitlements:
+      path: VarmeWidgets/VarmeWidgets.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dk.koster.varme.widgets
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: "Varme"
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: ""
+        ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME: ""
+        SKIP_INSTALL: YES
+    info:
+      path: VarmeWidgets/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        UIAppFonts: [Sora.ttf]
   FiatPreheatTests:
     type: bundle.unit-test
     platform: iOS
@@ -46,6 +83,7 @@ schemes:
     build:
       targets:
         FiatPreheat: all
+        VarmeWidgets: all
         FiatPreheatTests: [test]
     test:
       targets: [FiatPreheatTests]
