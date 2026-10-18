@@ -14,6 +14,8 @@ struct VButton: View {
     var loading = false
     /// iOS glass with a white tint, for the main action in a sheet.
     var glass = false
+    /// The glass's tint, when it isn't white.
+    var glassTint: Color = V.text
     let action: () -> Void
 
     var body: some View {
@@ -30,7 +32,7 @@ struct VButton: View {
             .foregroundStyle(V.ground)
             .frame(maxWidth: .infinity)
             .frame(height: height)
-            .glassCapsule(tint: V.text)
+            .glassCapsule(tint: glassTint)
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)

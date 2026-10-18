@@ -216,7 +216,7 @@ struct HomeScreen: View {
             HeatingButton(phase: phase, minutesLeft: model.preheatMinutesLeft) { Task { await model.stopPreheat() } }
         } else {
             let connecting = model.commandState == .sending(.preconditionOn)
-            VButton(title: connecting ? "Connecting…" : "Heat cabin", icon: "flame", height: 60, loading: connecting, glass: true) {
+            VButton(title: connecting ? "Connecting…" : "Heat cabin", icon: "flame", height: 60, loading: connecting, glass: true, glassTint: V.heatSoft) {
                 Task { await model.startPreheat() }
             }
             // Busy stays white (it's saying "Connecting…"); it just ignores taps.
@@ -250,14 +250,14 @@ struct HomeScreen: View {
         Button { sheet = .schedule } label: {
             VStack(spacing: 6) {
                 if let next = model.nextSchedule {
-                    Text(next.schedule.readyTimeText).font(V.button).tracking(-0.5).foregroundStyle(V.text)
-                    Text(next.ready.formatted(.dateTime.weekday(.abbreviated))).font(V.label).foregroundStyle(V.textMuted)
+                    Text(next.schedule.readyTimeText).font(V.sora(19, .semibold)).tracking(-0.5).foregroundStyle(V.text)
+                    Text(next.ready.formatted(.dateTime.weekday(.abbreviated))).font(V.sora(14)).foregroundStyle(V.textMuted)
                 } else if !model.schedules.isEmpty {
-                    PhIcon(name: "clock").foregroundStyle(V.textFaint)
-                    Text("Off").font(V.label).foregroundStyle(V.textMuted)
+                    PhIcon(name: "clock", size: 26).foregroundStyle(V.textFaint)
+                    Text("Off").font(V.sora(14)).foregroundStyle(V.textMuted)
                 } else {
-                    PhIcon(name: "clock").foregroundStyle(V.text)
-                    Text("Schedule").font(V.label).foregroundStyle(V.text)
+                    PhIcon(name: "clock", size: 26).foregroundStyle(V.text)
+                    Text("Schedule").font(V.sora(14)).foregroundStyle(V.text)
                 }
             }
             .frame(maxWidth: .infinity).frame(height: 78)
@@ -670,8 +670,8 @@ struct ActionTile: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                PhIcon(name: icon)
-                Text(title).font(V.label)
+                PhIcon(name: icon, size: 26)
+                Text(title).font(V.sora(14))
             }
             .foregroundStyle(state == .active ? V.amber : state == .pending ? V.textFaint : state == .unavailable ? V.textFaint : V.text)
             .frame(maxWidth: .infinity).frame(height: 78)
