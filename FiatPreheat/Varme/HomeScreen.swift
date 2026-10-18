@@ -149,16 +149,15 @@ struct HomeScreen: View {
         let charging = model.status?.isCharging == true
         let color = charging ? V.positive : V.batteryColor(soc)
         let range = model.rangeKm.map { model.useMiles ? $0 / 1.609 : $0 }
-        let note: ArcGauge.Note? = charging ? .text("Full \(fullBy)") : V.batteryWord(soc).map { .badge($0, color) }
         return GaugePager(page: $gaugePage, count: 2) { index, active in
             if index == 0 {
                 ArcGauge(fraction: (soc ?? 0) / 100, color: color, value: soc, unit: "%",
                          caption: charging ? "Charging" : "Battery", captionColor: charging ? V.positive : V.textMuted,
-                         note: note, active: active)
+                         active: active)
             } else {
                 ArcGauge(fraction: model.rangeFraction, color: color, value: range,
                          unit: model.useMiles ? "mi" : "km", caption: "Range", captionColor: V.textMuted,
-                         note: note ?? fullRangeNote, active: active)
+                         active: active)
             }
         }
         .frame(maxWidth: .infinity)
@@ -171,13 +170,6 @@ struct HomeScreen: View {
         // VoiceOver hears both, without swiping.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(gaugeSummary)
-    }
-
-    /// What a full charge reaches, so the range arc has a measure (and the gauge isn't bare).
-    private var fullRangeNote: ArcGauge.Note? {
-        guard let km = model.rangeKm, let soc = model.status?.stateOfCharge, soc > 0 else { return nil }
-        let full = max(model.bestFullRangeKm ?? 0, km * 100 / soc)
-        return .text(model.useMiles ? "Up to \(Int(full / 1.609)) mi" : "Up to \(Int(full)) km")
     }
 
     private var gaugeSummary: String {
@@ -324,18 +316,15 @@ struct HomeScreen: View {
 
 // MARK: - Gauge
 
-/// A 270° arc, open at the bottom: the value large in the middle, what it is under it, and a note
-/// (a "Low" badge, or when charging will finish) in the opening.
+/// A 270° arc, open at the bottom, glowing in its colour: the value large in the middle and what
+/// it is under it.
 struct ArcGauge: View {
-    enum Note { case badge(String, Color), text(String) }
-
     let fraction: Double
     let color: Color
     let value: Double?
     let unit: String
     let caption: String
     let captionColor: Color
-    let note: Note?
     /// The page on show: it fills and counts up when the app opens and each time it's swiped to.
     var active = true
 
@@ -351,10 +340,17 @@ struct ArcGauge: View {
             Circle().trim(from: 0, to: 0.75)
                 .stroke(V.outline.opacity(0.7), style: StrokeStyle(lineWidth: 7, lineCap: .round))
                 .rotationEffect(.degrees(135))
+            // The glow: a wide, soft copy of the arc under it, then the arc with a tight halo.
+            Circle().trim(from: 0, to: 0.75 * max(0.01, min(1, fraction * progress)))
+                .stroke(color, style: StrokeStyle(lineWidth: 16, lineCap: .round))
+                .rotationEffect(.degrees(135))
+                .blur(radius: 14)
+                .opacity(0.75)
             Circle().trim(from: 0, to: 0.75 * max(0.01, min(1, fraction * progress)))
                 .stroke(color, style: StrokeStyle(lineWidth: 7, lineCap: .round))
                 .rotationEffect(.degrees(135))
-                .shadow(color: color.opacity(0.35), radius: 8)
+                .shadow(color: color.opacity(0.9), radius: 5)
+                .shadow(color: color.opacity(0.5), radius: 12)
             // A marker where the arc ends, riding along it as it fills.
             ArcKnob(fraction: max(0.01, min(1, fraction * progress)))
                 .fill(V.text)
@@ -374,20 +370,6 @@ struct ArcGauge: View {
                 Text(caption).font(V.label).foregroundStyle(captionColor)
             }
             .offset(y: 4)
-            if let note {
-                Group {
-                    switch note {
-                    case .text(let text):
-                        Text(text).font(V.label).foregroundStyle(V.textMuted)
-                    case .badge(let text, let tint):
-                        Text(text).font(V.sora(11, .medium)).foregroundStyle(V.ground)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(Capsule().fill(tint))
-                    }
-                }
-                .offset(y: 62)
-                .opacity(progress)
-            }
         }
         .frame(width: 148, height: 148)
         .frame(maxWidth: .infinity)
@@ -477,10 +459,13 @@ struct GaugePager<Content: View>: View {
             .frame(width: width, alignment: .leading)
             .offset(x: -CGFloat(page) * width + drag)
             .frame(width: width, height: 160, alignment: .leading)
+            // Room above and below for the glow, so only the sides are cut (and faded).
+            .padding(.vertical, 28)
             .clipped()
             .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.14),
                                          .init(color: .black, location: 0.86), .init(color: .clear, location: 1)],
                                  startPoint: .leading, endPoint: .trailing))
+            .padding(.vertical, -28)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 8)
