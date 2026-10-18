@@ -16,6 +16,10 @@ struct VButton: View {
     var glass = false
     /// The glass's tint, when it isn't white.
     var glassTint: Color = V.text
+    /// Text and icon on the glass: dark on white glass, light on a see-through tint.
+    var glassInk: Color = V.ground
+    /// A soft light across the top of the glass, so a see-through tint still reads as glass.
+    var glassSheen = false
     let action: () -> Void
 
     var body: some View {
@@ -25,14 +29,23 @@ struct VButton: View {
     private var glassBody: some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                if loading { ProgressView().controlSize(.small).tint(V.ground) }
+                if loading { ProgressView().controlSize(.small).tint(glassInk) }
                 else if let icon { PhIcon(name: icon, size: 20) }
                 Text(title).font(V.button)
             }
-            .foregroundStyle(V.ground)
+            .foregroundStyle(glassInk)
             .frame(maxWidth: .infinity)
             .frame(height: height)
             .glassCapsule(tint: glassTint)
+            .overlay {
+                if glassSheen {
+                    Capsule().fill(LinearGradient(colors: [.white.opacity(0.22), .white.opacity(0.04), .clear],
+                                                  startPoint: .top, endPoint: .bottom))
+                        .overlay(Capsule().strokeBorder(LinearGradient(colors: [.white.opacity(0.35), .white.opacity(0.05)],
+                                                                       startPoint: .top, endPoint: .bottom), lineWidth: 1))
+                        .allowsHitTesting(false)
+                }
+            }
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)

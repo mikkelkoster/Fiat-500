@@ -16,7 +16,6 @@ enum V {
     static let textFaint = Color(hex: 0x71717a)    // zinc-500: pending states only
     static let positive = Color(hex: 0x4ade80)     // green-400: battery ≥ 40 %, charging, locked, switch on
     static let heat = Color(hex: 0xfb923c)         // orange-400: heating
-    static let heatSoft = Color(hex: 0xfdba74)     // orange-300: the Heat cabin button
     static let cool = Color(hex: 0x38bdf8)         // sky-400: cooling, position, route
     static let amber = Color(hex: 0xfbbf24)        // amber-400: battery 15–39 %, unlocked, lights on
     static let danger = Color(hex: 0xf87171)       // red-400: battery < 15 %, failed, delete
