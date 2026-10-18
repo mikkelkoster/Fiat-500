@@ -1,8 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 56 208 160" width="256" height="256" fill="none" stroke="#000" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-  <!-- rear of the car, seen from the side: roof line coming in from the left, down the back, under the bumper; wheel; boot lid up -->
-  <path d="M40 104h60c22 0 40 10 52 24"/>
-  <path d="M152 128l28 22v24c0 6-4 10-10 10h-18"/>
-  <path d="M40 184h44"/>
-  <circle cx="118" cy="184" r="22"/>
-  <path d="M152 128l40-40 20 16"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 64 200 160" width="256" height="256" fill="none" stroke="#000" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M36 104h52c34 0 58 14 74 36"/>
+  <path d="M162 140c10 12 14 22 14 32v8c0 8-6 12-14 12h-14"/>
+  <path d="M36 192h36"/>
+  <circle cx="108" cy="192" r="20"/>
+  <path d="M152 124l36-32 16 14"/>
 </svg>
