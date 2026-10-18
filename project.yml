@@ -28,8 +28,9 @@ targets:
       path: FiatPreheat/Support/Info.plist
       properties:
         UIBackgroundModes: [fetch]
-        UIAppFonts: [Geist-Regular.ttf, Geist-Medium.ttf, Geist-SemiBold.ttf]
+        UIAppFonts: [Geist-Regular.ttf, Geist-Medium.ttf, Geist-SemiBold.ttf, Sora.ttf]
         BGTaskSchedulerPermittedIdentifiers: [dk.koster.varme.schedule]
+        NSLocationWhenInUseUsageDescription: "Varme uses your position to show how far away the car is and to give you walking directions to it."
   FiatPreheatTests:
     type: bundle.unit-test
     platform: iOS

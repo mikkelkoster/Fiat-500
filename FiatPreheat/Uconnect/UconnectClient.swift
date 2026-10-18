@@ -4,6 +4,10 @@ struct UconnectAccount: Sendable, Equatable {
     var email: String
     var password: String
     var pin: String
+    var brand: Brand = .fiat
+    var region: Brand.Region = .europe
+
+    var config: UconnectConfig { brand.config(in: region) }
 }
 
 struct Vehicle: Sendable, Identifiable, Hashable {
@@ -100,11 +104,13 @@ enum UconnectError: LocalizedError {
 /// Talks to Stellantis' Uconnect backend the same way the Fiat app does:
 /// Gigya login → Cognito identity → AWS SigV4-signed REST calls → PIN-authorised commands.
 actor UconnectClient {
-    private let config: UconnectConfig
+    private var config: UconnectConfig
     private var session: URLSession
     private var account: UconnectAccount?
     private var uid: String?
     private var aws: AWSCredentials?
+    /// The owner's first name from the brand account, once signed in.
+    private(set) var ownerFirstName: String?
 
     init(config: UconnectConfig = .fiatEU) {
         self.config = config
@@ -121,8 +127,10 @@ actor UconnectClient {
     func setAccount(_ account: UconnectAccount?) {
         guard account != self.account else { return }
         self.account = account
+        if let account { config = account.config }
         uid = nil
         aws = nil
+        ownerFirstName = nil
         session = Self.makeSession()
     }
 
@@ -288,6 +296,7 @@ actor UconnectClient {
               let loginToken = (loginResponse["sessionInfo"] as? [String: Any])?["login_token"] as? String else {
             throw UconnectError.loginFailed("missing session")
         }
+        ownerFirstName = (loginResponse["profile"] as? [String: Any])?["firstName"] as? String
 
         // 3. Gigya JWT.
         let jwtResponse = try await gigya("accounts.getJWT", params: gigyaDefaults([

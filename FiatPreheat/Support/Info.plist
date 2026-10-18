@@ -22,11 +22,14 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Varme uses your position to show how far away the car is and to give you walking directions to it.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Geist-Regular.ttf</string>
 		<string>Geist-Medium.ttf</string>
 		<string>Geist-SemiBold.ttf</string>
+		<string>Sora.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

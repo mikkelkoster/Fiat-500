@@ -13,7 +13,7 @@ struct StartPreheatIntent: AppIntent {
         if case .failed(let message) = state {
             throw IntentError(message)
         }
-        return .result(dialog: "Preheating \(model.plate).")
+        return .result(dialog: "Preheating \(model.carName).")
     }
 }
 
@@ -28,7 +28,7 @@ struct StopPreheatIntent: AppIntent {
         if case .failed(let message) = state {
             throw IntentError(message)
         }
-        return .result(dialog: "Stopping climate on \(model.plate).")
+        return .result(dialog: "Stopping climate on \(model.carName).")
     }
 }
 
@@ -42,7 +42,7 @@ struct LockCarIntent: AppIntent {
         if case .failed(let message) = await model.perform(.lock, waitForCar: false) {
             throw IntentError(message)
         }
-        return .result(dialog: "Locking \(model.plate).")
+        return .result(dialog: "Locking \(model.carName).")
     }
 }
 
@@ -56,14 +56,14 @@ struct UnlockCarIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let model = CarModel.shared
         if #available(iOS 18.0, *) {
-            try await requestConfirmation(conditions: [], actionName: .go, dialog: "Unlock \(model.plate)?")
+            try await requestConfirmation(conditions: [], actionName: .go, dialog: "Unlock \(model.carName)?")
         } else {
-            try await requestConfirmation(result: .result(dialog: "Unlock \(model.plate)?"))
+            try await requestConfirmation(result: .result(dialog: "Unlock \(model.carName)?"))
         }
         if case .failed(let message) = await model.perform(.unlock, waitForCar: false) {
             throw IntentError(message)
         }
-        return .result(dialog: "Unlocking \(model.plate).")
+        return .result(dialog: "Unlocking \(model.carName).")
     }
 }
 
@@ -77,7 +77,7 @@ struct FlashLightsIntent: AppIntent {
         if case .failed(let message) = await model.perform(.lights, waitForCar: false) {
             throw IntentError(message)
         }
-        return .result(dialog: "Turning on the lights of \(model.plate).")
+        return .result(dialog: "Turning on the lights of \(model.carName).")
     }
 }
 

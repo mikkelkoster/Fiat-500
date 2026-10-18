@@ -9,6 +9,8 @@ struct PreheatSchedule: Codable, Identifiable, Hashable, Sendable {
     /// Calendar weekday numbers: 1 = Sunday … 7 = Saturday.
     var weekdays: Set<Int> = [2, 3, 4, 5, 6]
     var isEnabled = true
+    /// Skip a run when the cable isn't in, so the heat comes from the wall, not the battery.
+    var onlyWhenPluggedIn = true
 
     /// Hour/minute at which the preheat command is sent.
     var start: (hour: Int, minute: Int) {
@@ -39,7 +41,7 @@ struct PreheatSchedule: Codable, Identifiable, Hashable, Sendable {
 
     var daysText: String {
         switch weekdays {
-        case [2, 3, 4, 5, 6]: return "Weekdays"
+        case [2, 3, 4, 5, 6]: return "Mon – Fri"
         case [1, 7]: return "Weekends"
         case Set(1...7): return "Every day"
         default:

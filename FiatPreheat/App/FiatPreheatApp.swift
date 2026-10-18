@@ -6,9 +6,22 @@ struct FiatPreheatApp: App {
 
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            RootView()
                 .environment(CarModel.shared)
-                .tint(Ink.accent)
+                .tint(V.text)
+        }
+    }
+}
+
+/// Onboarding until there is an account and the owner has been through it once, then the home screen.
+struct RootView: View {
+    @Environment(CarModel.self) private var model
+
+    var body: some View {
+        if model.hasAccount && model.onboarded {
+            HomeScreen()
+        } else {
+            OnboardingFlow()
         }
     }
 }

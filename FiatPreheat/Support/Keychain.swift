@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-/// Stores the Fiat account in the Keychain. Readable after first unlock so scheduled
+/// Stores the brand account in the Keychain. Readable after first unlock so scheduled
 /// preheats can run from the background while the phone is locked.
 enum AccountStore {
     private static let service = "dk.koster.varme.account"
@@ -21,12 +21,19 @@ enum AccountStore {
               let email = fields["email"], let password = fields["password"], let pin = fields["pin"] else {
             return nil
         }
-        return UconnectAccount(email: email, password: password, pin: pin)
+        return UconnectAccount(
+            email: email, password: password, pin: pin,
+            brand: fields["brand"].flatMap(Brand.init(rawValue:)) ?? .fiat,
+            region: fields["region"].flatMap(Brand.Region.init(rawValue:)) ?? .europe
+        )
     }
 
     static func save(_ account: UconnectAccount) {
         delete()
-        let data = try! JSONEncoder().encode(["email": account.email, "password": account.password, "pin": account.pin])
+        let data = try! JSONEncoder().encode([
+            "email": account.email, "password": account.password, "pin": account.pin,
+            "brand": account.brand.rawValue, "region": account.region.rawValue,
+        ])
         let attributes: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

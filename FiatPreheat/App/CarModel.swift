@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import SwiftUI
 
 /// App state shared by the UI, App Intents (Siri/Shortcuts), notification actions and
 /// background refresh — one instance so they all see the same car and command state.
@@ -16,23 +17,40 @@ final class CarModel {
         case failed(String)
     }
 
+    /// Whether the car offers a command and whether the account has it switched on.
+    enum Availability { case available, needsSubscription, unsupported }
+
     private(set) var hasAccount = false
     private(set) var vehicles: [Vehicle] = []
     private(set) var status: VehicleStatus?
     private(set) var commandState: CommandState = .idle
     private(set) var lastPreheatStart: Date?
+    private(set) var lastLightsOn: Date?
     private(set) var statusError: String?
     private(set) var location: CarLocation?
     private(set) var locationError: String?
-
-    /// Whether the car offers a command and whether the account has it switched on.
-    enum Availability { case available, needsSubscription, unsupported }
 
     var selectedVIN: String? {
         didSet { defaults.set(selectedVIN, forKey: Keys.vin) }
     }
     var plate: String {
         didSet { defaults.set(plate, forKey: Keys.plate) }
+    }
+    var carName: String {
+        didSet { defaults.set(carName, forKey: Keys.carName) }
+    }
+    /// The owner's own choice, as `#rrggbb`; tints the light around the car.
+    var carColorHex: String {
+        didSet { defaults.set(carColorHex, forKey: Keys.carColor) }
+    }
+    var ownerName: String? {
+        didSet { defaults.set(ownerName, forKey: Keys.ownerName) }
+    }
+    var useMiles: Bool {
+        didSet { defaults.set(useMiles, forKey: Keys.useMiles) }
+    }
+    private(set) var onboarded: Bool {
+        didSet { defaults.set(onboarded, forKey: Keys.onboarded) }
     }
     var schedules: [PreheatSchedule] {
         didSet {
@@ -43,13 +61,42 @@ final class CarModel {
 
     /// The 500e stops preconditioning on its own; treat it as running for this long.
     static let assumedPreheatDuration: TimeInterval = 30 * 60
+    /// The lights stay on about this long after the command.
+    static let assumedLightsDuration: TimeInterval = 30
 
     var isPreheating: Bool {
         guard let lastPreheatStart else { return false }
         return Date().timeIntervalSince(lastPreheatStart) < Self.assumedPreheatDuration
     }
 
+    var preheatMinutesLeft: Int {
+        guard let lastPreheatStart else { return 0 }
+        return max(0, Int((Self.assumedPreheatDuration - Date().timeIntervalSince(lastPreheatStart)) / 60))
+    }
+
+    var isLightsOn: Bool {
+        guard let lastLightsOn else { return false }
+        return Date().timeIntervalSince(lastLightsOn) < Self.assumedLightsDuration
+    }
+
+    var isBusy: Bool {
+        switch commandState {
+        case .sending, .waitingForCar: true
+        default: false
+        }
+    }
+
     var vehicle: Vehicle? { vehicles.first { $0.vin == selectedVIN } }
+
+    /// The one schedule the home screen shows and the sheet edits.
+    var schedule: PreheatSchedule? { schedules.first }
+
+    /// The picture of the car. For now the one render we have; other cars get a silhouette.
+    var carImage: Image? {
+        guard let vehicle else { return Demo.isActive ? Image("car-fiat-500e-nero") : nil }
+        let isNew500 = vehicle.vin.hasPrefix("ZFAEFAC") || (vehicle.model ?? "").localizedCaseInsensitiveContains("500")
+        return isNew500 ? Image("car-fiat-500e-nero") : nil
+    }
 
     /// From the car's service list. A car that lists nothing gets every command, so an older or
     /// different account isn't locked out by a list it doesn't send.
@@ -60,26 +107,29 @@ final class CarModel {
         return .unsupported
     }
 
-    var isBusy: Bool {
-        switch commandState {
-        case .sending, .waitingForCar: true
-        default: false
-        }
-    }
-
     private let client = UconnectClient()
     private let defaults = UserDefaults.standard
 
     private enum Keys {
         static let vin = "selectedVIN"
         static let plate = "plate"
+        static let carName = "carName"
+        static let carColor = "carColor"
+        static let ownerName = "ownerName"
+        static let useMiles = "useMiles"
+        static let onboarded = "onboarded"
         static let schedules = "schedules"
         static let lastPreheat = "lastPreheatStart"
     }
 
     private init() {
         selectedVIN = defaults.string(forKey: Keys.vin)
-        plate = defaults.string(forKey: Keys.plate) ?? "ED35079"
+        plate = defaults.string(forKey: Keys.plate) ?? ""
+        carName = defaults.string(forKey: Keys.carName) ?? "My car"
+        carColorHex = defaults.string(forKey: Keys.carColor) ?? "#18181b"
+        ownerName = defaults.string(forKey: Keys.ownerName)
+        useMiles = defaults.bool(forKey: Keys.useMiles)
+        onboarded = defaults.bool(forKey: Keys.onboarded)
         schedules = defaults.data(forKey: Keys.schedules)
             .flatMap { try? JSONDecoder().decode([PreheatSchedule].self, from: $0) } ?? []
         lastPreheatStart = defaults.object(forKey: Keys.lastPreheat) as? Date
@@ -88,9 +138,13 @@ final class CarModel {
 
         if Demo.isActive {
             hasAccount = true
+            onboarded = Demo.screen != "onboarding"
             vehicles = [Demo.vehicle]
             selectedVIN = Demo.vehicle.vin
-            plate = "ED35079"
+            plate = "ED 35079"
+            carName = "500e"
+            ownerName = "Mikkel"
+            carColorHex = "#18181b"
             status = Demo.status
             schedules = Demo.schedules
             location = Demo.location
@@ -112,13 +166,21 @@ final class CarModel {
         if selectedVIN == nil || !found.contains(where: { $0.vin == selectedVIN }) {
             selectedVIN = found.first?.vin
         }
+        if ownerName == nil, let first = await client.ownerFirstName { ownerName = first }
+        if carName == "My car", let v = vehicle { carName = v.nickname ?? v.model ?? carName }
+        if defaults.object(forKey: Keys.useMiles) == nil, account.region == .northAmerica { useMiles = true }
         await refreshStatus()
+    }
+
+    func finishOnboarding() {
+        onboarded = true
     }
 
     func signOut() async {
         AccountStore.delete()
         await client.setAccount(nil)
         hasAccount = false
+        onboarded = false
         vehicles = []
         status = nil
         location = nil
@@ -135,7 +197,7 @@ final class CarModel {
         }
         await client.setAccount(account)
         do {
-            // Fetched every time: the service list changes when a Fiat subscription starts or ends.
+            // Fetched every time: the service list changes when a brand subscription starts or ends.
             vehicles = try await client.vehicles()
             if selectedVIN == nil || vehicle == nil { selectedVIN = vehicles.first?.vin }
             guard let vin = selectedVIN else { return }
@@ -158,6 +220,29 @@ final class CarModel {
         } catch {
             locationError = error.localizedDescription
         }
+    }
+
+    // MARK: Schedules
+
+    func saveSchedule(_ schedule: PreheatSchedule) {
+        if let index = schedules.firstIndex(where: { $0.id == schedule.id }) {
+            schedules[index] = schedule
+        } else {
+            schedules = [schedule]
+        }
+    }
+
+    func deleteSchedule() {
+        schedules = []
+    }
+
+    /// Fired by a notification or background refresh: honours "only when plugged in".
+    func scheduledPreheat() async {
+        if schedule?.onlyWhenPluggedIn == true {
+            await refreshStatus()
+            if status?.isPluggedIn == false { return }
+        }
+        await startPreheat(waitForCar: false)
     }
 
     // MARK: Commands
@@ -187,6 +272,7 @@ final class CarModel {
         if Demo.isActive {
             try? await Task.sleep(for: .seconds(1))
             recordAccepted(command)
+            await followUp(command)
             commandState = .done(command, .succeeded, Date())
             return commandState
         }
@@ -201,6 +287,7 @@ final class CarModel {
             commandState = .waitingForCar(command)
             let result = await client.waitForResult(vin: vin, correlationId: correlationId)
             if result == .failed, command == .preconditionOn { setLastPreheat(nil) }
+            if result == .failed, command == .lights { lastLightsOn = nil }
             if result == .succeeded { await followUp(command) }
             commandState = .done(command, result, Date())
         } catch {
@@ -213,6 +300,7 @@ final class CarModel {
         switch command {
         case .preconditionOn: setLastPreheat(Date())
         case .preconditionOff: setLastPreheat(nil)
+        case .lights: lastLightsOn = Date()
         default: break
         }
     }

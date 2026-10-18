@@ -90,7 +90,7 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
             let model = CarModel.shared
             if let due = Self.dueStart(in: model.schedules, now: Date()), !Self.alreadyFired(due) {
                 Self.markFired(due)
-                await model.startPreheat(waitForCar: false)
+                await model.scheduledPreheat()
             }
             self.submitBackgroundRefresh(for: model.schedules)
             task.setTaskCompleted(success: true)
@@ -125,7 +125,7 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
 
     @MainActor
     private static func startPreheat() async {
-        await CarModel.shared.startPreheat(waitForCar: false)
+        await CarModel.shared.scheduledPreheat()
     }
 
     // MARK: UNUserNotificationCenterDelegate
