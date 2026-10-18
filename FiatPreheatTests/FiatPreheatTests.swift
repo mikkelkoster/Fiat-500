@@ -85,7 +85,8 @@ final class RemoteTests: XCTestCase {
         XCTAssertEqual(RemoteCommand.trunkUnlock.endpoint, .init(command: "ROTRUNKUNLOCK", version: "v2", path: "remote"))
         XCTAssertEqual(RemoteCommand.chargeNow.endpoint, .init(command: "CNOW", version: "v1", path: "ev/chargenow"))
         XCTAssertEqual(RemoteCommand.chargeNow.fallback, .init(command: "START_CHARGE", version: "v4", path: "ev/chargenow"))
-        XCTAssertEqual(RemoteCommand.deepRefresh.fallback, .init(command: "DEEPREFRESH2", version: "v2", path: "ev"))
+        // Not py-uconnect's DEEPREFRESH2: the v2 endpoint answered 400 "must be DEEPREFRESH".
+        XCTAssertEqual(RemoteCommand.deepRefresh.fallback, .init(command: "DEEPREFRESH", version: "v2", path: "ev"))
         XCTAssertEqual(RemoteCommand.locate.endpoint, .init(command: "VF", version: "v1", path: "location/"))
         XCTAssertNil(RemoteCommand.preconditionOn.fallback)
     }
