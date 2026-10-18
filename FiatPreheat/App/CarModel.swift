@@ -377,12 +377,32 @@ final class CarModel {
     /// and if the car doesn't answer, the numbers already shown stay.
     func wakeQuietly() async {
         guard hasAccount, !Demo.isActive, let vin = selectedVIN,
-              availability(of: .deepRefresh) == .available else { return }
+              availability(of: .deepRefresh) == .available, wakeState != .waking else { return }
+        wakeState = .waking
         await client.setAccount(account)
-        guard let id = try? await client.send(.deepRefresh, vin: vin) else { return }
-        if await client.waitForResult(vin: vin, correlationId: id) == .succeeded {
-            await refreshStatus()
+        do {
+            let id = try await client.send(.deepRefresh, vin: vin)
+            if await client.waitForResult(vin: vin, correlationId: id) == .succeeded {
+                await refreshStatus()
+                wakeState = .idle
+                return
+            }
+            wakeState = .failed("The car didn't answer")
+        } catch {
+            wakeState = .failed(Self.shortReason(error))
         }
+        // The note stays a while, then the line goes back to the car's last report.
+        try? await Task.sleep(for: .seconds(8))
+        if case .failed = wakeState { wakeState = .idle }
+    }
+
+    enum WakeState: Equatable { case idle, waking, failed(String) }
+    /// Asking the car for fresh numbers: the header says so, and says if it came to nothing.
+    private(set) var wakeState: WakeState = .idle
+
+    private static func shortReason(_ error: Error) -> String {
+        if case UconnectError.requestFailed(let code, _) = error { return "Fiat refused (\(code))" }
+        return "Couldn't reach Fiat"
     }
 
     // MARK: Cars

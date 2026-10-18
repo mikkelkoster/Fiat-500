@@ -140,12 +140,20 @@ struct HomeScreen: View {
         return statusText
     }
 
+    /// The numbers are only as new as the car's last report. Say that plainly: a fresh report is
+    /// "Updated", an old one "Car reported", and while the car is being asked, say so.
     private var statusText: String {
-        guard let updated = model.status.map({ $0.reportedAt ?? $0.updatedAt }) else {
+        guard let reported = model.status.map({ $0.reportedAt ?? $0.updatedAt }) else {
             return model.statusError == nil ? "Loading…" : "Couldn't reach the car · pull to retry"
         }
-        let time = updated.formatted(date: .omitted, time: .shortened)
-        return Calendar.current.isDateInToday(updated) ? "Updated \(time)" : "Updated \(updated.formatted(.dateTime.day().month(.abbreviated))) \(time)"
+        let time = Calendar.current.isDateInToday(reported)
+            ? reported.formatted(date: .omitted, time: .shortened)
+            : "\(reported.formatted(.dateTime.day().month(.abbreviated))) \(reported.formatted(date: .omitted, time: .shortened))"
+        switch model.wakeState {
+        case .waking: return "Waking the car…"
+        case .failed(let why): return "\(why) · reported \(time)"
+        case .idle: return model.isStale ? "Car reported \(time)" : "Updated \(time)"
+        }
     }
 
     /// Battery and range as two gauges you swipe between, free on the page: read-only, so nothing
