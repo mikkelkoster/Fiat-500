@@ -13,7 +13,7 @@ struct HomeScreen: View {
     enum Sheet: String, Identifiable { case find, schedule, settings, trips; var id: String { rawValue } }
 
     /// The gauge's height and how far it reaches up over the car.
-    private static let gaugeHeight: CGFloat = 184
+    private static let gaugeHeight: CGFloat = 172
     private static let gaugeOverlap: CGFloat = 104
 
     /// Everything under the hero: the gauge (less its overlap), Heat cabin, the action row, the
@@ -157,7 +157,7 @@ struct HomeScreen: View {
             } else {
                 ArcGauge(fraction: model.rangeFraction, color: color, value: range,
                          unit: model.useMiles ? "mi" : "km", caption: "Range", captionColor: V.textMuted,
-                         footnote: fullRangeText, active: active)
+                         active: active)
             }
         }
         .frame(maxWidth: .infinity)
@@ -172,18 +172,10 @@ struct HomeScreen: View {
         .accessibilityLabel(gaugeSummary)
     }
 
-    /// What a full charge reaches: the measure of the range arc.
-    private var fullRangeText: String? {
-        guard let km = model.rangeKm, let soc = model.status?.stateOfCharge, soc > 0 else { return nil }
-        let full = max(model.bestFullRangeKm ?? 0, km * 100 / soc)
-        return model.useMiles ? "of \(Int(full / 1.609)) mi" : "of \(Int(full)) km"
-    }
-
     private var gaugeSummary: String {
         var parts: [String] = []
         if let soc = model.status?.stateOfCharge { parts.append("Battery \(Int(soc)) percent") }
         if let km = model.rangeKm { parts.append(model.useMiles ? "range \(Int(km / 1.609)) miles" : "range \(Int(km)) kilometres") }
-        if let full = fullRangeText { parts.append(full.replacingOccurrences(of: "km", with: "kilometres").replacingOccurrences(of: " mi", with: " miles")) }
         if model.status?.isCharging == true { parts.append("charging, full \(fullBy)") }
         return parts.isEmpty ? "Battery not loaded yet" : parts.joined(separator: ", ")
     }
@@ -333,8 +325,6 @@ struct ArcGauge: View {
     let unit: String
     let caption: String
     let captionColor: Color
-    /// A quiet line in the opening at the bottom, plain text.
-    var footnote: String? = nil
     /// The page on show: it fills and counts up when the app opens and each time it's swiped to.
     var active = true
 
@@ -380,18 +370,26 @@ struct ArcGauge: View {
                 Text(caption).font(V.label).foregroundStyle(captionColor)
             }
             .offset(y: 4)
-            if let footnote {
-                Text(footnote).font(V.label).foregroundStyle(V.textFaint)
-                    .offset(y: 62)
-                    .opacity(progress)
-            }
+
         }
         .frame(width: 148, height: 148)
         .frame(maxWidth: .infinity)
         // On opening, wait for the launch transition so the fill is seen.
         .onAppear { if active { replay(after: 0.35) } }
         .onChange(of: active) { _, isActive in
-            if isActive { replay() } else { shown = 0 }
+            if isActive {
+                replay()
+            } else {
+                // Stay full while sliding out; empty once gone, ready to fill when it comes back.
+                Task {
+                    try? await Task.sleep(for: .milliseconds(450))
+                    if !active {
+                        var reset = Transaction()
+                        reset.disablesAnimations = true
+                        withTransaction(reset) { shown = 0 }
+                    }
+                }
+            }
         }
         .onChange(of: value) { _, new in
             guard active else { return }
@@ -400,7 +398,7 @@ struct ArcGauge: View {
     }
 
     /// From empty to the value, again.
-    private func replay(after delay: Double = 0.05) {
+    private func replay(after delay: Double = 0.12) {
         var reset = Transaction()
         reset.disablesAnimations = true
         withTransaction(reset) { shown = 0 }
@@ -462,10 +460,10 @@ struct GaugePager<Content: View>: View {
 
     /// The window the gauges slide through: a little wider than a gauge, fading at its sides.
     private let width: CGFloat = 230
-    private static var settle: Animation { .spring(response: 0.45, dampingFraction: 0.7) }
 
     var body: some View {
-        VStack(spacing: 8) {
+        // The arc's opening is empty, so the dots sit up in it.
+        VStack(spacing: -4) {
             HStack(spacing: 0) {
                 ForEach(0..<count, id: \.self) { i in
                     content(i, i == page).frame(width: width)
@@ -496,14 +494,20 @@ struct GaugePager<Content: View>: View {
                     .onEnded { value in
                         defer { sideways = nil }
                         guard sideways == true else { return }
-                        let flung = value.predictedEndTranslation.width
+                        // Halfway across, or a flick either way, turns the page.
+                        let speed = value.velocity.width
                         var next = page
-                        if flung < -width * 0.35 { next = min(count - 1, page + 1) }
-                        if flung > width * 0.35 { next = max(0, page - 1) }
+                        if value.translation.width < -width * 0.5 || speed < -250 { next = min(count - 1, page + 1) }
+                        if value.translation.width > width * 0.5 || speed > 250 { next = max(0, page - 1) }
                         if next != page { Haptics.select() }
-                        withAnimation(Self.settle) { page = next; drag = 0 }
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { head = CGFloat(next) }
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.72).delay(0.06)) { tail = CGFloat(next) }
+                        // Carry on at the finger's speed into a stiff spring: quick, a hair of overshoot.
+                        let remaining = (CGFloat(page - next) * width) - drag
+                        let velocity = abs(remaining) > 1 ? Double(speed / remaining) : 0
+                        withAnimation(.interpolatingSpring(stiffness: 420, damping: 34, initialVelocity: velocity)) {
+                            page = next; drag = 0
+                        }
+                        withAnimation(.spring(response: 0.22, dampingFraction: 0.85)) { head = CGFloat(next) }
+                        withAnimation(.spring(response: 0.34, dampingFraction: 0.8).delay(0.04)) { tail = CGFloat(next) }
                     }
             )
             dots
