@@ -160,7 +160,9 @@ enum RemoteCommand: String, Sendable, CaseIterable {
     var fallback: Endpoint? {
         switch self {
         case .chargeNow: Endpoint(command: "START_CHARGE", version: "v4", path: "ev/chargenow")
-        case .deepRefresh: Endpoint(command: "DEEPREFRESH2", version: "v2", path: "ev")
+        // The v2 endpoint names it DEEPREFRESH too: Fiat answers 400 "must be DEEPREFRESH" to
+        // the DEEPREFRESH2 py-uconnect sends (seen on a 2022 500e, 2026-10-18).
+        case .deepRefresh: Endpoint(command: "DEEPREFRESH", version: "v2", path: "ev")
         default: nil
         }
     }

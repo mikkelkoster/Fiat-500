@@ -136,7 +136,7 @@ struct HomeScreen: View {
     }
 
     private var updatedText: String {
-        if Demo.isSample { return "Sample car" }
+        if Demo.isSample { return "Nothing is sent to a car" }
         return statusText
     }
 
@@ -310,9 +310,9 @@ struct HomeScreen: View {
         _ = await (status, location, minimum)
         refreshing = false
         // The numbers are only as new as the car's last report; if that's old, ask the car itself.
-        // That takes a minute or so; a note says when it's in.
-        if !Demo.isActive, model.isStale, model.availability(of: .deepRefresh) == .available, !model.isBusy {
-            Task { await model.perform(.deepRefresh) }
+        // That takes a minute or so, quietly; the numbers update when it answers.
+        if !Demo.isActive, model.isStale, !model.isBusy {
+            Task { await model.wakeQuietly() }
         }
     }
 
@@ -379,6 +379,13 @@ struct ArcGauge: View {
             .offset(y: 4)
         }
         .frame(width: 176, height: 176)
+        // A tap fills it again from empty.
+        .contentShape(Circle())
+        .onTapGesture {
+            guard value != nil else { return }
+            Haptics.select()
+            replay(after: 0.02)
+        }
         .frame(maxWidth: .infinity)
         .animation(.easeOut(duration: 0.3), value: value == nil)
         // On opening, wait for the launch transition so the fill is seen.

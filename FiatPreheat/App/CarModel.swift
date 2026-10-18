@@ -67,7 +67,11 @@ final class CarModel {
 
     /// Where each of those pictures meets the ground, for its shadow.
     private(set) var grounds: [String: GroundShape] = [:]
-    var carGround: GroundShape? { selectedVIN.flatMap { grounds[$0] } }
+    var carGround: GroundShape? {
+        if Demo.isSample { return Self.coveredGround }
+        return selectedVIN.flatMap { grounds[$0] }
+    }
+    private static let coveredGround = UIImage(named: "car-covered").flatMap(CarPicture.ground(of:))
 
     /// The longest range a full charge has given this car, learned from status reads, so the range
     /// gauge can show this charge against the car's best (cold weather shortens the arc).
@@ -150,12 +154,15 @@ final class CarModel {
 
     /// The picture of the car. For now the one render we have; other cars get a silhouette.
     var carImage: Image? {
+        // The sample car is a prototype under a cover: no real car's picture or paint.
+        if Demo.isSample { return Image("car-covered") }
         if !paints.isEmpty { return Image(CarPaint.fiat500e(matching: carColorHex).imageName) }
         return selectedVIN.flatMap { pictures[$0] }.map { Image(uiImage: $0) }
     }
 
     /// The factory paints we have pictures of for this car; empty when we only have a silhouette.
     var paints: [CarPaint] {
+        if Demo.isSample { return [] }
         guard let vehicle else { return Demo.isActive ? CarPaint.fiat500e : [] }
         let isNew500 = vehicle.vin.hasPrefix("ZFAEFAC") || (vehicle.model ?? "").localizedCaseInsensitiveContains("500")
         return isNew500 ? CarPaint.fiat500e : []
@@ -244,8 +251,9 @@ final class CarModel {
         onboarded = Demo.screen != "onboarding"
         vehicles = Demo.vehicles
         selectedVIN = Demo.vehicle.vin
-        plate = "ED 35079"
-        carName = UserDefaults.standard.string(forKey: "demoName") ?? "Fiat 500e"
+        // The sample is no particular car; the screenshot demo keeps its 500e.
+        plate = Demo.isSample ? "VARME" : "ED 35079"
+        carName = UserDefaults.standard.string(forKey: "demoName") ?? (Demo.isSample ? "Sample car" : "Fiat 500e")
         carColorHex = UserDefaults.standard.string(forKey: "demoColor") ?? "#18181b"
         status = UserDefaults.standard.bool(forKey: "demoLoading") ? nil : Demo.status
         defaults.set(300.0, forKey: "bestFullRange.\(Demo.vehicle.vin)")
@@ -363,6 +371,18 @@ final class CarModel {
         guard var km = status.range else { return "–" }
         if status.rangeUnit?.lowercased().hasPrefix("mi") == true { km *= 1.609 }
         return useMiles ? "\(Int(km / 1.609)) mi" : "\(Int(km)) km"
+    }
+
+    /// Asks the car itself for fresh numbers, in the background: no message, no busy buttons,
+    /// and if the car doesn't answer, the numbers already shown stay.
+    func wakeQuietly() async {
+        guard hasAccount, !Demo.isActive, let vin = selectedVIN,
+              availability(of: .deepRefresh) == .available else { return }
+        await client.setAccount(account)
+        guard let id = try? await client.send(.deepRefresh, vin: vin) else { return }
+        if await client.waitForResult(vin: vin, correlationId: id) == .succeeded {
+            await refreshStatus()
+        }
     }
 
     // MARK: Cars

@@ -51,7 +51,15 @@ struct OnboardingFlow: View {
                 .buttonStyle(.plain)
                 VStack(spacing: 10) {
                     Text("Works with").eyebrowStyle()
-                    Text(Brand.allCases.map(\.name).joined(separator: "  ·  ")).font(V.label).foregroundStyle(V.textMuted).multilineTextAlignment(.center)
+                    // Two rows of marks, quiet, as in the design.
+                    VStack(spacing: 12) {
+                        HStack(spacing: 18) { ForEach([Brand.fiat, .jeep, .alfaRomeo, .maserati]) { BrandMark(brand: $0, scale: 0.72) } }
+                        HStack(spacing: 18) { ForEach([Brand.chrysler, .dodge, .ram]) { BrandMark(brand: $0, scale: 0.72) } }
+                    }
+                    .foregroundStyle(V.text)
+                    .opacity(0.8)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Brand.allCases.map(\.name).joined(separator: ", "))
                     Text("Brand names belong to their owners. Varme is an independent app, not affiliated with Stellantis.")
                         .font(V.sora(11)).foregroundStyle(V.textFaint).multilineTextAlignment(.center)
                 }
@@ -71,8 +79,9 @@ struct OnboardingFlow: View {
                         Haptics.select(); brand = b
                         if !b.regions.contains(region) { region = b.regions[0] }
                     } label: {
-                        Text(b.name.uppercased()).font(V.sora(14, .semibold)).tracking(2).foregroundStyle(V.text)
-                            .frame(maxWidth: .infinity).frame(height: 72)
+                        BrandMark(brand: b)
+                            .foregroundStyle(V.text)
+                            .frame(maxWidth: .infinity).frame(height: 84)
                             .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(brand == b ? V.raised : V.surface))
                             .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(brand == b ? V.text : V.raised, lineWidth: brand == b ? 1.5 : 1))
                             .opacity(brand == b ? 1 : 0.75)
@@ -358,5 +367,31 @@ struct CarLineup: View {
         }
         .frame(height: 300)
         .accessibilityLabel("A city car, a saloon, an SUV and a pickup, side by side")
+    }
+}
+
+/// A brand's mark in white: the logo where it's a simple shape, the name set in Sora where the
+/// logo is a coloured badge (Alfa Romeo, Chrysler). Sized as on the brand step; `scale` shrinks it.
+struct BrandMark: View {
+    let brand: Brand
+    var scale: CGFloat = 1
+
+    var body: some View {
+        Group {
+            switch brand {
+            case .fiat: logo("logo-fiat", 30)
+            case .jeep: logo("logo-jeep", 18)
+            case .maserati: logo("logo-maserati", 26)
+            case .dodge: logo("logo-dodge", 13)
+            case .ram: logo("logo-ram", 12)
+            case .alfaRomeo, .chrysler:
+                Text(brand.name.uppercased()).font(V.sora(13 * scale, .semibold)).tracking(2 * scale).lineLimit(1).fixedSize()
+            }
+        }
+        .accessibilityLabel(brand.name)
+    }
+
+    private func logo(_ name: String, _ height: CGFloat) -> some View {
+        Image(name).renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(height: height * scale)
     }
 }
