@@ -37,15 +37,7 @@ struct VButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: height)
             .glassCapsule(tint: glassTint)
-            .overlay {
-                if glassSheen {
-                    Capsule().fill(LinearGradient(colors: [.white.opacity(0.22), .white.opacity(0.04), .clear],
-                                                  startPoint: .top, endPoint: .bottom))
-                        .overlay(Capsule().strokeBorder(LinearGradient(colors: [.white.opacity(0.35), .white.opacity(0.05)],
-                                                                       startPoint: .top, endPoint: .bottom), lineWidth: 1))
-                        .allowsHitTesting(false)
-                }
-            }
+            .overlay { if glassSheen { GlassSheen() } }
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -369,5 +361,17 @@ extension View {
         } else {
             background(shape.fill(.ultraThinMaterial).overlay(shape.fill((tint ?? .clear).opacity(0.12))))
         }
+    }
+}
+
+/// A soft light across the top of a capsule and a bright upper edge, so a tinted glass still reads
+/// as glass rather than a solid fill. Shared by Heat cabin and the slider's knob.
+struct GlassSheen: View {
+    var body: some View {
+        Capsule().fill(LinearGradient(colors: [.white.opacity(0.22), .white.opacity(0.04), .clear],
+                                      startPoint: .top, endPoint: .bottom))
+            .overlay(Capsule().strokeBorder(LinearGradient(colors: [.white.opacity(0.35), .white.opacity(0.05)],
+                                                           startPoint: .top, endPoint: .bottom), lineWidth: 1))
+            .allowsHitTesting(false)
     }
 }

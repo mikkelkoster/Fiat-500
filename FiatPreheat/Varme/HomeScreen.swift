@@ -706,7 +706,9 @@ struct UnlockSlider: View {
                     .frame(maxWidth: .infinity).opacity(1 - Double(drag / travel) * 1.5)
                 PhIcon(name: locked ? "lock" : "lock-open", size: 20).foregroundStyle(V.ground)
                     .frame(width: 50, height: 50)
-                    .glassCapsule(tint: locked ? V.text : V.amber)
+                    // The same frosted treatment as Heat cabin, in white (amber when unlocked).
+                    .glassCapsule(tint: (locked ? V.text : V.amber).opacity(0.95))
+                    .overlay(GlassSheen())
                     .offset(x: 5 + drag)
                     .gesture(DragGesture()
                         .onChanged { drag = min(travel, max(0, $0.translation.width)) }
