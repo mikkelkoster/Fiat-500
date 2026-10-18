@@ -34,6 +34,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         // Must happen before launch finishes so background tasks and notification actions are delivered.
         ScheduleCoordinator.shared.configure()
+        WatchLink.shared.activate()
         return true
     }
 }

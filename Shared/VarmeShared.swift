@@ -1,10 +1,16 @@
+#if canImport(ActivityKit)
 import ActivityKit
+#endif
 import Foundation
 
 // Shared between the app and the widget extension: what the widgets show, and the Live Activity.
 
 enum VarmeGroup {
+    #if os(watchOS)
+    static let id = "group.dk.koster.varme.watch"
+    #else
     static let id = "group.dk.koster.varme"
+    #endif
     static let snapshotKey = "snapshot"
     static var defaults: UserDefaults { UserDefaults(suiteName: id) ?? .standard }
 }
@@ -48,6 +54,7 @@ struct CarSnapshot: Codable, Equatable {
     }
 }
 
+#if canImport(ActivityKit) && os(iOS)
 /// The preheat Live Activity: fixed facts in the attributes, the end time in the state.
 struct PreheatActivityAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
@@ -59,6 +66,7 @@ struct PreheatActivityAttributes: ActivityAttributes {
     var carName: String
     var plate: String
 }
+#endif
 
 /// Deep links the widgets open the app with; the app sends the command.
 enum VarmeLink {

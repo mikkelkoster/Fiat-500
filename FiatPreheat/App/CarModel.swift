@@ -344,6 +344,7 @@ final class CarModel {
                     isCharging: status?.isCharging == true, isPluggedIn: status?.isPluggedIn == true, isLocked: status?.isLocked,
                     preheatStartedAt: isPreheating ? lastPreheatStart : nil, nextSchedule: next, hasCarImage: carImage != nil,
                     updatedAt: Date()).save()
+        if let snapshot = CarSnapshot.load() { WatchLink.shared.publish(snapshot) }
         WidgetCenter.shared.reloadAllTimelines()
         if #available(iOS 18.0, *) { ControlCenter.shared.reloadAllControls() }
     }
