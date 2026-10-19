@@ -35,7 +35,7 @@ BATTERY AND RANGE
 A clear gauge shows charge and range, coloured by how much is left. Swipe between them; pull down to refresh.
 
 LOCK, UNLOCK, LIGHTS, BOOT, FIND
-Slide to lock or unlock. Flash the lights to spot the car in a car park, open the boot, and see where the car is on a map with walking directions.
+Slide to lock or unlock. Flash the lights to spot the car in a car park, unlock the boot, and see where the car is on a map with walking directions.
 
 ALERTS
 Optional notifications when charging finishes, the battery runs low or the car has been left unlocked.

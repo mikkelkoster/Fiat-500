@@ -261,7 +261,7 @@ struct HomeScreen: View {
                 Task { await model.perform(.lights) }
             }
             ActionTile(icon: "map-pin", title: "Find", busyTitle: "Locating…", state: tileState(.locate)) { sheet = .find }
-            ActionTile(icon: "boot", title: "Boot", busyTitle: "Opening…", state: tileState(.trunkUnlock)) { Task { await model.perform(.trunkUnlock) } }
+            ActionTile(icon: "boot", title: "Boot", busyTitle: "Unlocking…", state: tileState(.trunkUnlock)) { Task { await model.perform(.trunkUnlock) } }
             scheduleTile
         }
     }
