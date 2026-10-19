@@ -110,7 +110,14 @@ do {
     }
 
     step("Reading status for \(vin)")
+    if command == "status" {
+        // Everything Fiat says, so a field the app reads wrong can be spotted.
+        let raw = try await client.rawStatus(vin: vin)
+        let data = try JSONSerialization.data(withJSONObject: raw, options: [.prettyPrinted, .sortedKeys])
+        print(String(decoding: data, as: UTF8.self))
+    }
     let status = try await client.status(vin: vin)
+    print("✓ Reported \(status.reportedAt.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "?")")
     let locked = status.isLocked.map { $0 ? "locked" : "unlocked" } ?? "?"
     print("✓ Battery \(status.stateOfCharge.map { "\(Int($0))%" } ?? "?"), range \(status.range.map { "\(Int($0)) \(status.rangeUnit ?? "")" } ?? "?"), plugged in: \(status.isPluggedIn.map { $0 ? "yes" : "no" } ?? "?"), charging: \(status.isCharging.map { $0 ? "yes" : "no" } ?? "?"), doors: \(locked)")
     if command == "status" { exit(0) }

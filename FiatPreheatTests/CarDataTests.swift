@@ -111,3 +111,15 @@ final class CarAlertsTests: XCTestCase {
         XCTAssertEqual(Weekdays.text([2, 3, 4, 6]), "Mon – Wed, Fri")
     }
 }
+
+final class ChargingWordsTests: XCTestCase {
+    func testReadsTheMeaning() {
+        XCTAssertEqual(UconnectClient.charging("CHARGING"), true)
+        XCTAssertEqual(UconnectClient.charging("CHARGING_AC"), true)
+        XCTAssertEqual(UconnectClient.charging("Charging in progress"), true)
+        XCTAssertEqual(UconnectClient.charging("NOT_CHARGING"), false)
+        XCTAssertEqual(UconnectClient.charging("CHARGE_COMPLETE"), false)
+        XCTAssertEqual(UconnectClient.charging("CHARGING_COMPLETE"), false)
+        XCTAssertNil(UconnectClient.charging(nil))
+    }
+}

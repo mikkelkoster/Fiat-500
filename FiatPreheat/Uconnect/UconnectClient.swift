@@ -168,6 +168,25 @@ actor UconnectClient {
         }
     }
 
+    /// Fiat words charging differently across cars and years ("CHARGING", "CHARGING_AC",
+    /// "Charging in progress", "NOT_CHARGING", "CHARGE_COMPLETE"); read the meaning, not one spelling.
+    static func charging(_ value: Any?) -> Bool? {
+        guard let text = (value as? String)?.uppercased().replacingOccurrences(of: " ", with: "_"), !text.isEmpty else {
+            return value as? Bool
+        }
+        if text.hasPrefix("NOT") || text.hasPrefix("NO_") || text.contains("COMPLETE") || text.contains("IDLE")
+            || text.contains("STOP") || text.contains("DISCONNECT") { return false }
+        return text.contains("CHARGING") || text.contains("IN_PROGRESS")
+    }
+
+    /// Both status replies as Fiat sends them, for the command-line tool.
+    func rawStatus(vin: String) async throws -> [String: Any] {
+        let uid = try await authenticatedUID()
+        var out: [String: Any] = ["status": try await signedRequest("GET", "/v3/accounts/\(uid)/vehicles/\(vin)/status/")]
+        if let remote = try? await signedRequest("GET", "/v1/accounts/\(uid)/vehicles/\(vin)/remote/status") { out["remote"] = remote }
+        return out
+    }
+
     func status(vin: String) async throws -> VehicleStatus {
         let uid = try await authenticatedUID()
         let json = try await signedRequest("GET", "/v3/accounts/\(uid)/vehicles/\(vin)/status/")
@@ -177,8 +196,8 @@ actor UconnectClient {
             stateOfCharge: number(battery?["stateOfCharge"]),
             range: number(range?["value"]),
             rangeUnit: range?["unit"] as? String,
-            isCharging: (battery?["chargingStatus"] as? String).map { $0 == "CHARGING" },
-            isPluggedIn: battery?["plugInStatus"] as? Bool,
+            isCharging: Self.charging(battery?["chargingStatus"]),
+            isPluggedIn: (battery?["plugInStatus"] as? Bool) ?? (battery?["plugInStatus"] as? String).map { $0.uppercased() == "TRUE" || $0.uppercased().contains("PLUGGED_IN") },
             updatedAt: Date()
         )
         status.reportedAt = number(json["timestamp"]).map { Date(timeIntervalSince1970: $0 / 1000) }
