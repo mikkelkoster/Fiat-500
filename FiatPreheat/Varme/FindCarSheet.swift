@@ -43,7 +43,8 @@ struct FindCarSheet: View {
                 }
                 Button { Task { await model.perform(.locate) } } label: {
                     HStack(spacing: 6) {
-                        PhIcon(name: "arrows-clockwise", size: 14)
+                        if updating { ProgressView().controlSize(.mini).tint(V.text).frame(width: 14, height: 14) }
+                        else { PhIcon(name: "arrows-clockwise", size: 14) }
                         Text(updating ? "Asking the car…" : "Update").font(V.label)
                     }
                     .foregroundStyle(V.text)
@@ -65,7 +66,7 @@ struct FindCarSheet: View {
                     if let location = model.location { openURL(location.directionsURL) }
                 }
                 .disabled(model.location == nil)
-                VButton(title: "Flash lights", icon: "sun", prominent: false) {
+                VButton(title: flashing ? "Flashing…" : "Flash lights", icon: "sun", prominent: false, loading: flashing) {
                     Task { await model.perform(.lights) }
                 }
                 .disabled(model.isBusy || model.availability(of: .lights) != .available)
@@ -88,6 +89,13 @@ struct FindCarSheet: View {
             Task { await describe() }
         }
         .onChange(of: locator.location) { _, _ in updateDistance() }
+    }
+
+    private var flashing: Bool {
+        switch model.commandState {
+        case .sending(.lights), .waitingForCar(.lights): true
+        default: false
+        }
     }
 
     private var updating: Bool {

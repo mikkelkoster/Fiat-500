@@ -5,7 +5,6 @@ struct HomeScreen: View {
     @Environment(\.scenePhase) private var phase
     @State private var sheet: Sheet?
     @State private var toast: ToastItem?
-    @State private var confirmUnlock = false
     @State private var pull: CGFloat = 0
     @State private var refreshing = false
     /// Which gauge shows, battery or range; kept between launches.
@@ -42,9 +41,9 @@ struct HomeScreen: View {
                     actionTiles.padding(.horizontal, V.gutter)
                     UnlockSlider(locked: model.status?.isLocked ?? true,
                                  pending: isRunning(.unlock) ? true : isRunning(.lock) ? false : nil,
-                                 busy: model.isBusy || model.availability(of: .lock) != .available,
-                                 holding: confirmUnlock) { unlock in
-                        if unlock { confirmUnlock = true } else { Task { await model.perform(.lock) } }
+                                 busy: model.isBusy || model.availability(of: .lock) != .available) { unlock in
+                        // The full slide is the confirmation; no question on top of it.
+                        Task { await model.perform(unlock ? .unlock : .lock) }
                     }
                     .padding(.horizontal, V.gutter)
                     Spacer(minLength: 0)
@@ -83,9 +82,6 @@ struct HomeScreen: View {
             case .settings: SettingsSheet()
             case .trips: TripsSheet()
             }
-        }
-        .confirmationDialog("Unlock \(model.carName)?", isPresented: $confirmUnlock, titleVisibility: .visible) {
-            Button("Unlock") { Task { await model.perform(.unlock) } }
         }
         .onChange(of: model.commandState) { _, state in show(ToastItem(state, status: model.status)) }
         .onChange(of: model.pendingSheet) { _, which in
@@ -261,11 +257,11 @@ struct HomeScreen: View {
 
     private var actionTiles: some View {
         HStack(spacing: 8) {
-            ActionTile(icon: "sun", title: "Flash lights", state: tileState(.lights)) {
+            ActionTile(icon: "sun", title: "Flash lights", busyTitle: "Flashing…", state: tileState(.lights)) {
                 Task { await model.perform(.lights) }
             }
-            ActionTile(icon: "map-pin", title: "Find", state: tileState(.locate)) { sheet = .find }
-            ActionTile(icon: "boot", title: "Boot", state: tileState(.trunkUnlock)) { Task { await model.perform(.trunkUnlock) } }
+            ActionTile(icon: "map-pin", title: "Find", busyTitle: "Locating…", state: tileState(.locate)) { sheet = .find }
+            ActionTile(icon: "boot", title: "Boot", busyTitle: "Opening…", state: tileState(.trunkUnlock)) { Task { await model.perform(.trunkUnlock) } }
             scheduleTile
         }
     }
@@ -775,17 +771,29 @@ struct ActionTile: View {
     enum State { case idle, active, pending, unavailable }
     let icon: String
     let title: String
+    /// What it says while the car works on it.
+    var busyTitle: String? = nil
     let state: State
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                PhIcon(name: icon, size: 26)
-                Text(title).font(V.sora(14)).lineLimit(1).minimumScaleFactor(0.8)
+                ZStack {
+                    if state == .pending {
+                        ProgressView().tint(V.text).transition(.blurReplace.combined(with: .scale(0.6)))
+                    } else {
+                        PhIcon(name: icon, size: 26).transition(.blurReplace.combined(with: .scale(0.6)))
+                    }
+                }
+                .frame(width: 26, height: 26)
+                Text(state == .pending ? busyTitle ?? title : title)
+                    .font(V.sora(14)).lineLimit(1).minimumScaleFactor(0.8)
+                    .contentTransition(.opacity)
             }
             .padding(.horizontal, 4)
-            .foregroundStyle(state == .active ? V.amber : state == .pending ? V.textFaint : state == .unavailable ? V.textFaint : V.text)
+            .foregroundStyle(state == .active ? V.amber : state == .pending ? V.textMuted : state == .unavailable ? V.textFaint : V.text)
+            .animation(.spring(duration: 0.4, bounce: 0.1), value: state)
             .frame(maxWidth: .infinity).frame(height: 78)
             .glassTile(tint: state == .active ? V.amber : nil)
             .contentShape(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous))
