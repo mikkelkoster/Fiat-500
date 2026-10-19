@@ -370,7 +370,8 @@ final class CarModel {
     /// and if the car doesn't answer, the numbers already shown stay.
     func wakeQuietly() async {
         guard hasAccount, !Demo.isActive, let vin = selectedVIN,
-              availability(of: .deepRefresh) == .available, wakeState != .waking else { return }
+              availability(of: .deepRefresh) == .available, wakeState != .waking,
+              !wakeRefused(vin) else { return }
         wakeState = .waking
         await client.setAccount(account)
         do {
@@ -381,12 +382,22 @@ final class CarModel {
                 return
             }
             wakeState = .failed("The car didn't answer")
+        } catch UconnectError.requestFailed(403, _) {
+            // Fiat won't wake this car on request (seen on a 2022 500e with My Remote). Don't ask
+            // again on every pull; try once more after a week in case that changes.
+            defaults.set(Date(), forKey: "wakeRefused.\(vin)")
+            wakeState = .failed("Can't wake this car remotely")
         } catch {
             wakeState = .failed(Self.shortReason(error))
         }
         // The note stays a while, then the line goes back to the car's last report.
         try? await Task.sleep(for: .seconds(8))
         if case .failed = wakeState { wakeState = .idle }
+    }
+
+    private func wakeRefused(_ vin: String) -> Bool {
+        guard let when = defaults.object(forKey: "wakeRefused.\(vin)") as? Date else { return false }
+        return Date().timeIntervalSince(when) < 7 * 86_400
     }
 
     enum WakeState: Equatable { case idle, waking, failed(String) }

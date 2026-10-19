@@ -145,13 +145,16 @@ struct HomeScreen: View {
         guard let reported = model.status.map({ $0.reportedAt ?? $0.updatedAt }) else {
             return model.statusError == nil ? "Loading…" : "Couldn't reach the car · pull to retry"
         }
-        let time = Calendar.current.isDateInToday(reported)
-            ? reported.formatted(date: .omitted, time: .shortened)
-            : "\(reported.formatted(.dateTime.day().month(.abbreviated))) \(reported.formatted(date: .omitted, time: .shortened))"
+        let clock = reported.formatted(date: .omitted, time: .shortened)
+        let calendar = Calendar.current
+        let time = calendar.isDateInToday(reported) ? clock
+            : calendar.isDateInYesterday(reported) ? "yesterday \(clock)"
+            : "\(reported.formatted(.dateTime.day().month(.abbreviated))) \(clock)"
         switch model.wakeState {
         case .waking: return "Waking the car…"
-        case .failed(let why): return "\(why) · reported \(time)"
-        case .idle: return model.isStale ? "Car reported \(time)" : "Updated \(time)"
+        // Said once, short enough to fit beside the plate; then back to the report time.
+        case .failed(let why): return why
+        case .idle: return model.isStale ? "Reported \(time)" : "Updated \(time)"
         }
     }
 
