@@ -146,38 +146,15 @@ extension View {
 
 // MARK: - Switch
 
-/// Torque's switch in Varme's colours: 56 × 32, a white knob, the state drawn inside the
-/// track (a check on green when on, a cross on outline when off). The whole row toggles.
+/// The system switch, green when on, so it slides, bounces and sounds like every other iOS switch.
 struct VSwitch: View {
     @Binding var isOn: Bool
-    @Environment(\.isEnabled) private var enabled
 
     var body: some View {
-        let knob: CGFloat = 26, inset: CGFloat = 3, width: CGFloat = 56, height: CGFloat = 32
-        Button {
-            Haptics.select()
-            withAnimation(.snappy(duration: 0.25)) { isOn.toggle() }
-        } label: {
-            ZStack(alignment: .leading) {
-                Capsule().fill(isOn ? V.positive : V.outline)
-                PhIcon(name: "check", size: 12).foregroundStyle(V.ground)
-                    .frame(width: width - knob - inset * 2).offset(x: inset)
-                    .opacity(isOn ? 1 : 0)
-                PhIcon(name: "x", size: 10).foregroundStyle(V.textMuted)
-                    .frame(width: width - knob - inset * 2).offset(x: knob + inset)
-                    .opacity(isOn ? 0 : 1)
-                Circle().fill(.white)
-                    .shadow(color: .black.opacity(0.35), radius: 1.5, y: 1)
-                    .frame(width: knob, height: knob)
-                    .offset(x: isOn ? width - knob - inset : inset)
-            }
-            .frame(width: width, height: height)
-            .opacity(enabled ? 1 : 0.5)
-            .frame(minHeight: V.control)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityRepresentation { Toggle("", isOn: $isOn) }
+        Toggle("", isOn: $isOn.animation(.snappy(duration: 0.25)))
+            .labelsHidden()
+            .tint(V.positive)
+            .fixedSize()
     }
 }
 
