@@ -40,7 +40,10 @@ struct HomeScreen: View {
                     .animation(.easeOut(duration: 0.25), value: canChargeNow)
                     .padding(.horizontal, V.gutter)
                     actionTiles.padding(.horizontal, V.gutter)
-                    UnlockSlider(locked: model.status?.isLocked ?? true, busy: model.isBusy || model.availability(of: .lock) != .available) { unlock in
+                    UnlockSlider(locked: model.status?.isLocked ?? true,
+                                 pending: isRunning(.unlock) ? true : isRunning(.lock) ? false : nil,
+                                 busy: model.isBusy || model.availability(of: .lock) != .available,
+                                 holding: confirmUnlock) { unlock in
                         if unlock { confirmUnlock = true } else { Task { await model.perform(.lock) } }
                     }
                     .padding(.horizontal, V.gutter)
@@ -801,18 +804,24 @@ struct ActionTile: View {
 /// follows the knob, and a finished slide holds there until the car answers.
 struct UnlockSlider: View {
     let locked: Bool
+    /// While a command is on its way to the car: true when unlocking, false when locking.
+    let pending: Bool?
     let busy: Bool
+    /// While the unlock question is up: the knob stays where the slide left it.
+    var holding = false
     let onComplete: (_ unlock: Bool) -> Void
     /// How far the finger has moved the knob from where it rests.
     @State private var drag: CGFloat = 0
     /// After a completed slide, the state it's heading for, held until the car answers.
     @State private var heading: Bool?
+    /// Live copy of "a question or a command is under way", for the timer below to read.
+    @State private var waiting = false
 
     var body: some View {
         GeometryReader { g in
             let travel = g.size.width - 50 - 10
             // Where the knob rests: by the state it's heading for, else the car's.
-            let unlockedSide = heading.map { $0 } ?? !locked
+            let unlockedSide = heading ?? pending ?? !locked
             let rest: CGFloat = unlockedSide ? travel : 0
             let position = min(travel, max(0, rest + drag))
             let red = travel > 0 ? position / travel : 0
@@ -823,8 +832,17 @@ struct UnlockSlider: View {
                     .background(Capsule().fill(V.danger.opacity(0.10 * red)))
                     .shadow(color: V.danger.opacity(0.35 * red), radius: 14)
                 ZStack {
-                    Text("SWIPE TO UNLOCK").foregroundStyle(V.textMuted).opacity(unlockedSide ? 0 : 1)
-                    Text("SWIPE TO LOCK").foregroundStyle(V.danger).opacity(unlockedSide ? 1 : 0)
+                    if let pending {
+                        // Waiting for the car: what it's doing, with a light running through it.
+                        ShimmerText(text: pending ? "UNLOCKING" : "LOCKING", color: pending ? V.danger : V.text)
+                            .transition(.blurReplace)
+                    } else {
+                        ZStack {
+                            Text("SWIPE TO UNLOCK").foregroundStyle(V.textMuted).opacity(unlockedSide ? 0 : 1)
+                            Text("SWIPE TO LOCK").foregroundStyle(V.danger).opacity(unlockedSide ? 1 : 0)
+                        }
+                        .transition(.blurReplace)
+                    }
                 }
                 .font(V.eyebrow).tracking(3)
                 // The words sit in the space the knob isn't in.
@@ -832,8 +850,16 @@ struct UnlockSlider: View {
                 .padding(.leading, unlockedSide ? 0 : 50).padding(.trailing, unlockedSide ? 50 : 0)
                 .opacity(1 - Double(away) * 1.6)
                 ZStack {
-                    PhIcon(name: "lock", size: 20).opacity(red < 0.5 ? 1 : 0)
-                    PhIcon(name: "lock-open", size: 20).opacity(red < 0.5 ? 0 : 1)
+                    if pending != nil {
+                        ProgressView().controlSize(.small).tint(V.ground)
+                            .transition(.blurReplace.combined(with: .scale(0.6)))
+                    } else {
+                        ZStack {
+                            PhIcon(name: "lock", size: 20).opacity(red < 0.5 ? 1 : 0)
+                            PhIcon(name: "lock-open", size: 20).opacity(red < 0.5 ? 0 : 1)
+                        }
+                        .transition(.blurReplace.combined(with: .scale(0.6)))
+                    }
                 }
                 .foregroundStyle(V.ground)
                 .animation(.easeOut(duration: 0.15), value: red < 0.5)
@@ -856,10 +882,16 @@ struct UnlockSlider: View {
                             Haptics.notify(.success)
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { heading = locked; drag = 0 }
                             onComplete(locked)
-                            // If nothing comes of it (the confirmation was cancelled), go back.
+                            // If nothing comes of it (the question was cancelled), go back: once
+                            // nothing is under way, and still nothing a moment later.
                             Task {
-                                try? await Task.sleep(for: .seconds(4))
-                                if !busy, heading != nil { withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) { heading = nil } }
+                                try? await Task.sleep(for: .seconds(1))
+                                while true {
+                                    while waiting { try? await Task.sleep(for: .milliseconds(250)) }
+                                    try? await Task.sleep(for: .milliseconds(600))
+                                    if !waiting { break }
+                                }
+                                if heading != nil { withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) { heading = nil } }
                             }
                         } else {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { drag = 0 }
@@ -868,8 +900,11 @@ struct UnlockSlider: View {
             }
         }
         .frame(height: 60)
-        .opacity(busy ? 0.75 : 1)
+        // Its own command isn't dimmed (the spinner says what's happening); others' are.
+        .opacity(busy && pending == nil ? 0.75 : 1)
         .disabled(busy)
+        .animation(.spring(duration: 0.45, bounce: 0.1), value: pending)
+        .onChange(of: holding || pending != nil, initial: true) { _, now in waiting = now }
         .onChange(of: locked) { _, _ in withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) { heading = nil } }
         .onChange(of: busy) { _, isBusy in
             if !isBusy { withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) { heading = nil } }
@@ -878,6 +913,29 @@ struct UnlockSlider: View {
         .accessibilityLabel(locked ? "Locked. Unlock" : "Unlocked. Lock")
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { onComplete(locked) }
+    }
+
+    /// The label while the car works on it, a soft light running through the letters.
+    struct ShimmerText: View {
+        let text: String
+        let color: Color
+        @State private var run = false
+
+        var body: some View {
+            Text(text).foregroundStyle(color.opacity(0.7))
+                .overlay {
+                    GeometryReader { g in
+                        LinearGradient(colors: [.clear, .white, .clear], startPoint: .leading, endPoint: .trailing)
+                            .frame(width: g.size.width * 0.5)
+                            .offset(x: run ? g.size.width * 1.1 : -g.size.width * 0.6)
+                    }
+                    .mask(Text(text))
+                    .blendMode(.plusLighter)
+                }
+                .onAppear {
+                    withAnimation(.easeInOut(duration: 1.3).repeatForever(autoreverses: false)) { run = true }
+                }
+        }
     }
 
     /// White (zinc-100) at 0 to red (red-400) at 1.
