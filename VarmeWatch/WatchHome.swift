@@ -16,7 +16,7 @@ struct WatchHome: View {
                             tile(icon: car.isLocked == false ? "lock" : "lock-open",
                                  title: car.isLocked == false ? "Lock" : "Unlock",
                                  command: car.isLocked == false ? "lock" : "unlock")
-                            tile(icon: "sun", title: "Lights", command: "lights")
+                            tile(icon: "sun", title: "Flash lights", command: "lights")
                         }
                     } else {
                         VStack(spacing: 8) {
@@ -111,7 +111,7 @@ struct WatchHome: View {
         } label: {
             VStack(spacing: 6) {
                 if model.sending == command { ProgressView().frame(width: 20, height: 20) } else { PhIcon(name: icon, size: 20) }
-                Text(title).font(V.sora(12))
+                Text(title).font(V.sora(12)).lineLimit(1).minimumScaleFactor(0.8)
             }
             .foregroundStyle(V.text)
             .frame(maxWidth: .infinity).frame(height: 64)

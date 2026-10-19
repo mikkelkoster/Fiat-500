@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeScreen: View {
     @Environment(CarModel.self) private var model
+    @Environment(\.scenePhase) private var phase
     @State private var sheet: Sheet?
     @State private var toast: ToastItem?
     @State private var confirmUnlock = false
@@ -83,7 +84,7 @@ struct HomeScreen: View {
         .confirmationDialog("Unlock \(model.carName)?", isPresented: $confirmUnlock, titleVisibility: .visible) {
             Button("Unlock") { Task { await model.perform(.unlock) } }
         }
-        .onChange(of: model.commandState) { _, state in show(ToastItem(state)) }
+        .onChange(of: model.commandState) { _, state in show(ToastItem(state, status: model.status)) }
         .onChange(of: model.pendingSheet) { _, which in
             if which == "find" { sheet = .find; model.pendingSheet = nil }
         }
@@ -96,9 +97,21 @@ struct HomeScreen: View {
                 case "trips": sheet = .trips
                 default: break
                 }
-                return
             }
+        }
+        // Read Fiat again whenever the app comes to the front, then every minute while it's open,
+        // so charging creeps up on screen without pulling. These are reads of what the car last
+        // reported, not wake-ups, so they don't touch the car or its 12 V battery.
+        .task(id: phase) {
+            guard phase == .active, !Demo.isActive else { return }
+            async let location: () = model.loadLocation()
             await model.refreshStatus()
+            await location
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(model.status?.isCharging == true ? 30 : 60))
+                guard !Task.isCancelled, !refreshing else { continue }
+                await model.refreshStatus()
+            }
         }
     }
 
@@ -254,7 +267,7 @@ struct HomeScreen: View {
 
     private var actionTiles: some View {
         HStack(spacing: 8) {
-            ActionTile(icon: "sun", title: "Lights", state: tileState(.lights)) {
+            ActionTile(icon: "sun", title: "Flash lights", state: tileState(.lights)) {
                 Task { await model.perform(.lights) }
             }
             ActionTile(icon: "map-pin", title: "Find", state: tileState(.locate)) { sheet = .find }
@@ -701,8 +714,9 @@ struct ActionTile: View {
         Button(action: action) {
             VStack(spacing: 8) {
                 PhIcon(name: icon, size: 26)
-                Text(title).font(V.sora(14))
+                Text(title).font(V.sora(14)).lineLimit(1).minimumScaleFactor(0.8)
             }
+            .padding(.horizontal, 4)
             .foregroundStyle(state == .active ? V.amber : state == .pending ? V.textFaint : state == .unavailable ? V.textFaint : V.text)
             .frame(maxWidth: .infinity).frame(height: 78)
             .glassTile(tint: state == .active ? V.amber : nil)
@@ -817,12 +831,18 @@ struct ToastItem: Equatable {
     var detail: String? = nil
     var isError = false
 
-    init?(_ state: CarModel.CommandState) {
+    /// Below this, unplugged, a refused heat is most likely the car saving its charge for driving.
+    static let lowForHeating = 30.0
+
+    init?(_ state: CarModel.CommandState, status: VehicleStatus? = nil) {
         switch state {
         case .idle, .sending, .waitingForCar:
             return nil
         case .failed(let message):
             title = "Couldn't reach the car"; detail = message; isError = true
+        case .done(.preconditionOn, .failed, _)
+            where status?.isPluggedIn != true && (status?.stateOfCharge ?? 100) < Self.lowForHeating:
+            title = "Battery may be too low to heat"; detail = "Plug in and try again."; isError = true
         case .done(let command, .failed, _):
             title = "The car didn't accept it"; isError = true
             detail = command == .preconditionOn ? "Check it's parked with enough charge." : "It may be asleep or out of coverage. Try again in a minute."
