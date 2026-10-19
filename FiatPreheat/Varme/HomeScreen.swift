@@ -239,29 +239,20 @@ struct HomeScreen: View {
         .accessibilityLabel("Charge now")
     }
 
-    @ViewBuilder private var preheatButton: some View {
-        if let phase = heatPhase {
-            HeatingButton(phase: phase, minutesLeft: model.preheatMinutesLeft) { Task { await model.stopPreheat() } }
-        } else {
-            let connecting = model.commandState == .sending(.preconditionOn)
-            VButton(title: connecting ? "Connecting…" : "Heat cabin", icon: "flame", height: 60, loading: connecting, glass: true,
-                    // Frosted glass with an orange cast, light text: the glass shows through.
-                    glassTint: V.heat.opacity(0.7), glassInk: .white, glassSheen: true) {
-                Task { await model.startPreheat() }
-            }
-            // Busy stays white (it's saying "Connecting…"); it just ignores taps.
-            .allowsHitTesting(!model.isBusy)
-            .disabled(model.availability(of: .preconditionOn) != .available)
-        }
+    private var preheatButton: some View {
+        HeatControl(phase: heatPhase, minutesLeft: model.preheatMinutesLeft,
+                    canStart: model.availability(of: .preconditionOn) == .available && !model.isBusy,
+                    start: { Task { await model.startPreheat() } },
+                    stop: { Task { await model.stopPreheat() } })
     }
 
-    /// Once the car has the start command, the heating button shows, and Stop works straight away,
-    /// even while we're still waiting for the car to confirm.
-    private var heatPhase: HeatingButton.Phase? {
+    /// Stop works as soon as the car has the start command, even before it confirms.
+    private var heatPhase: HeatControl.Phase {
         switch model.commandState {
         case .sending(.preconditionOff), .waitingForCar(.preconditionOff): return .stopping
+        case .sending(.preconditionOn): return .connecting
         case .waitingForCar(.preconditionOn): return .starting
-        default: return model.isPreheating ? .running : nil
+        default: return model.isPreheating ? .running : .idle
         }
     }
 
@@ -635,69 +626,143 @@ struct GaugePager<Content: View>: View {
     }
 }
 
-// MARK: - Heating button
+// MARK: - Heat control
 
-/// The preheat button while the cabin heats: a faint band drifts across inside every 5.2 s, the dot breathes.
-struct HeatingButton: View {
-    enum Phase { case starting, running, stopping }
+/// Heat cabin, in one piece from tap to heating and back: the orange glass darkens into the
+/// heating capsule, the flame turns into a spinner and then a breathing dot, the words slide
+/// to the left and Stop grows in from the right. Every step is the same view, so it morphs.
+struct HeatControl: View {
+    enum Phase: Equatable { case idle, connecting, starting, running, stopping }
     let phase: Phase
     let minutesLeft: Int
+    let canStart: Bool
+    let start: () -> Void
     let stop: () -> Void
     @State private var sweep = false
     @State private var pulse = false
 
-    private var text: String {
-        switch phase {
-        case .starting: "Connecting to the car…"
-        case .running: "Heating · \(minutesLeft) min left"
-        case .stopping: "Stopping…"
-        }
-    }
+    private var active: Bool { phase != .idle }
+    private static let morph = Animation.spring(duration: 0.55, bounce: 0.12)
 
     var body: some View {
-        HStack {
-            HStack(spacing: 10) {
-                if phase == .running {
-                    Circle().fill(V.heat).frame(width: 10, height: 10)
-                        .scaleEffect(pulse ? 1.08 : 0.92).opacity(pulse ? 1 : 0.55)
-                } else {
-                    ProgressView().controlSize(.small).tint(V.heat)
-                }
-                Text(text).font(V.button).foregroundStyle(V.heat)
-                    .lineLimit(1).minimumScaleFactor(0.8)
-                    .contentTransition(.opacity)
+        ZStack {
+            Button(action: start) { surface }
+                .buttonStyle(PressStyle())
+                .disabled(active || !canStart)
+            if active {
+                stopButton
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.trailing, 10)
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.6, anchor: .trailing).combined(with: .opacity).animation(Self.morph.delay(0.08)),
+                        removal: .scale(scale: 0.8, anchor: .trailing).combined(with: .opacity)))
             }
-            .padding(.leading, 22)
-            .animation(.easeInOut(duration: 0.3), value: phase)
-            Spacer(minLength: 8)
-            Button(action: stop) {
-                Text("Stop").font(V.body).foregroundStyle(V.ground)
-                    .padding(.horizontal, 16).frame(height: 44)
-                    .background(Capsule().fill(V.heat))
-            }
-            .buttonStyle(PressStyle())
-            .disabled(phase == .stopping)
-            .opacity(phase == .stopping ? 0.5 : 1)
-            .padding(.trailing, 10)
         }
         .frame(height: 60)
-        .background(
-            GeometryReader { g in
-                ZStack {
-                    Capsule().fill(V.activeFill(V.heat))
-                    LinearGradient(colors: [V.heat.opacity(0), V.heat.opacity(0.07), Color(hex: 0xfed7aa).opacity(0.12), V.heat.opacity(0.07), V.heat.opacity(0)], startPoint: .leading, endPoint: .trailing)
+        .opacity(active || canStart ? 1 : 0.5)
+        .animation(Self.morph, value: phase)
+        .animation(.easeOut(duration: 0.25), value: canStart)
+        .onChange(of: phase) { old, new in
+            if new == .running, old != .running { Haptics.notify(.success) }
+        }
+        .onAppear {
+            withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 5.2).repeatForever(autoreverses: false)) { sweep = true }
+            withAnimation(.timingCurve(0.45, 0, 0.55, 1, duration: 2.4).repeatForever(autoreverses: true)) { pulse = true }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var surface: some View {
+        ZStack {
+            // Resting: frosted glass with an orange cast.
+            Color.clear
+                .glassCapsule(tint: V.heat.opacity(0.7))
+                .overlay(GlassSheen())
+                .opacity(active ? 0 : 1)
+            // Working: the dark capsule with an orange edge; a light band drifts through while heating.
+            ZStack {
+                Capsule().fill(V.ground)
+                Capsule().fill(V.activeFill(V.heat))
+                GeometryReader { g in
+                    LinearGradient(colors: [V.heat.opacity(0), V.heat.opacity(0.07), Color(hex: 0xfed7aa).opacity(0.12), V.heat.opacity(0.07), V.heat.opacity(0)],
+                                   startPoint: .leading, endPoint: .trailing)
                         .frame(width: g.size.width * 0.55)
                         .offset(x: sweep ? g.size.width * 1.1 : -g.size.width * 0.6)
                         .opacity(sweep ? 0 : 1)
                 }
                 .clipShape(Capsule())
+                .opacity(phase == .running ? 1 : 0)
+                Capsule().strokeBorder(V.heat, lineWidth: 1.5)
             }
-        )
-        .overlay(Capsule().strokeBorder(V.heat, lineWidth: 1.5))
-        .onAppear {
-            withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 5.2).repeatForever(autoreverses: false)) { sweep = true }
-            withAnimation(.timingCurve(0.45, 0, 0.55, 1, duration: 2.4).repeatForever(autoreverses: true)) { pulse = true }
+            .opacity(active ? 1 : 0)
+            .scaleEffect(active ? 1 : 0.97)
+
+            HStack(spacing: 10) {
+                indicator.frame(width: 20, height: 20)
+                label
+            }
+            .foregroundStyle(active ? V.heat : .white)
+            .frame(maxWidth: .infinity, alignment: active ? .leading : .center)
+            .padding(.leading, active ? 22 : 0)
+            // Room for Stop, so a long line shrinks rather than running under it.
+            .padding(.trailing, active ? 100 : 0)
         }
+        .frame(maxWidth: .infinity)
+        .frame(height: 60)
+        .contentShape(Capsule())
+    }
+
+    @ViewBuilder private var indicator: some View {
+        switch phase {
+        case .idle:
+            PhIcon(name: "flame", size: 20).transition(.blurReplace.combined(with: .scale(0.6)))
+        case .connecting, .starting, .stopping:
+            ProgressView().controlSize(.small).tint(V.heat).transition(.blurReplace.combined(with: .scale(0.6)))
+        case .running:
+            Circle().fill(V.heat).frame(width: 10, height: 10)
+                .scaleEffect(pulse ? 1.08 : 0.92).opacity(pulse ? 1 : 0.55)
+                .transition(.blurReplace.combined(with: .scale(0.2)))
+        }
+    }
+
+    private var label: some View {
+        Group {
+            switch phase {
+            case .idle: Text("Heat cabin")
+            // Same words while sending and while the car answers, so nothing flickers in between.
+            case .connecting, .starting: Text("Connecting to the car…")
+            case .running:
+                Text("Heating · \(minutesLeft) min left")
+                    .contentTransition(.numericText(countsDown: true))
+                    .animation(.snappy, value: minutesLeft)
+            case .stopping: Text("Stopping…")
+            }
+        }
+        .font(V.button)
+        .lineLimit(1).minimumScaleFactor(0.8)
+        .id(labelKey)
+        .transition(.blurReplace)
+    }
+
+    private var labelKey: Int {
+        switch phase {
+        case .idle: 0
+        case .connecting, .starting: 1
+        case .running: 2
+        case .stopping: 3
+        }
+    }
+
+    private var stopButton: some View {
+        Button(action: stop) {
+            Text("Stop").font(V.body).foregroundStyle(V.ground)
+                .padding(.horizontal, 16).frame(height: 44)
+                .background(Capsule().fill(V.heat))
+        }
+        .buttonStyle(PressStyle())
+        // Nothing to stop until the start command is with the car.
+        .disabled(phase == .connecting || phase == .stopping)
+        .opacity(phase == .connecting || phase == .stopping ? 0.5 : 1)
     }
 }
 
