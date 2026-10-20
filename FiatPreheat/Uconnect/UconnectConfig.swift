@@ -134,6 +134,8 @@ enum RemoteCommand: String, Sendable, CaseIterable {
     case unlock = "RDU"
     case lights = "ROLIGHTS"
     case trunkUnlock = "ROTRUNKUNLOCK"
+    /// Not every car offers it; where it isn't listed, locking the car locks the boot too.
+    case trunkLock = "ROTRUNKLOCK"
     case chargeNow = "CNOW"
     /// Wakes the car so it reports fresh battery and charging data.
     case deepRefresh = "DEEPREFRESH"
@@ -148,7 +150,7 @@ enum RemoteCommand: String, Sendable, CaseIterable {
 
     var endpoint: Endpoint {
         switch self {
-        case .trunkUnlock: Endpoint(command: rawValue, version: "v2", path: "remote")
+        case .trunkUnlock, .trunkLock: Endpoint(command: rawValue, version: "v2", path: "remote")
         case .chargeNow: Endpoint(command: rawValue, version: "v1", path: "ev/chargenow")
         case .deepRefresh: Endpoint(command: rawValue, version: "v1", path: "ev")
         case .locate: Endpoint(command: rawValue, version: "v1", path: "location/")

@@ -62,6 +62,18 @@ final class TripTests: XCTestCase {
         XCTAssertEqual(trips[1].start, Date(timeIntervalSince1970: 1_760_000_000))
     }
 
+    func testDeepNestingAndOdometer() {
+        let reply: [String: Any] = ["data": ["trips": [
+            ["tripInfo": ["startDateTime": "2026-10-19T13:55:00Z", "endDateTime": "2026-10-19T14:20:00Z",
+                          "odometer": ["start": 10_000, "end": 10_012.5]], "efficiency": ["consumption": 13.1]],
+        ]]]
+        let trips = Trip.list(from: reply)
+        XCTAssertEqual(trips.count, 1)
+        XCTAssertEqual(trips[0].distanceKm ?? 0, 12.5, accuracy: 0.01)
+        XCTAssertEqual(trips[0].minutes ?? 0, 25, accuracy: 0.01, "from start and end time")
+        XCTAssertEqual(trips[0].consumption, 13.1)
+    }
+
     func testSingleLastTrip() {
         let trips = Trip.list(from: ["trip": ["startTime": 1_760_000_000_000, "distance": 7.5, "duration": 900]])
         XCTAssertEqual(trips.count, 1)

@@ -157,6 +157,11 @@ final class CarModel {
 
     /// From the car's service list. A car that lists nothing gets every command, so an older or
     /// different account isn't locked out by a list it doesn't send.
+    /// What locks the boot again: its own command where the car lists it, else locking the car.
+    var bootLockCommand: RemoteCommand {
+        vehicle?.services.contains(RemoteCommand.trunkLock.rawValue) == true ? .trunkLock : .lock
+    }
+
     func availability(of command: RemoteCommand) -> Availability {
         guard let vehicle, !vehicle.services.isEmpty || !vehicle.disabledServices.isEmpty else { return .available }
         if vehicle.services.contains(command.rawValue) { return .available }
@@ -472,8 +477,14 @@ final class CarModel {
         guard hasAccount, let vin = selectedVIN else { return [] }
         if Demo.isActive { return Demo.trips }
         await client.setAccount(account)
-        return Trip.list(from: try await client.trips(vin: vin))
+        let reply = try await client.trips(vin: vin)
+        lastTripsReply = (try? JSONSerialization.data(withJSONObject: reply, options: [.prettyPrinted, .sortedKeys]))
+            .map { String(decoding: $0, as: UTF8.self) }
+        return Trip.list(from: reply)
     }
+
+    /// Fiat's trips reply as it came, for the owner to copy when the app can't read part of it.
+    private(set) var lastTripsReply: String?
 
     // MARK: Location
 
@@ -592,7 +603,9 @@ final class CarModel {
     /// Reads back what a confirmed command changed, so the screen shows the car's new state.
     private func followUp(_ command: RemoteCommand) async {
         switch command {
-        case .lock: status?.isLocked = true; publishSnapshot()
+        // Central locking takes the boot with it.
+        case .lock: status?.isLocked = true; status?.isTrunkLocked = true; publishSnapshot()
+        case .trunkLock: status?.isTrunkLocked = true
         case .unlock: status?.isLocked = false; publishSnapshot()
         case .trunkUnlock: status?.isTrunkLocked = false
         case .locate: await loadLocation()

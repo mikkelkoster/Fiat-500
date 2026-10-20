@@ -177,15 +177,19 @@ struct Trip: Identifiable, Equatable {
             .sorted { ($0.start ?? .distantPast) > ($1.start ?? .distantPast) }
     }
 
+    private static func isTripKey(_ key: String) -> Bool {
+        key.contains("distance") || key.contains("mileage") || key.contains("odometer")
+    }
+
     private static func singleTrip(in value: Any) -> [String: Any]? {
         guard let d = value as? [String: Any] else { return nil }
-        if flatten(d).keys.contains(where: { $0.contains("distance") }) { return d }
+        if flatten(d).keys.contains(where: isTripKey) { return d }
         return d.values.lazy.compactMap { singleTrip(in: $0) }.first
     }
 
     private static func firstList(in value: Any) -> [[String: Any]]? {
         if let list = value as? [[String: Any]],
-           list.contains(where: { flatten($0).keys.contains { $0.contains("distance") } }) {
+           list.contains(where: { flatten($0).keys.contains(where: isTripKey) }) {
             return list
         }
         if let d = value as? [String: Any] { return d.values.lazy.compactMap { firstList(in: $0) }.first }
@@ -193,13 +197,14 @@ struct Trip: Identifiable, Equatable {
         return nil
     }
 
-    /// One level of nesting folded in, keys lower-cased: {"distance": {"value": 12}} → "distance.value".
-    private static func flatten(_ item: [String: Any]) -> [String: Any] {
+    /// Every level of nesting folded in, keys lower-cased:
+    /// {"summary": {"distance": {"value": 12}}} → "summary.distance.value".
+    private static func flatten(_ item: [String: Any], prefix: String = "") -> [String: Any] {
         var out: [String: Any] = [:]
         for (key, value) in item {
-            let k = key.lowercased()
+            let k = prefix + key.lowercased()
             if let inner = value as? [String: Any] {
-                for (ik, iv) in inner { out[k + "." + ik.lowercased()] = iv }
+                out.merge(flatten(inner, prefix: k + "."), uniquingKeysWith: { a, _ in a })
             } else {
                 out[k] = value
             }
@@ -226,16 +231,30 @@ struct Trip: Identifiable, Equatable {
             f.filter { match($0.key) }.sorted { $0.key.count < $1.key.count }.first.map { ($0.key, $0.value) }
         }
         var trip = Trip(id: index)
-        if let s = first({ ($0.contains("start") && ($0.contains("time") || $0.contains("date"))) || $0 == "timestamp" }) {
+        if let s = first({ ($0.contains("start") && ($0.contains("time") || $0.contains("date")) && !$0.contains("odometer")) || $0 == "timestamp" }) {
             trip.start = date(s.value)
         }
-        if let d = first({ $0.contains("distance") && !$0.contains("unit") }), let v = number(d.value) {
-            let unit = (f[d.key.replacingOccurrences(of: ".value", with: ".unit")] as? String ?? f["distanceunit"] as? String ?? "km").lowercased()
-            trip.distanceKm = unit.hasPrefix("mi") ? v * 1.609 : unit == "m" ? v / 1000 : v
+        func km(_ key: String, _ v: Double) -> Double {
+            let unit = (f[key.replacingOccurrences(of: ".value", with: ".unit")] as? String ?? f["distanceunit"] as? String ?? "km").lowercased()
+            return unit.hasPrefix("mi") ? v * 1.609 : unit == "m" ? v / 1000 : v
+        }
+        let distances = f.filter { ($0.key.contains("distance") || $0.key.contains("mileage")) && !$0.key.contains("unit") }
+            .compactMap { k, v in number(v).map { (k, $0) } }.sorted { $0.0.count < $1.0.count }
+        if let (k, v) = distances.first {
+            trip.distanceKm = km(k, v)
+        } else if let s = first({ $0.contains("odometer") && $0.contains("start") && !$0.contains("unit") }),
+                  let e = first({ $0.contains("odometer") && $0.contains("end") && !$0.contains("unit") }),
+                  let a = number(s.value), let b = number(e.value), b >= a {
+            // Some replies give only the odometer at each end.
+            trip.distanceKm = km(e.key, b - a)
         }
         if let d = first({ $0.contains("duration") && !$0.contains("unit") }), let v = number(d.value) {
             // Seconds unless it's clearly minutes.
             trip.minutes = v > 600 ? v / 60 : v
+        } else if let start = trip.start,
+                  let e = first({ $0.contains("end") && ($0.contains("time") || $0.contains("date")) }),
+                  let end = date(e.value), end > start {
+            trip.minutes = end.timeIntervalSince(start) / 60
         }
         if let c = first({ ($0.contains("consumption") || $0.contains("efficiency")) && !$0.contains("unit") }) {
             trip.consumption = number(c.value)

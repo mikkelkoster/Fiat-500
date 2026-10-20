@@ -7,6 +7,7 @@ struct TripsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var trips: [Trip]?
     @State private var error: String?
+    @State private var copied = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,7 +15,7 @@ struct TripsSheet: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 12) {
                     if let trips, !trips.isEmpty {
-                        summary(trips)
+                        if trips.contains(where: { $0.distanceKm != nil }) { summary(trips) }
                         VStack(spacing: 0) {
                             ForEach(trips) { trip in
                                 if trip.id != trips.first?.id { Divider().overlay(V.outline).padding(.leading, 18) }
@@ -22,6 +23,9 @@ struct TripsSheet: View {
                             }
                         }
                         .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
+                        if trips.contains(where: { $0.distanceKm == nil }), let reply = model.lastTripsReply {
+                            copyReply(reply)
+                        }
                     } else if let error {
                         message(error)
                     } else if trips != nil {
@@ -91,6 +95,25 @@ struct TripsSheet: View {
             }
         }
         .padding(.horizontal, 18).padding(.vertical, 12)
+    }
+
+    /// When Fiat words a trip in a way the app can't read yet: copy the reply to send to the developer.
+    private func copyReply(_ reply: String) -> some View {
+        VStack(spacing: 8) {
+            Text("Some trip details didn't come through. Copy what Fiat sent and email it to hello@mikkelkoster.com, so Varme can learn to read it.")
+                .font(V.label).foregroundStyle(V.textMuted).multilineTextAlignment(.center)
+            Button {
+                UIPasteboard.general.string = reply
+                Haptics.notify(.success)
+                copied = true
+            } label: {
+                Text(copied ? "Copied" : "Copy Fiat's reply").font(V.label).foregroundStyle(V.text)
+                    .padding(.horizontal, 16).frame(height: 36)
+                    .background(Capsule().strokeBorder(V.outline, lineWidth: 1))
+            }
+            .buttonStyle(PressStyle())
+        }
+        .padding(.top, 12).padding(.horizontal, 8)
     }
 
     private func message(_ text: String) -> some View {

@@ -261,9 +261,22 @@ struct HomeScreen: View {
                 Task { await model.perform(.lights) }
             }
             ActionTile(icon: "map-pin", title: "Find", busyTitle: "Locating…", state: tileState(.locate)) { sheet = .find }
-            ActionTile(icon: "boot", title: "Boot", busyTitle: "Unlocking…", state: tileState(.trunkUnlock)) { Task { await model.perform(.trunkUnlock) } }
+            bootTile
             scheduleTile
         }
+    }
+
+    /// Boot: unlocks it, and while it's unlocked says so in red; then a tap locks it again.
+    private var bootTile: some View {
+        let unlocked = model.status?.isTrunkLocked == false
+        let locking = isRunning(.trunkLock) || (unlocked && isRunning(.lock))
+        let state: ActionTile.State = isRunning(.trunkUnlock) || locking ? .pending
+            : unlocked ? .alert : tileState(.trunkUnlock)
+        return ActionTile(icon: "boot", title: unlocked ? "Unlocked" : "Boot",
+                          busyTitle: locking ? "Locking…" : "Unlocking…", state: state) {
+            Task { await model.perform(unlocked ? model.bootLockCommand : .trunkUnlock) }
+        }
+        .accessibilityLabel(unlocked ? "Boot unlocked. Lock" : "Unlock boot")
     }
 
     private var scheduleTile: some View {
@@ -768,7 +781,8 @@ struct HeatControl: View {
 // MARK: - Action tile
 
 struct ActionTile: View {
-    enum State { case idle, active, pending, unavailable }
+    /// `alert`: something left open (the boot unlocked); red, and a tap closes it.
+    enum State { case idle, active, alert, pending, unavailable }
     let icon: String
     let title: String
     /// What it says while the car works on it.
@@ -792,10 +806,10 @@ struct ActionTile: View {
                     .contentTransition(.opacity)
             }
             .padding(.horizontal, 4)
-            .foregroundStyle(state == .active ? V.amber : state == .pending ? V.textMuted : state == .unavailable ? V.textFaint : V.text)
+            .foregroundStyle(state == .active ? V.amber : state == .alert ? V.danger : state == .pending ? V.textMuted : state == .unavailable ? V.textFaint : V.text)
             .animation(.spring(duration: 0.4, bounce: 0.1), value: state)
             .frame(maxWidth: .infinity).frame(height: 78)
-            .glassTile(tint: state == .active ? V.amber : nil)
+            .glassTile(tint: state == .active ? V.amber : state == .alert ? V.danger : nil)
             .contentShape(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -986,12 +1000,12 @@ struct ToastItem: Equatable {
 
     private static let confirmed: [RemoteCommand: String] = [
         .preconditionOn: "Heating", .preconditionOff: "Climate off", .lock: "Locked", .unlock: "Unlocked",
-        .lights: "Lights flashed", .trunkUnlock: "Boot unlocked", .chargeNow: "Charging started",
+        .lights: "Lights flashed", .trunkUnlock: "Boot unlocked", .trunkLock: "Boot locked", .chargeNow: "Charging started",
         .deepRefresh: "Updated from the car", .locate: "Location updated",
     ]
     private static let sent: [RemoteCommand: String] = [
         .preconditionOn: "Heat sent", .preconditionOff: "Stop sent", .lock: "Lock sent", .unlock: "Unlock sent",
-        .lights: "Lights sent", .trunkUnlock: "Boot unlock sent", .chargeNow: "Charge now sent",
+        .lights: "Lights sent", .trunkUnlock: "Boot unlock sent", .trunkLock: "Boot lock sent", .chargeNow: "Charge now sent",
         .deepRefresh: "Update requested", .locate: "Location requested",
     ]
 }
