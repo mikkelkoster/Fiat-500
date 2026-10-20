@@ -23,11 +23,21 @@ enum CarPicture {
         UIImage(contentsOfFile: file(vin).path)
     }
 
-    static func make(vin: String, from url: URL) async -> UIImage? {
-        guard let (data, _) = try? await URLSession.shared.data(from: url),
-              let source = CIImage(data: data, options: [.applyOrientationProperty: true]) else { return nil }
+    /// Why a picture didn't come through, in words for Settings.
+    struct Failure: Error { let reason: String }
+
+    static func make(vin: String, from url: URL) async throws -> UIImage {
+        let (data, response): (Data, URLResponse)
+        do { (data, response) = try await URLSession.shared.data(from: url) }
+        catch { throw Failure(reason: "Couldn't download it (\(error.localizedDescription))") }
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw Failure(reason: "Fiat's picture server answered \(http.statusCode)")
+        }
+        guard let source = CIImage(data: data, options: [.applyOrientationProperty: true]) else {
+            throw Failure(reason: "What came back isn't a picture (\(data.count) bytes)")
+        }
         let cut = lift(source) ?? source
-        guard let placed = place(cut) else { return nil }
+        guard let placed = place(cut) else { throw Failure(reason: "Couldn't fit the car into the picture") }
         try? FileManager.default.createDirectory(at: file(vin).deletingLastPathComponent(), withIntermediateDirectories: true)
         try? placed.pngData()?.write(to: file(vin))
         return placed

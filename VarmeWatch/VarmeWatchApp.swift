@@ -24,8 +24,20 @@ final class WatchModel: NSObject, ObservableObject, WCSessionDelegate {
     @Published var message: String?
     @Published var messageIsError = false
 
+    /// The sample car, for simulator runs and screenshots: launch with -preheatDemo
+    /// (and -demoScreen preheating to open heating). Nothing is sent to the iPhone.
+    static let isDemo = ProcessInfo.processInfo.arguments.contains("-preheatDemo")
+
     override init() {
         super.init()
+        if Self.isDemo {
+            let heating = UserDefaults.standard.string(forKey: "demoScreen") == "preheating"
+            car = CarSnapshot(carName: UserDefaults.standard.string(forKey: "demoName") ?? "My EV", plate: "ED 35079",
+                              stateOfCharge: 72, rangeKm: 187, useMiles: false, isCharging: false, isPluggedIn: true,
+                              isLocked: true, preheatStartedAt: heating ? Date().addingTimeInterval(-7 * 60) : nil,
+                              nextSchedule: "Wed 07:30", hasCarImage: true, updatedAt: Date())
+            return
+        }
         if WCSession.isSupported() {
             WCSession.default.delegate = self
             WCSession.default.activate()
@@ -33,6 +45,7 @@ final class WatchModel: NSObject, ObservableObject, WCSessionDelegate {
     }
 
     func send(_ command: String) {
+        if Self.isDemo { pretend(command); return }
         guard WCSession.default.activationState == .activated else { show("Open Varme on your iPhone once.", error: true); return }
         sending = command
         WKInterfaceDeviceHaptic.start()
@@ -53,7 +66,26 @@ final class WatchModel: NSObject, ObservableObject, WCSessionDelegate {
         })
     }
 
-    func refresh() { if WCSession.default.isReachable { send("refresh") } }
+    func refresh() { if !Self.isDemo, WCSession.default.isReachable { send("refresh") } }
+
+    /// The sample car answers after a moment, as a real one would.
+    private func pretend(_ command: String) {
+        sending = command
+        WKInterfaceDeviceHaptic.start()
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            switch command {
+            case "preheat": car?.preheatStartedAt = Date()
+            case "stop": car?.preheatStartedAt = nil
+            case "lock": car?.isLocked = true
+            case "unlock": car?.isLocked = false
+            default: break
+            }
+            sending = nil
+            show(["preheat": "Heating", "stop": "Climate off", "lock": "Locked", "unlock": "Unlocked", "lights": "Lights flashed"][command] ?? "Done", error: false)
+            WKInterfaceDeviceHaptic.result(true)
+        }
+    }
 
     private func show(_ text: String, error: Bool) {
         guard !text.isEmpty else { return }

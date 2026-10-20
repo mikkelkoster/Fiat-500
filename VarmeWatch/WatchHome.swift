@@ -92,13 +92,15 @@ struct WatchHome: View {
         } else {
             Button { model.send("preheat") } label: {
                 HStack(spacing: 8) {
-                    if model.sending == "preheat" { ProgressView().tint(V.ground).frame(width: 18, height: 18) }
+                    if model.sending == "preheat" { ProgressView().tint(.white).frame(width: 18, height: 18) }
                     else { PhIcon(name: "flame", size: 18) }
-                    Text(model.sending == "preheat" ? "Sending…" : "Heat").font(V.sora(16, .semibold))
+                    Text(model.sending == "preheat" ? "Connecting…" : "Heat cabin").font(V.sora(16, .semibold))
+                        .lineLimit(1).minimumScaleFactor(0.8)
                 }
-                .foregroundStyle(V.ground)
+                // The phone's Heat cabin orange, so the two read as one app.
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity).frame(height: 52)
-                .background(Capsule().fill(V.text))
+                .background(Capsule().fill(V.heat))
             }
             .buttonStyle(.plain)
             .disabled(model.sending != nil)

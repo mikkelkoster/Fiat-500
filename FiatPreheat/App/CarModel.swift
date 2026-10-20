@@ -431,11 +431,30 @@ final class CarModel {
         if let cached = CarPicture.cached(vin: vin) { pictures[vin] = cached; return }
         pictureLoading = true
         defer { pictureLoading = false }
-        var url = vehicle?.imageURL
-        if url == nil { url = try? await client.imageURL(vin: vin) }
-        guard let url, let made = await CarPicture.make(vin: vin, from: url) else { return }
-        pictures[vin] = made
-        publishSnapshot()
+        pictureProblem = nil
+        do {
+            var url = vehicle?.imageURL
+            if url == nil { url = try await client.imageURL(vin: vin) }
+            guard let url else { throw CarPicture.Failure(reason: "Fiat sent no picture of this car") }
+            pictures[vin] = try await CarPicture.make(vin: vin, from: url)
+            publishSnapshot()
+        } catch let failure as CarPicture.Failure {
+            pictureProblem = failure.reason
+        } catch UconnectError.requestFailed(let code, _) {
+            pictureProblem = "Fiat refused the picture request (\(code))"
+        } catch {
+            pictureProblem = error.localizedDescription
+        }
+    }
+
+    /// Why this car shows the cover instead of its own picture; nil when it has its picture.
+    private(set) var pictureProblem: String?
+
+    /// Asks for the car's picture again, from Settings.
+    func retryPicture() async {
+        guard let vin = selectedVIN else { return }
+        picturesTried.remove(vin)
+        await loadPictureIfNeeded()
     }
 
     // MARK: The car's own timers
