@@ -176,25 +176,31 @@ struct CarWidget: Widget {
 struct CarWidgetView: View {
     let car: CarSnapshot
     var body: some View {
-        HStack(spacing: 6) {
-            if car.hasCarImage {
-                car.carPicture.resizable().aspectRatio(contentMode: .fit).frame(width: 150)
-            }
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text(car.stateOfCharge.map { "\(Int($0))" } ?? "–").font(V.sora(32, .ultraLight)).tracking(-1.5).foregroundStyle(V.text)
-                    Text("%").font(V.sora(13)).foregroundStyle(V.textMuted)
+        HStack(spacing: 18) {
+            // The app's gauge in small: the charge as an arc, the number inside.
+            let soc = min(100, max(0, car.stateOfCharge ?? 0))
+            let color = car.isCharging ? V.positive : batteryColor(car.stateOfCharge)
+            ZStack {
+                // Three quarters of a circle, open at the bottom.
+                Group {
+                    Circle().trim(from: 0, to: 0.75).stroke(V.raised, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                    Circle().trim(from: 0, to: 0.75 * soc / 100).stroke(color, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                        .shadow(color: color.opacity(0.6), radius: 6)
                 }
+                .rotationEffect(.degrees(135))
+                VStack(spacing: 0) {
+                    HStack(alignment: .firstTextBaseline, spacing: 1) {
+                        Text(car.stateOfCharge.map { "\(Int($0))" } ?? "–").font(V.sora(30, .ultraLight)).tracking(-1).foregroundStyle(V.text)
+                        Text("%").font(V.sora(11)).foregroundStyle(V.textMuted)
+                    }
+                    if car.isCharging { WidgetIcon(name: "lightning", size: 12).foregroundStyle(V.positive) }
+                }
+            }
+            .frame(width: 104, height: 104)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(car.carName).font(V.sora(17)).foregroundStyle(V.text).lineLimit(1)
                 Text("\(car.rangeText) · \(car.isCharging ? "charging" : car.isPluggedIn ? "plugged in" : car.isLocked == true ? "locked" : "")")
                     .font(V.sora(12)).foregroundStyle(V.textMuted).lineLimit(1)
-                GeometryReader { g in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(V.raised)
-                        Capsule().fill(car.isCharging ? V.positive : batteryColor(car.stateOfCharge))
-                            .frame(width: g.size.width * CGFloat(min(100, max(0, car.stateOfCharge ?? 0))) / 100)
-                    }
-                }
-                .frame(height: 4)
                 HStack(spacing: 8) {
                     Link(destination: car.isPreheating ? VarmeLink.open : VarmeLink.preheat) {
                         Circle().fill(car.isPreheating ? V.climate : V.text).frame(width: 40, height: 40)
@@ -229,11 +235,7 @@ struct PreheatLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    if CarSnapshot.load()?.hasCarImage ?? true {
-                        (CarSnapshot.load() ?? .placeholder).carPicture.resizable().aspectRatio(contentMode: .fit).frame(width: 92)
-                    } else {
-                        WidgetIcon(name: "wind", size: 28).foregroundStyle(V.climate).padding(.top, 8)
-                    }
+                    WidgetIcon(name: "wind", size: 28).foregroundStyle(V.climate).padding(.top, 8)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 0) {

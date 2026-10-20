@@ -49,27 +49,6 @@ final class CarModel {
     var carName: String {
         didSet { defaults.set(carName, forKey: carKey(Keys.carName)) }
     }
-    /// The owner's own choice, as `#rrggbb`: picks the 500e's paint, tints the light around the car.
-    var carColorHex: String {
-        didSet { defaults.set(carColorHex, forKey: carKey(Keys.carColor)); publishSnapshot() }
-    }
-    /// Pictures made for cars without bundled ones, by VIN.
-    private(set) var pictures: [String: UIImage] = [:] {
-        didSet {
-            for (vin, picture) in pictures where grounds[vin] == nil { grounds[vin] = CarPicture.ground(of: picture) }
-        }
-    }
-    /// A picture is being fetched and cut out.
-    private(set) var pictureLoading = false
-
-    /// Where each of those pictures meets the ground, for its shadow.
-    private(set) var grounds: [String: GroundShape] = [:]
-    var carGround: GroundShape? {
-        if let vin = selectedVIN, !Demo.isActive, pictures[vin] != nil { return grounds[vin] }
-        return Self.coveredGround
-    }
-    private static let coveredGround = UIImage(named: "car-covered").flatMap(CarPicture.ground(of:))
-
     /// The longest range a full charge has given this car, learned from status reads, so the range
     /// gauge can show this charge against the car's best (cold weather shortens the arc).
     var bestFullRangeKm: Double? {
@@ -97,7 +76,6 @@ final class CarModel {
         let full = max(bestFullRangeKm ?? 0, km * 100 / soc)
         return full > 0 ? min(1, km / full) : soc / 100
     }
-    private var picturesTried: Set<String> = []
     /// The car's own timers, once read.
     private(set) var carTimers: CarTimers?
     private(set) var carTimersError: String?
@@ -148,21 +126,6 @@ final class CarModel {
             s.upcomingStarts(after: Date()).first.map { (s, $0.addingTimeInterval(TimeInterval(s.leadMinutes * 60))) }
         }
         .min { $0.1 < $1.1 }
-    }
-
-    /// The picture of the car: the one the brand's own servers have for this car (its real model
-    /// and paint), cut out on the phone. No carmaker artwork ships in the app. Until it arrives,
-    /// and for a car without one, the sample car and the demo, it's a car under a cover; the home
-    /// screen fades from one to the other.
-    var carImage: Image {
-        if !Demo.isActive, let vin = selectedVIN, let picture = pictures[vin] { return Image(uiImage: picture) }
-        return Image("car-covered")
-    }
-
-    /// Changes when the picture does, so the home screen can cross-fade.
-    var carImageKey: String {
-        if !Demo.isActive, let vin = selectedVIN, pictures[vin] != nil { return vin }
-        return "covered"
     }
 
     /// From the car's service list. A car that lists nothing gets every command, so an older or
@@ -217,12 +180,9 @@ final class CarModel {
     private func loadCarSettings() {
         plate = defaults.string(forKey: carKey(Keys.plate)) ?? ""
         carName = defaults.string(forKey: carKey(Keys.carName)) ?? vehicle.map { $0.nickname ?? $0.model ?? "My car" } ?? "My car"
-        carColorHex = defaults.string(forKey: carKey(Keys.carColor)) ?? "#18181b"
         carTimers = nil
         location = nil
         status = Self.savedStatus(selectedVIN, defaults)
-        // A picture made on an earlier launch shows at once, without the cover first.
-        if let vin = selectedVIN, pictures[vin] == nil, let cached = CarPicture.cached(vin: vin) { pictures[vin] = cached }
     }
 
     /// The last numbers read for a car, shown (with their time) until fresh ones arrive.
@@ -233,7 +193,7 @@ final class CarModel {
 
     private init() {
         let savedVIN = defaults.string(forKey: Keys.vin)
-        // Last launch's car list: the picture (and what the car can do) is known before Fiat answers.
+        // Last launch's car list: what the car can do is known before Fiat answers.
         vehicles = defaults.data(forKey: Keys.vehicles).flatMap { try? JSONDecoder().decode([Vehicle].self, from: $0) } ?? []
         selectedVIN = savedVIN
         // Settings saved before they were kept per car move to the selected car.
@@ -244,7 +204,6 @@ final class CarModel {
         }
         plate = ""
         carName = "My car"
-        carColorHex = "#18181b"
         ownerName = defaults.string(forKey: Keys.ownerName)
         useMiles = defaults.bool(forKey: Keys.useMiles)
         onboarded = defaults.bool(forKey: Keys.onboarded)
@@ -255,8 +214,6 @@ final class CarModel {
         hasAccount = AccountStore.load() != nil
         plate = defaults.string(forKey: carKey(Keys.plate)) ?? ""
         carName = defaults.string(forKey: carKey(Keys.carName)) ?? "My car"
-        carColorHex = defaults.string(forKey: carKey(Keys.carColor)) ?? "#18181b"
-        if let vin = selectedVIN { pictures[vin] = CarPicture.cached(vin: vin) }
         status = Self.savedStatus(selectedVIN, defaults)
 
         if Demo.isActive { loadSample() }
@@ -271,7 +228,6 @@ final class CarModel {
         // The sample is no particular car; the screenshot demo keeps its 500e.
         plate = Demo.isSample ? "VARME" : "ED 35079"
         carName = UserDefaults.standard.string(forKey: "demoName") ?? (Demo.isSample ? "Sample car" : "Fiat 500e")
-        carColorHex = UserDefaults.standard.string(forKey: "demoColor") ?? "#18181b"
         status = UserDefaults.standard.bool(forKey: "demoLoading") ? nil : Demo.status
         defaults.set(300.0, forKey: "bestFullRange.\(Demo.vehicle.vin)")
         schedules = Demo.schedules
@@ -357,7 +313,6 @@ final class CarModel {
             vehicles = try await client.vehicles()
             defaults.set(try? JSONEncoder().encode(vehicles), forKey: Keys.vehicles)
             if selectedVIN == nil || vehicle == nil { selectedVIN = vehicles.first?.vin }
-            Task { await loadPictureIfNeeded() }
             guard let vin = selectedVIN else { return }
             let fresh = try await client.status(vin: vin)
             status = fresh
@@ -449,39 +404,6 @@ final class CarModel {
         await loadLocation()
     }
 
-    /// For cars without a bundled picture: the brand's picture, cut out on the phone, once.
-    private func loadPictureIfNeeded() async {
-        guard let vin = selectedVIN, pictures[vin] == nil, !picturesTried.contains(vin) else { return }
-        picturesTried.insert(vin)
-        if let cached = CarPicture.cached(vin: vin) { pictures[vin] = cached; return }
-        pictureLoading = true
-        defer { pictureLoading = false }
-        pictureProblem = nil
-        do {
-            var url = vehicle?.imageURL
-            if url == nil { url = try await client.imageURL(vin: vin) }
-            guard let url else { throw CarPicture.Failure(reason: "Fiat sent no picture of this car") }
-            pictures[vin] = try await CarPicture.make(vin: vin, from: url)
-            publishSnapshot()
-        } catch let failure as CarPicture.Failure {
-            pictureProblem = failure.reason
-        } catch UconnectError.requestFailed(let code, _) {
-            pictureProblem = "Fiat refused the picture request (\(code))"
-        } catch {
-            pictureProblem = error.localizedDescription
-        }
-    }
-
-    /// Why this car shows the cover instead of its own picture; nil when it has its picture.
-    private(set) var pictureProblem: String?
-
-    /// Asks for the car's picture again, from Settings.
-    func retryPicture() async {
-        guard let vin = selectedVIN else { return }
-        picturesTried.remove(vin)
-        await loadPictureIfNeeded()
-    }
-
     // MARK: The car's own timers
 
     func loadCarTimers() async {
@@ -561,8 +483,7 @@ final class CarModel {
     func carReport() async -> String? {
         guard hasAccount, !Demo.isActive, let vin = selectedVIN else { return nil }
         await client.setAccount(account)
-        guard var raw = try? await client.rawStatus(vin: vin, picture: true) else { return nil }
-        raw["pictureProblem"] = pictureProblem ?? "none"
+        guard let raw = try? await client.rawStatus(vin: vin) else { return nil }
         guard let data = try? JSONSerialization.data(withJSONObject: raw, options: [.prettyPrinted, .sortedKeys]) else { return nil }
         return String(decoding: data, as: UTF8.self)
     }
@@ -715,12 +636,10 @@ final class CarModel {
         var rangeKm = status?.range
         if let r = rangeKm, status?.rangeUnit?.lowercased().hasPrefix("mi") == true { rangeKm = r * 1.609 }
         let next = nextSchedule?.ready.formatted(.dateTime.weekday(.abbreviated).hour().minute())
-        let picture = selectedVIN.flatMap { pictures[$0] }
-        if let picture { CarPicture.shareWithWidgets(picture) }
         CarSnapshot(carName: carName, plate: plate, stateOfCharge: status?.stateOfCharge, rangeKm: rangeKm, useMiles: useMiles,
                     isCharging: status?.isCharging == true, isPluggedIn: status?.isPluggedIn == true, isLocked: status?.isLocked,
-                    preheatStartedAt: isPreheating ? lastPreheatStart : nil, nextSchedule: next, hasCarImage: true,
-                    updatedAt: Date(), carImageName: picture != nil ? CarSnapshot.sharedPictureName : "car-covered").save()
+                    preheatStartedAt: isPreheating ? lastPreheatStart : nil, nextSchedule: next, hasCarImage: false,
+                    updatedAt: Date()).save()
         if let snapshot = CarSnapshot.load() { WatchLink.shared.publish(snapshot) }
         WidgetCenter.shared.reloadAllTimelines()
         if #available(iOS 18.0, *) { ControlCenter.shared.reloadAllControls() }

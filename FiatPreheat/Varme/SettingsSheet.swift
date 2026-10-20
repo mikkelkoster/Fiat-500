@@ -30,25 +30,6 @@ struct SettingsSheet: View {
                     VMenuRow(title: "Distance", options: [(false, "Kilometres"), (true, "Miles")], selection: $model.useMiles)
                         .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
 
-                    if let problem = model.pictureProblem, !Demo.isActive {
-                        // The car shows under a cover: say why, and let the owner try again.
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Car picture").font(V.body).foregroundStyle(V.text)
-                                Text(problem).font(V.label).foregroundStyle(V.textMuted).textSelection(.enabled)
-                            }
-                            Spacer(minLength: 8)
-                            Button { Task { await model.retryPicture() } } label: {
-                                if model.pictureLoading { ProgressView().tint(V.text) }
-                                else { Text("Try again").font(V.label).foregroundStyle(V.text) }
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(model.pictureLoading)
-                        }
-                        .padding(.horizontal, 18).padding(.vertical, 12)
-                        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
-                    }
-
                     Button { showTrips = true } label: {
                         HStack {
                             Text("Trips").font(V.body).foregroundStyle(V.text)

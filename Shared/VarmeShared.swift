@@ -27,22 +27,13 @@ struct CarSnapshot: Codable, Equatable {
     var isLocked: Bool?
     var preheatStartedAt: Date?
     var nextSchedule: String?
+    /// Kept so snapshots written by older builds still decode; the app shows no car picture now.
     var hasCarImage: Bool
     var updatedAt: Date
-    /// Which picture of the car, in the asset catalog; follows the paint chosen in the app.
-    var carImageName: String? = nil
-
-    var carImage: String { carImageName ?? "car-covered" }
-
-    /// Marks a picture made on the phone and left in the App Group, not one in the asset catalog.
-    static let sharedPictureName = "group:car.png"
-    static var sharedPictureURL: URL? {
-        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: VarmeGroup.id)?.appending(path: "car.png")
-    }
 
     static let placeholder = CarSnapshot(carName: "500e", plate: "ED 35079", stateOfCharge: 100, rangeKm: 260, useMiles: false,
                                          isCharging: false, isPluggedIn: true, isLocked: true, preheatStartedAt: nil,
-                                         nextSchedule: "Mon 07:30", hasCarImage: true, updatedAt: Date())
+                                         nextSchedule: "Mon 07:30", hasCarImage: false, updatedAt: Date())
 
     static func load() -> CarSnapshot? {
         guard let data = VarmeGroup.defaults.data(forKey: VarmeGroup.snapshotKey) else { return nil }
@@ -75,20 +66,6 @@ struct PreheatActivityAttributes: ActivityAttributes {
     }
     var carName: String
     var plate: String
-}
-#endif
-
-#if os(iOS)
-import SwiftUI
-
-extension CarSnapshot {
-    /// The car's picture for a widget, from the asset catalog or the App Group.
-    var carPicture: Image {
-        if carImage == Self.sharedPictureName, let url = Self.sharedPictureURL, let image = UIImage(contentsOfFile: url.path) {
-            return Image(uiImage: image)
-        }
-        return Image(carImage == Self.sharedPictureName ? "car-covered" : carImage)
-    }
 }
 #endif
 

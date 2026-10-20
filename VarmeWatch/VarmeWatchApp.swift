@@ -35,7 +35,7 @@ final class WatchModel: NSObject, ObservableObject, WCSessionDelegate {
             car = CarSnapshot(carName: UserDefaults.standard.string(forKey: "demoName") ?? "My EV", plate: "ED 35079",
                               stateOfCharge: 72, rangeKm: 187, useMiles: false, isCharging: false, isPluggedIn: true,
                               isLocked: true, preheatStartedAt: heating ? Date().addingTimeInterval(-7 * 60) : nil,
-                              nextSchedule: "Wed 07:30", hasCarImage: true, updatedAt: Date())
+                              nextSchedule: "Wed 07:30", hasCarImage: false, updatedAt: Date())
             return
         }
         if WCSession.isSupported() {

@@ -12,13 +12,19 @@ struct HomeScreen: View {
 
     enum Sheet: String, Identifiable { case find, schedule, settings, trips; var id: String { rawValue } }
 
-    /// The gauge's height and how far it reaches up over the car.
+    /// The gauge at its natural size, and the header above it.
     private static let gaugeHeight: CGFloat = 200
-    private static let gaugeOverlap: CGFloat = 104
+    private static let heroHeight: CGFloat = 196
 
-    /// Everything under the hero: the gauge (less its overlap), Heat cabin, the action row, the
-    /// slider, the gaps, and a little air above the home indicator.
-    private static let belowHero: CGFloat = gaugeHeight - gaugeOverlap + 60 + 78 + 60 + V.cardGap * 4 + 6
+    /// Everything but the gauge: the header, the facts row, Climate, the action row, the slider,
+    /// the gaps and a little air above the home indicator.
+    private static let aroundGauge: CGFloat = heroHeight + 20 + 60 + 78 + 60 + V.cardGap * 6 + 8
+
+    /// The gauge grows into the room the screen has, up to a third larger; smaller iPhones get it
+    /// a little smaller than natural rather than pushing the slider off the screen.
+    private static func gaugeScale(screenHeight: CGFloat) -> CGFloat {
+        min(1.32, max(0.85, (screenHeight - aroundGauge - 16) / (gaugeHeight + 5)))
+    }
 
     /// How far to pull before letting go refreshes.
     private let pullThreshold: CGFloat = 64
@@ -29,11 +35,13 @@ struct HomeScreen: View {
             // The page fits the screen, so it doesn't scroll: it only moves when pulled down to refresh.
             GeometryReader { geo in
                 VStack(spacing: V.cardGap) {
-                    hero(height: min(640, max(380, geo.size.height + geo.safeAreaInsets.top - Self.belowHero)))
-                    // Free on the page, reaching up over the car's wheels.
-                    gauges.padding(.top, -Self.gaugeOverlap)
-                        .overlay(alignment: .bottomLeading) { temperatureHint.padding(.leading, V.gutter) }
-                        .overlay(alignment: .bottomTrailing) { settingHint.padding(.trailing, V.gutter) }
+                    let scale = Self.gaugeScale(screenHeight: geo.size.height + geo.safeAreaInsets.top)
+                    hero
+                    Spacer(minLength: 0)
+                    // No picture of the car: the gauge is the hero, with the facts under it.
+                    gauges.scaleEffect(scale).frame(height: Self.gaugeHeight * scale)
+                    factsRow.padding(.top, 4)
+                    Spacer(minLength: 0)
                     HStack(spacing: 10) {
                         if offers(.preconditionOn) { preheatButton }
                         if canChargeNow { chargeButton.transition(.scale.combined(with: .opacity)) }
@@ -48,7 +56,7 @@ struct HomeScreen: View {
                         Task { await model.perform(unlock ? .unlock : .lock) }
                     }
                     .padding(.horizontal, V.gutter)
-                    Spacer(minLength: 0)
+                    .padding(.bottom, 8)
                 }
                 .offset(y: refreshing ? 64 : pull)
                 .animation(.timingCurve(0.2, 0.8, 0.2, 1, duration: 0.35), value: refreshing)
@@ -120,17 +128,12 @@ struct HomeScreen: View {
 
     // MARK: Pieces
 
-    private func hero(height: CGFloat) -> some View {
+    private var hero: some View {
         CarHero(
             carName: model.carName,
             plate: model.plate,
-            // The picture carries the car's own paint; the light around it stays neutral.
-            carColor: V.surface,
-            image: model.carImage,
-            imageKey: model.carImageKey,
-            ground: model.carGround,
             updated: updatedText,
-            height: height,
+            height: Self.heroHeight,
             onSettings: { sheet = .settings },
             cars: model.vehicles.map { v in (v.vin, v.vin == model.selectedVIN ? model.carName : (model.savedName(for: v) ?? v.nickname ?? v.model ?? "Car")) },
             onSwitchCar: { vin in Task { await model.switchCar(to: vin) } }
@@ -219,40 +222,44 @@ struct HomeScreen: View {
 
     // MARK: Temperature
 
-    /// Inside the car where it says, else outside it: blue when it's cold enough to want warming,
-    /// orange when it's hot enough to want cooling.
-    @ViewBuilder private var temperatureHint: some View {
-        let inside = model.status?.cabinTemperature
+    /// One quiet line under the gauge: the temperature (inside where the car says, else outside;
+    /// blue when it's cold enough to want warming, orange when hot enough to want cooling), the
+    /// odometer, the climate's setting where the car reports it, and a low 12 V battery in red.
+    /// When it doesn't fit, the least important go first.
+    private var factsRow: some View {
+        let status = model.status
+        let inside = status?.cabinTemperature
+        var facts: [(icon: String, text: String, color: Color, keep: Bool)] = []
         if let c = inside ?? model.outsideTemperature {
-            HStack(spacing: 5) {
-                PhIcon(name: "thermometer", size: 14)
-                Text(inside != nil ? "Inside \(Self.degrees(c))" : "\(Self.degrees(c)) outside").font(V.label)
-            }
-            .foregroundStyle(c < 5 ? V.cool : c > 25 ? V.heat : V.textMuted)
-            .padding(.bottom, 26)
-            .accessibilityElement(children: .combine)
+            facts.append(("thermometer", inside != nil ? "Inside \(Self.degrees(c))" : "\(Self.degrees(c)) outside",
+                          c < 5 ? V.cool : c > 25 ? V.heat : V.textMuted, true))
         }
-    }
-
-    /// What the climate is set to, on cars that report it; a low 12 V battery comes first.
-    @ViewBuilder private var settingHint: some View {
-        if let volts = model.status?.auxBatteryVolts, volts < CarAlerts.lowVolts {
-            HStack(spacing: 5) {
-                PhIcon(name: "battery", size: 14)
-                Text(String(format: "12 V low · %.1f V", volts)).font(V.label)
-            }
-            .foregroundStyle(V.danger)
-            .padding(.bottom, 26)
-            .accessibilityElement(children: .combine)
-        } else if let t = model.status?.targetTemperature {
-            HStack(spacing: 5) {
-                PhIcon(name: "wind", size: 14)
-                Text("Set to \(Self.degrees(t))").font(V.label)
-            }
-            .foregroundStyle(V.textMuted)
-            .padding(.bottom, 26)
-            .accessibilityElement(children: .combine)
+        if let km = status?.odometerKm {
+            let value = model.useMiles ? km / 1.609 : km
+            facts.append(("road", "\(value.formatted(.number.precision(.fractionLength(0)))) \(model.useMiles ? "mi" : "km")", V.textMuted, false))
         }
+        if let t = status?.targetTemperature { facts.append(("wind", "Set to \(Self.degrees(t))", V.textMuted, false)) }
+        if let v = status?.auxBatteryVolts, v < CarAlerts.lowVolts {
+            facts.append(("battery", String(format: "12 V low · %.1f V", v), V.danger, true))
+        }
+        func row(_ items: [(icon: String, text: String, color: Color, keep: Bool)]) -> some View {
+            HStack(spacing: 18) {
+                ForEach(items.indices, id: \.self) { i in
+                    HStack(spacing: 5) {
+                        PhIcon(name: items[i].icon, size: 14)
+                        Text(items[i].text).font(V.label).lineLimit(1)
+                    }
+                    .foregroundStyle(items[i].color)
+                }
+            }
+        }
+        return ViewThatFits(in: .horizontal) {
+            row(facts)
+            row(facts.filter(\.keep))
+        }
+        .frame(height: 20)
+        .padding(.horizontal, V.gutter)
+        .accessibilityElement(children: .combine)
     }
 
     /// "4°" in the phone's own unit (°F in the US).
