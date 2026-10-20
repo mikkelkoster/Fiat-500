@@ -168,7 +168,8 @@ struct SettingsSheet: View {
                 [status.serviceDays.map { "\(Int($0)) days" }, status.serviceKm.map { distance($0) }].compactMap { $0 }.joined(separator: " or "),
                 CarAlerts.serviceSoon(status) ? V.amber : V.text) : nil,
             status.auxBatteryVolts.map { v in
-                ("12 V battery", String(format: "%.1f V", v) + (v < CarAlerts.lowVolts ? " · Low" : v >= 13.5 ? " · Charging" : " · Good"),
+                // Over ~13.5 V the car is topping it up from the big battery: that's healthy, not "charging".
+                ("12 V battery", String(format: "%.1f V", v) + (v < CarAlerts.lowVolts ? " · Low" : v < CarAlerts.voltsReset ? " · Fair" : " · Good"),
                  v < CarAlerts.lowVolts ? V.danger : V.text)
             },
         ].compactMap { $0 }
