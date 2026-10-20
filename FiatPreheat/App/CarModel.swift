@@ -561,8 +561,9 @@ final class CarModel {
     func carReport() async -> String? {
         guard hasAccount, !Demo.isActive, let vin = selectedVIN else { return nil }
         await client.setAccount(account)
-        guard let raw = try? await client.rawStatus(vin: vin),
-              let data = try? JSONSerialization.data(withJSONObject: raw, options: [.prettyPrinted, .sortedKeys]) else { return nil }
+        guard var raw = try? await client.rawStatus(vin: vin, picture: true) else { return nil }
+        raw["pictureProblem"] = pictureProblem ?? "none"
+        guard let data = try? JSONSerialization.data(withJSONObject: raw, options: [.prettyPrinted, .sortedKeys]) else { return nil }
         return String(decoding: data, as: UTF8.self)
     }
 

@@ -210,11 +210,25 @@ actor UconnectClient {
         return out
     }
 
-    /// Both status replies as Fiat sends them, for the command-line tool.
-    func rawStatus(vin: String) async throws -> [String: Any] {
+    /// Both status replies as Fiat sends them, for the command-line tool and the car report.
+    /// With `picture`, also this car's entry in the car list and the reply to the picture request.
+    func rawStatus(vin: String, picture: Bool = false) async throws -> [String: Any] {
         let uid = try await authenticatedUID()
         var out: [String: Any] = ["status": try await signedRequest("GET", "/v3/accounts/\(uid)/vehicles/\(vin)/status/")]
         if let remote = try? await signedRequest("GET", "/v1/accounts/\(uid)/vehicles/\(vin)/remote/status") { out["remote"] = remote }
+        guard picture else { return out }
+        if let list = try? await signedRequest("GET", "/v4/accounts/\(uid)/vehicles",
+                                               query: ["stage": "ALL", "sdp": "ALL", "brand": config.brandCode]),
+           let car = (list["vehicles"] as? [[String: Any]])?.first(where: { $0["vin"] as? String == vin }) {
+            // The services list is long and already known; the rest says where pictures come from.
+            out["vehicle"] = car.filter { $0.key != "services" }
+        }
+        do {
+            out["image"] = try await signedRequest("POST", "/v4/accounts/\(uid)/vehicles/\(vin)/image/",
+                                                   body: ["imageURLs": [["id": vin, "width": 1200, "height": 640, "resp": "png"]]])
+        } catch {
+            out["image"] = ["error": "\(error)"]
+        }
         return out
     }
 
