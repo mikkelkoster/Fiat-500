@@ -59,16 +59,12 @@ final class CarModel {
     }
     /// A picture is being fetched and cut out.
     private(set) var pictureLoading = false
-    /// Nothing to show yet, but something is on its way: the car list, or the car's picture.
-    var carImageLoading: Bool {
-        carImage == nil && (pictureLoading || (hasAccount && vehicles.isEmpty && statusError == nil))
-    }
 
     /// Where each of those pictures meets the ground, for its shadow.
     private(set) var grounds: [String: GroundShape] = [:]
     var carGround: GroundShape? {
         if let vin = selectedVIN, !Demo.isActive, pictures[vin] != nil { return grounds[vin] }
-        return carImage == nil ? nil : Self.coveredGround
+        return Self.coveredGround
     }
     private static let coveredGround = UIImage(named: "car-covered").flatMap(CarPicture.ground(of:))
 
@@ -81,14 +77,21 @@ final class CarModel {
 
     /// Range left in km, from the status in whatever unit Fiat sent.
     var rangeKm: Double? {
-        guard var km = status?.range else { return nil }
-        if status?.rangeUnit?.lowercased().hasPrefix("mi") == true { km *= 1.609 }
+        // The battery's range where there is one; otherwise the tank's.
+        if var km = status?.range {
+            if status?.rangeUnit?.lowercased().hasPrefix("mi") == true { km *= 1.609 }
+            return km
+        }
+        guard var km = status?.fuelRange else { return nil }
+        if status?.fuelRangeUnit?.lowercased().hasPrefix("mi") == true { km *= 1.609 }
         return km
     }
 
     /// Range as a share of the best full-charge range seen; falls back to the battery level.
     var rangeFraction: Double {
-        guard let km = rangeKm, let soc = status?.stateOfCharge, soc > 0 else { return (status?.stateOfCharge ?? 0) / 100 }
+        guard let km = rangeKm, let soc = status?.stateOfCharge, soc > 0 else {
+            return (status?.stateOfCharge ?? status?.fuelLevel ?? 0) / 100
+        }
         let full = max(bestFullRangeKm ?? 0, km * 100 / soc)
         return full > 0 ? min(1, km / full) : soc / 100
     }
@@ -146,20 +149,38 @@ final class CarModel {
     }
 
     /// The picture of the car: the one the brand's own servers have for this car (its real model
-    /// and paint), cut out on the phone. No carmaker artwork ships in the app. Until it arrives
-    /// there's a spinner; a car without one, the sample car and the demo get a car under a cover.
-    var carImage: Image? {
-        if Demo.isActive { return Image("car-covered") }
-        guard let vin = selectedVIN else { return nil }
-        if let picture = pictures[vin] { return Image(uiImage: picture) }
-        return picturesTried.contains(vin) && !pictureLoading ? Image("car-covered") : nil
+    /// and paint), cut out on the phone. No carmaker artwork ships in the app. Until it arrives,
+    /// and for a car without one, the sample car and the demo, it's a car under a cover; the home
+    /// screen fades from one to the other.
+    var carImage: Image {
+        if !Demo.isActive, let vin = selectedVIN, let picture = pictures[vin] { return Image(uiImage: picture) }
+        return Image("car-covered")
+    }
+
+    /// Changes when the picture does, so the home screen can cross-fade.
+    var carImageKey: String {
+        if !Demo.isActive, let vin = selectedVIN, pictures[vin] != nil { return vin }
+        return "covered"
     }
 
     /// From the car's service list. A car that lists nothing gets every command, so an older or
     /// different account isn't locked out by a list it doesn't send.
+    private func lists(_ command: RemoteCommand) -> Bool { vehicle?.services.contains(command.rawValue) == true }
+
+    /// Boot or liftgate, whichever the car lists (boot when it lists neither, or nothing at all).
+    var bootUnlockCommand: RemoteCommand {
+        !lists(.trunkUnlock) && lists(.liftgateUnlock) ? .liftgateUnlock : .trunkUnlock
+    }
+
     /// What locks the boot again: its own command where the car lists it, else locking the car.
     var bootLockCommand: RemoteCommand {
-        vehicle?.services.contains(RemoteCommand.trunkLock.rawValue) == true ? .trunkLock : .lock
+        if bootUnlockCommand == .liftgateUnlock { return lists(.liftgateLock) ? .liftgateLock : .lock }
+        return lists(.trunkLock) ? .trunkLock : .lock
+    }
+
+    /// Lights alone where the car offers it; horn and lights where that's all it offers.
+    var findCommand: RemoteCommand {
+        !lists(.lights) && lists(.hornLights) ? .hornLights : .lights
     }
 
     func availability(of command: RemoteCommand) -> Availability {
@@ -198,6 +219,8 @@ final class CarModel {
         carTimers = nil
         location = nil
         status = Self.savedStatus(selectedVIN, defaults)
+        // A picture made on an earlier launch shows at once, without the cover first.
+        if let vin = selectedVIN, pictures[vin] == nil, let cached = CarPicture.cached(vin: vin) { pictures[vin] = cached }
     }
 
     /// The last numbers read for a car, shown (with their time) until fresh ones arrive.
@@ -624,7 +647,8 @@ final class CarModel {
         switch command {
         // Central locking takes the boot with it.
         case .lock: status?.isLocked = true; status?.isTrunkLocked = true; publishSnapshot()
-        case .trunkLock: status?.isTrunkLocked = true
+        case .trunkLock, .liftgateLock: status?.isTrunkLocked = true
+        case .liftgateUnlock: status?.isTrunkLocked = false
         case .unlock: status?.isLocked = false; publishSnapshot()
         case .trunkUnlock: status?.isTrunkLocked = false
         case .locate: await loadLocation()
@@ -653,8 +677,8 @@ final class CarModel {
         if let picture { CarPicture.shareWithWidgets(picture) }
         CarSnapshot(carName: carName, plate: plate, stateOfCharge: status?.stateOfCharge, rangeKm: rangeKm, useMiles: useMiles,
                     isCharging: status?.isCharging == true, isPluggedIn: status?.isPluggedIn == true, isLocked: status?.isLocked,
-                    preheatStartedAt: isPreheating ? lastPreheatStart : nil, nextSchedule: next, hasCarImage: carImage != nil,
-                    updatedAt: Date(), carImageName: picture != nil ? CarSnapshot.sharedPictureName : carImage == nil ? nil : "car-covered").save()
+                    preheatStartedAt: isPreheating ? lastPreheatStart : nil, nextSchedule: next, hasCarImage: true,
+                    updatedAt: Date(), carImageName: picture != nil ? CarSnapshot.sharedPictureName : "car-covered").save()
         if let snapshot = CarSnapshot.load() { WatchLink.shared.publish(snapshot) }
         WidgetCenter.shared.reloadAllTimelines()
         if #available(iOS 18.0, *) { ControlCenter.shared.reloadAllControls() }

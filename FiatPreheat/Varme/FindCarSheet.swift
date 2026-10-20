@@ -67,9 +67,9 @@ struct FindCarSheet: View {
                 }
                 .disabled(model.location == nil)
                 VButton(title: flashing ? "Flashing…" : "Flash lights", icon: "sun", prominent: false, loading: flashing) {
-                    Task { await model.perform(.lights) }
+                    Task { await model.perform(model.findCommand) }
                 }
-                .disabled(model.isBusy || model.availability(of: .lights) != .available)
+                .disabled(model.isBusy || model.availability(of: model.findCommand) != .available)
             }
             .padding(.horizontal, V.gutter)
             .padding(.vertical, 14)
@@ -93,7 +93,7 @@ struct FindCarSheet: View {
 
     private var flashing: Bool {
         switch model.commandState {
-        case .sending(.lights), .waitingForCar(.lights): true
+        case .sending(.lights), .waitingForCar(.lights), .sending(.hornLights), .waitingForCar(.hornLights): true
         default: false
         }
     }

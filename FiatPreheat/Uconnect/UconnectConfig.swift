@@ -136,6 +136,11 @@ enum RemoteCommand: String, Sendable, CaseIterable {
     case trunkUnlock = "ROTRUNKUNLOCK"
     /// Not every car offers it; where it isn't listed, locking the car locks the boot too.
     case trunkLock = "ROTRUNKLOCK"
+    /// Cars with a liftgate (most Jeeps) list these instead of the boot ones.
+    case liftgateUnlock = "ROLIFTGATEUNLOCK"
+    case liftgateLock = "ROLIFTGATELOCK"
+    /// Horn and lights together: what many North American cars offer to find them.
+    case hornLights = "HBLF"
     case chargeNow = "CNOW"
     /// Wakes the car so it reports fresh battery and charging data.
     case deepRefresh = "DEEPREFRESH"
@@ -150,7 +155,7 @@ enum RemoteCommand: String, Sendable, CaseIterable {
 
     var endpoint: Endpoint {
         switch self {
-        case .trunkUnlock, .trunkLock: Endpoint(command: rawValue, version: "v2", path: "remote")
+        case .trunkUnlock, .trunkLock, .liftgateUnlock, .liftgateLock: Endpoint(command: rawValue, version: "v2", path: "remote")
         case .chargeNow: Endpoint(command: rawValue, version: "v1", path: "ev/chargenow")
         case .deepRefresh: Endpoint(command: rawValue, version: "v1", path: "ev")
         case .locate: Endpoint(command: rawValue, version: "v1", path: "location/")
@@ -161,6 +166,8 @@ enum RemoteCommand: String, Sendable, CaseIterable {
     /// Newer cars answer 403 to the first form of some commands; py-uconnect then retries this one.
     var fallback: Endpoint? {
         switch self {
+        // Untested on a liftgate car: if v2 refuses, try the plain remote path.
+        case .liftgateUnlock, .liftgateLock: Endpoint(command: rawValue, version: "v1", path: "remote")
         case .chargeNow: Endpoint(command: "START_CHARGE", version: "v4", path: "ev/chargenow")
         // The v2 endpoint names it DEEPREFRESH too: Fiat answers 400 "must be DEEPREFRESH" to
         // the DEEPREFRESH2 py-uconnect sends (seen on a 2022 500e, 2026-10-18).

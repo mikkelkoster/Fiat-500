@@ -9,6 +9,7 @@ import Foundation
 ///   -demoSoc 24  -demoName "…"     battery level and car name, for checking layouts
 ///   -demoUnlocked YES              the car reports unlocked
 ///   -demoLoading YES               no numbers yet: the gauge shows it's loading
+///   -demoFuel 64                   a tank too (a plug-in hybrid); with -demoPetrol YES, no battery at all
 enum Demo {
     static var isActive: Bool { launchedAsDemo || UserDefaults.standard.bool(forKey: sampleKey) }
     /// The sample car was chosen on the welcome screen; it lasts until "Leave sample car".
@@ -18,7 +19,10 @@ enum Demo {
     static let screen = UserDefaults.standard.string(forKey: "demoScreen") ?? "home"
 
     static let account = UconnectAccount(email: "driver@example.com", password: "password", pin: "1234")
-    static let vehicle = Vehicle(vin: "ZFAEFAC39MX000000", nickname: "500e", model: "New 500", services: RemoteCommand.allCases.map(\.rawValue))
+    static let vehicle = Vehicle(vin: "ZFAEFAC39MX000000", nickname: "500e", model: "New 500",
+                                 services: UserDefaults.standard.bool(forKey: "demoPetrol") ? petrolServices : RemoteCommand.allCases.map(\.rawValue))
+    /// What a petrol Jeep might list: no climate or charging, a liftgate, horn and lights.
+    static let petrolServices = ["RDL", "RDU", "HBLF", "ROLIFTGATEUNLOCK", "ROLIFTGATELOCK", "VF"]
     /// A second car, to show switching.
     static let vehicles = [vehicle, Vehicle(vin: "ZARNAAG00R0000000", nickname: nil, model: "Alfa Romeo Junior Elettrica", services: RemoteCommand.allCases.map(\.rawValue))]
     /// The car's own timers, in the shape Fiat sends them.
@@ -40,7 +44,17 @@ enum Demo {
     static var status: VehicleStatus {
         let charging = screen == "charging"
         let soc = UserDefaults.standard.string(forKey: "demoSoc").flatMap(Double.init)
-        return VehicleStatus(stateOfCharge: soc ?? (charging ? 76 : 100), range: soc.map { $0 * 2.6 } ?? (charging ? 198 : 260), rangeUnit: "km", isCharging: charging, isPluggedIn: true, updatedAt: Date(), isLocked: !UserDefaults.standard.bool(forKey: "demoUnlocked"))
+        let petrol = UserDefaults.standard.bool(forKey: "demoPetrol")
+        var status = VehicleStatus(stateOfCharge: petrol ? nil : soc ?? (charging ? 76 : 100),
+                                   range: petrol ? nil : soc.map { $0 * 2.6 } ?? (charging ? 198 : 260), rangeUnit: "km",
+                                   isCharging: petrol ? nil : charging, isPluggedIn: petrol ? nil : true, updatedAt: Date(),
+                                   isLocked: !UserDefaults.standard.bool(forKey: "demoUnlocked"))
+        if let fuel = UserDefaults.standard.string(forKey: "demoFuel").flatMap(Double.init) {
+            status.fuelLevel = fuel
+            status.fuelRange = fuel * 7.5
+            status.fuelRangeUnit = "km"
+        }
+        return status
     }
     /// Kongens Nytorv, Copenhagen.
     static var location: CarLocation {

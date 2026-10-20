@@ -7,6 +7,8 @@ struct CarHero: View {
     let plate: String
     let carColor: Color
     let image: Image?
+    /// Changes with the picture: the cover fades into the car's own picture when it arrives.
+    var imageKey = ""
     let heating: Bool
     /// The picture is one of the 500e renders, whose tyre positions are known.
     var lampsKnown = false
@@ -14,7 +16,6 @@ struct CarHero: View {
     var ground: GroundShape? = nil
     var updated: String? = nil
     /// The picture is on its way: the wheel turns where the car will be.
-    var loading = false
     var height: CGFloat = 420
     var onSettings: (() -> Void)? = nil
     /// Other cars on the account (VIN, name); with more than one, the plate opens a switcher.
@@ -35,47 +36,45 @@ struct CarHero: View {
             ZStack(alignment: .topLeading) {
                 spotlight
                 if let image {
-                    // The picture has no ground of its own: a lit floor and shadows put the car on it.
-                    CarGround(knownWheels: lampsKnown, shape: ground)
-                        .frame(width: imageWidth, height: imageHeight)
-                        .position(x: w / 2, y: imageTop + imageHeight / 2)
-                    if heating {
-                        // A blurred warm copy of the car itself breathes under it.
+                    ZStack(alignment: .topLeading) {
+                        // The picture has no ground of its own: a lit floor and shadows put the car on it.
+                        CarGround(knownWheels: lampsKnown, shape: ground)
+                            .frame(width: imageWidth, height: imageHeight)
+                            .position(x: w / 2, y: imageTop + imageHeight / 2)
+                        if heating {
+                            // A blurred warm copy of the car itself breathes under it.
+                            image.resizable().aspectRatio(contentMode: .fit)
+                                .frame(width: imageWidth)
+                                .colorMultiply(V.heat).brightness(0.2).blur(radius: 22)
+                                .blendMode(.screen)
+                                .scaleEffect(breathe ? 1.03 : 1, anchor: .center)
+                                .opacity(breathe ? 1 : 0.55)
+                                .position(x: w / 2, y: imageTop + imageHeight / 2)
+                            warmEllipse(w: imageWidth * 0.44, h: imageHeight * 0.18)
+                                .position(x: w / 2, y: imageTop + imageHeight * 0.9)
+                        }
                         image.resizable().aspectRatio(contentMode: .fit)
                             .frame(width: imageWidth)
-                            .colorMultiply(V.heat).brightness(0.2).blur(radius: 22)
-                            .blendMode(.screen)
-                            .scaleEffect(breathe ? 1.03 : 1, anchor: .center)
-                            .opacity(breathe ? 1 : 0.55)
                             .position(x: w / 2, y: imageTop + imageHeight / 2)
-                        warmEllipse(w: imageWidth * 0.44, h: imageHeight * 0.18)
-                            .position(x: w / 2, y: imageTop + imageHeight * 0.9)
-                    }
-                    image.resizable().aspectRatio(contentMode: .fit)
-                        .frame(width: imageWidth)
-                        .position(x: w / 2, y: imageTop + imageHeight / 2)
-                    if heating {
-                        warmEllipse(w: imageWidth * 0.38, h: imageHeight * 0.25, bright: true)
-                            .position(x: w / 2 - imageWidth * 0.02, y: imageTop + imageHeight * 0.36)
-                        ForEach(0..<3, id: \.self) { i in
-                            let x = w / 2 + CGFloat(i - 1) * imageWidth * 0.1
-                            Ellipse().fill(RadialGradient(colors: [Color(hex: 0xfed7aa).opacity(0.55), V.heat.opacity(0)], center: .center, startRadius: 0, endRadius: 30))
-                                .frame(width: 46, height: 74)
-                                .blur(radius: 7)
-                                .blendMode(.screen)
-                                .offset(y: shimmer ? -46 : 26)
-                                .opacity(shimmer ? 0 : 0.75)
-                                .animation(.timingCurve(0.3, 0.1, 0.2, 1, duration: 3.6).repeatForever(autoreverses: false).delay(Double(i) * 1.2), value: shimmer)
-                                .position(x: x, y: imageTop + imageHeight * 0.14)
+                        if heating {
+                            warmEllipse(w: imageWidth * 0.38, h: imageHeight * 0.25, bright: true)
+                                .position(x: w / 2 - imageWidth * 0.02, y: imageTop + imageHeight * 0.36)
+                            ForEach(0..<3, id: \.self) { i in
+                                let x = w / 2 + CGFloat(i - 1) * imageWidth * 0.1
+                                Ellipse().fill(RadialGradient(colors: [Color(hex: 0xfed7aa).opacity(0.55), V.heat.opacity(0)], center: .center, startRadius: 0, endRadius: 30))
+                                    .frame(width: 46, height: 74)
+                                    .blur(radius: 7)
+                                    .blendMode(.screen)
+                                    .offset(y: shimmer ? -46 : 26)
+                                    .opacity(shimmer ? 0 : 0.75)
+                                    .animation(.timingCurve(0.3, 0.1, 0.2, 1, duration: 3.6).repeatForever(autoreverses: false).delay(Double(i) * 1.2), value: shimmer)
+                                    .position(x: x, y: imageTop + imageHeight * 0.14)
+                            }
                         }
                     }
-                } else if loading {
-                    TimelineView(.animation) { context in
-                        PhIcon(name: "wheel", size: 30).foregroundStyle(V.textMuted)
-                            .rotationEffect(.degrees(context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1) * 360))
-                    }
-                    .position(x: w / 2, y: imageTop + imageHeight * 0.55)
-                    .accessibilityLabel("Loading the car's picture")
+                    .id(imageKey)
+                    // Carries its own animation, so the swap cross-fades whatever triggered it.
+                    .transition(.opacity.animation(.easeInOut(duration: 0.9)))
                 } else {
                     CarSilhouette().fill(V.raised)
                         .frame(width: imageWidth * 0.7, height: imageWidth * 0.7 * 0.5)

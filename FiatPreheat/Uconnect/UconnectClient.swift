@@ -38,6 +38,10 @@ struct VehicleStatus: Sendable, Equatable, Codable {
     var reportedAt: Date? = nil
     /// Fiat's estimate while charging, in minutes, when it sends one.
     var minutesToFull: Double? = nil
+    /// Petrol, diesel and plug-in hybrid cars: the tank in percent, and the range on it.
+    var fuelLevel: Double? = nil
+    var fuelRange: Double? = nil
+    var fuelRangeUnit: String? = nil
 
     /// Reads the doors and boot out of `/remote/status`.
     mutating func applyRemoteStatus(_ json: [String: Any]) {
@@ -45,7 +49,7 @@ struct VehicleStatus: Sendable, Equatable, Codable {
             let states = doors.values.compactMap { ($0 as? [String: Any])?["status"] as? String }
             isLocked = states.isEmpty ? nil : states.allSatisfy { $0 == "LOCKED" }
         }
-        if let trunk = (json["trunk"] as? [String: Any])?["status"] as? String {
+        if let trunk = ((json["trunk"] ?? json["liftgate"]) as? [String: Any])?["status"] as? String {
             isTrunkLocked = trunk == "LOCKED"
         }
     }
@@ -201,6 +205,12 @@ actor UconnectClient {
             updatedAt: Date()
         )
         status.reportedAt = number(json["timestamp"]).map { Date(timeIntervalSince1970: $0 / 1000) }
+        // Fuel, for cars with a tank; py-uconnect reads it from vehicleInfo.fuel.
+        let fuel = ((json["vehicleInfo"] as? [String: Any])?["fuel"] ?? json["fuel"]) as? [String: Any]
+        status.fuelLevel = number(fuel?["fuelAmountLevel"]) ?? number(fuel?["fuelLevel"])
+        let fuelRange = fuel?["distanceToEmpty"] as? [String: Any]
+        status.fuelRange = number(fuelRange?["value"])
+        status.fuelRangeUnit = fuelRange?["unit"] as? String
         // Some cars send -1 for the levels they can't charge at.
         status.minutesToFull = ["timeToFullyChargeL2", "timeToFullyChargeL3", "timeToFullyChargeL1"]
             .compactMap { number(battery?[$0]) }.first { $0 > 0 }

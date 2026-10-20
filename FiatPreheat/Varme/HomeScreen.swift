@@ -33,7 +33,7 @@ struct HomeScreen: View {
                     // Free on the page, reaching up over the car's wheels.
                     gauges.padding(.top, -Self.gaugeOverlap)
                     HStack(spacing: 10) {
-                        preheatButton
+                        if offers(.preconditionOn) { preheatButton }
                         if canChargeNow { chargeButton.transition(.scale.combined(with: .opacity)) }
                     }
                     .animation(.easeOut(duration: 0.25), value: canChargeNow)
@@ -123,10 +123,10 @@ struct HomeScreen: View {
             // The picture carries the car's own paint; the light around it stays neutral.
             carColor: V.surface,
             image: model.carImage,
+            imageKey: model.carImageKey,
             heating: model.isPreheating,
             ground: model.carGround,
             updated: updatedText,
-            loading: model.carImageLoading,
             height: height,
             onSettings: { sheet = .settings },
             cars: model.vehicles.map { v in (v.vin, v.vin == model.selectedVIN ? model.carName : (model.savedName(for: v) ?? v.nickname ?? v.model ?? "Car")) },
@@ -178,13 +178,22 @@ struct HomeScreen: View {
         let charging = model.status?.isCharging == true
         let color = charging ? V.positive : V.batteryColor(soc)
         let range = model.rangeKm.map { model.useMiles ? $0 / 1.609 : $0 }
-        return GaugePager(page: $gaugePage, count: 2) { index, active in
-            if index == 0 {
+        let fuel = model.status?.fuelLevel
+        let pages = gaugePages
+        // The range takes the colour of what it runs on: the battery, or the tank.
+        let rangeColor = soc == nil && fuel != nil ? V.batteryColor(fuel) : color
+        let page = Binding(get: { min(gaugePage, pages.count - 1) }, set: { gaugePage = $0 })
+        return GaugePager(page: page, count: pages.count) { index, active in
+            switch pages[index] {
+            case .battery:
                 ArcGauge(fraction: (soc ?? 0) / 100, color: color, value: soc, unit: "%",
                          caption: charging ? "Charging" : "Battery", captionColor: charging ? V.positive : V.textMuted,
                          captionIcon: charging ? "lightning" : "battery", active: active)
-            } else {
-                ArcGauge(fraction: model.rangeFraction, color: color, value: range,
+            case .fuel:
+                ArcGauge(fraction: (fuel ?? 0) / 100, color: V.batteryColor(fuel), value: fuel, unit: "%",
+                         caption: "Fuel", captionColor: V.textMuted, captionIcon: "gas-pump", active: active)
+            case .range:
+                ArcGauge(fraction: model.rangeFraction, color: rangeColor, value: range,
                          unit: model.useMiles ? "mi" : "km", caption: "Range", captionColor: V.textMuted,
                          captionIcon: "road", active: active)
             }
@@ -205,9 +214,23 @@ struct HomeScreen: View {
         .accessibilityLabel(gaugeSummary)
     }
 
+    private enum GaugePage { case battery, fuel, range }
+
+    /// Electric: battery and range. Plug-in hybrid: battery, fuel and range. Petrol or diesel:
+    /// fuel and range. Before anything is read, the battery page shows it's loading.
+    private var gaugePages: [GaugePage] {
+        let status = model.status
+        var pages: [GaugePage] = []
+        if status?.stateOfCharge != nil || status?.fuelLevel == nil { pages.append(.battery) }
+        if status?.fuelLevel != nil { pages.append(.fuel) }
+        pages.append(.range)
+        return pages
+    }
+
     private var gaugeSummary: String {
         var parts: [String] = []
         if let soc = model.status?.stateOfCharge { parts.append("Battery \(Int(soc)) percent") }
+        if let fuel = model.status?.fuelLevel { parts.append("fuel \(Int(fuel)) percent") }
         if let km = model.rangeKm { parts.append(model.useMiles ? "range \(Int(km / 1.609)) miles" : "range \(Int(km)) kilometres") }
         if model.status?.isCharging == true { parts.append("charging, full \(fullBy)") }
         return parts.isEmpty ? "Battery not loaded yet" : parts.joined(separator: ", ")
@@ -257,24 +280,39 @@ struct HomeScreen: View {
 
     private var actionTiles: some View {
         HStack(spacing: 8) {
-            ActionTile(icon: "sun", title: "Flash lights", busyTitle: "Flashing…", state: tileState(.lights)) {
-                Task { await model.perform(.lights) }
+            // Only what the car offers; one it offers without the subscription still shows, greyed.
+            if offers(model.findCommand) {
+                let horn = model.findCommand == .hornLights
+                ActionTile(icon: "sun", title: horn ? "Horn & lights" : "Flash lights", busyTitle: horn ? "Honking…" : "Flashing…",
+                           state: tileState(model.findCommand)) {
+                    Task { await model.perform(model.findCommand) }
+                }
             }
-            ActionTile(icon: "map-pin", title: "Find", busyTitle: "Locating…", state: tileState(.locate)) { sheet = .find }
-            bootTile
-            scheduleTile
+            if offers(.locate) {
+                ActionTile(icon: "map-pin", title: "Find", busyTitle: "Locating…", state: tileState(.locate)) { sheet = .find }
+            }
+            if offers(model.bootUnlockCommand) { bootTile }
+            // Schedules start the heating, so they go where the heating does.
+            if offers(.preconditionOn) { scheduleTile }
         }
+    }
+
+    /// A car that doesn't list a command at all doesn't get its button. (One that lists it
+    /// without the subscription keeps it, greyed, so the owner knows it's there to have.)
+    private func offers(_ command: RemoteCommand) -> Bool {
+        model.availability(of: command) != .unsupported
     }
 
     /// Boot: unlocks it, and while it's unlocked says so in red; then a tap locks it again.
     private var bootTile: some View {
         let unlocked = model.status?.isTrunkLocked == false
-        let locking = isRunning(.trunkLock) || (unlocked && isRunning(.lock))
-        let state: ActionTile.State = isRunning(.trunkUnlock) || locking ? .pending
-            : unlocked ? .alert : tileState(.trunkUnlock)
-        return ActionTile(icon: "boot", title: unlocked ? "Unlocked" : "Boot",
+        let open = model.bootUnlockCommand
+        let locking = isRunning(.trunkLock) || isRunning(.liftgateLock) || (unlocked && isRunning(.lock))
+        let state: ActionTile.State = isRunning(open) || locking ? .pending
+            : unlocked ? .alert : tileState(open)
+        return ActionTile(icon: "boot", title: unlocked ? "Unlocked" : open == .liftgateUnlock ? "Liftgate" : "Boot",
                           busyTitle: locking ? "Locking…" : "Unlocking…", state: state) {
-            Task { await model.perform(unlocked ? model.bootLockCommand : .trunkUnlock) }
+            Task { await model.perform(unlocked ? model.bootLockCommand : open) }
         }
         .accessibilityLabel(unlocked ? "Boot unlocked. Lock" : "Unlock boot")
     }
@@ -1000,12 +1038,14 @@ struct ToastItem: Equatable {
 
     private static let confirmed: [RemoteCommand: String] = [
         .preconditionOn: "Heating", .preconditionOff: "Climate off", .lock: "Locked", .unlock: "Unlocked",
-        .lights: "Lights flashed", .trunkUnlock: "Boot unlocked", .trunkLock: "Boot locked", .chargeNow: "Charging started",
+        .lights: "Lights flashed", .trunkUnlock: "Boot unlocked", .trunkLock: "Boot locked",
+        .liftgateUnlock: "Liftgate unlocked", .liftgateLock: "Liftgate locked", .hornLights: "Horn and lights", .chargeNow: "Charging started",
         .deepRefresh: "Updated from the car", .locate: "Location updated",
     ]
     private static let sent: [RemoteCommand: String] = [
         .preconditionOn: "Heat sent", .preconditionOff: "Stop sent", .lock: "Lock sent", .unlock: "Unlock sent",
-        .lights: "Lights sent", .trunkUnlock: "Boot unlock sent", .trunkLock: "Boot lock sent", .chargeNow: "Charge now sent",
+        .lights: "Lights sent", .trunkUnlock: "Boot unlock sent", .trunkLock: "Boot lock sent",
+        .liftgateUnlock: "Liftgate unlock sent", .liftgateLock: "Liftgate lock sent", .hornLights: "Horn sent", .chargeNow: "Charge now sent",
         .deepRefresh: "Update requested", .locate: "Location requested",
     ]
 }
