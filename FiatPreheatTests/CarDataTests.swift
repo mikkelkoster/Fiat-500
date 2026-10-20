@@ -118,6 +118,29 @@ final class CarAlertsTests: XCTestCase {
         XCTAssertFalse(UserDefaults.standard.bool(forKey: "alertState.lowSent"))
     }
 
+    func testServiceWarnsOnceAsItComesDue() {
+        var s = status(soc: 80, charging: false, locked: true)
+        s.serviceDays = 120; s.serviceKm = 5000
+        CarAlerts.evaluate(s, carName: "500e", rangeText: "", now: Date())
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: "alertState.serviceSent"))
+        s.serviceDays = 25
+        CarAlerts.evaluate(s, carName: "500e", rangeText: "", now: Date())
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: "alertState.serviceSent"))
+        s.serviceDays = 365; s.serviceKm = 15000
+        CarAlerts.evaluate(s, carName: "500e", rangeText: "", now: Date())
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: "alertState.serviceSent"), "a service resets it")
+    }
+
+    func testLowTwelveVolt() {
+        var s = status(soc: 80, charging: false, locked: true)
+        s.auxBatteryVolts = 11.7
+        CarAlerts.evaluate(s, carName: "500e", rangeText: "", now: Date())
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: "alertState.lowVoltageSent"))
+        s.auxBatteryVolts = 14.7
+        CarAlerts.evaluate(s, carName: "500e", rangeText: "", now: Date())
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: "alertState.lowVoltageSent"))
+    }
+
     func testWeekdayText() {
         XCTAssertEqual(Weekdays.text([2, 3, 4, 5, 6, 7]), "Mon – Sat")
         XCTAssertEqual(Weekdays.text([2, 3, 4, 6]), "Mon – Wed, Fri")

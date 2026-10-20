@@ -234,9 +234,17 @@ struct HomeScreen: View {
         }
     }
 
-    /// What the climate is set to, on cars that report it.
+    /// What the climate is set to, on cars that report it; a low 12 V battery comes first.
     @ViewBuilder private var settingHint: some View {
-        if let t = model.status?.targetTemperature {
+        if let volts = model.status?.auxBatteryVolts, volts < CarAlerts.lowVolts {
+            HStack(spacing: 5) {
+                PhIcon(name: "battery", size: 14)
+                Text(String(format: "12 V low · %.1f V", volts)).font(V.label)
+            }
+            .foregroundStyle(V.danger)
+            .padding(.bottom, 26)
+            .accessibilityElement(children: .combine)
+        } else if let t = model.status?.targetTemperature {
             HStack(spacing: 5) {
                 PhIcon(name: "wind", size: 14)
                 Text("Set to \(Self.degrees(t))").font(V.label)
@@ -792,7 +800,7 @@ struct HeatControl: View {
                 indicator.frame(width: 20, height: 20)
                 label
             }
-            // Dark on the bright green, green on the dark capsule.
+            // Dark on the white glass, white on the dark capsule.
             .foregroundStyle(active ? V.climate : V.ground)
             .frame(maxWidth: .infinity, alignment: active ? .leading : .center)
             .padding(.leading, active ? 22 : 0)

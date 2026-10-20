@@ -47,6 +47,12 @@ struct VehicleStatus: Sendable, Equatable, Codable {
     var outsideTemperature: Double? = nil
     /// The climate's own setting, where a car reports it: what pre-conditioning heats or cools to.
     var targetTemperature: Double? = nil
+    /// From vehicleInfo: the odometer, the next service, the 12 V battery and the car's trip meters.
+    var odometerKm: Double? = nil
+    var serviceDays: Double? = nil
+    var serviceKm: Double? = nil
+    var auxBatteryVolts: Double? = nil
+    var tripMeters: [TripMeter]? = nil
 
     /// Reads the doors and boot out of `/remote/status`.
     mutating func applyRemoteStatus(_ json: [String: Any]) {
@@ -58,6 +64,12 @@ struct VehicleStatus: Sendable, Equatable, Codable {
             isTrunkLocked = trunk == "LOCKED"
         }
     }
+}
+
+/// One of the car's own trip meters (A, B), as the dashboard shows it.
+struct TripMeter: Sendable, Equatable, Codable {
+    let name: String
+    let km: Double
 }
 
 /// Where the car last reported itself.
@@ -252,6 +264,22 @@ actor UconnectClient {
         let fuelRange = fuel?["distanceToEmpty"] as? [String: Any]
         status.fuelRange = number(fuelRange?["value"])
         status.fuelRangeUnit = fuelRange?["unit"] as? String
+        // The rest of vehicleInfo, as a 2022 500e sends it (seen 2026-10-20).
+        let info = json["vehicleInfo"] as? [String: Any]
+        func measure(_ value: Any?) -> Double? {
+            guard let d = value as? [String: Any], let v = number(d["value"]) else { return nil }
+            return (d["unit"] as? String)?.lowercased().hasPrefix("mi") == true ? v * 1.609 : v
+        }
+        status.odometerKm = measure((info?["odometer"] as? [String: Any])?["odometer"])
+        status.serviceDays = number(info?["daysToService"])
+        status.serviceKm = measure((info?["distanceToService"] as? [String: Any])?["distanceToService"])
+        status.auxBatteryVolts = number(((info?["batteryInfo"] as? [String: Any])?["batteryVoltage"] as? [String: Any])?["value"])
+        let meters = ((info?["tripsInfo"] as? [String: Any])?["trips"] as? [[String: Any]] ?? []).compactMap { trip -> TripMeter? in
+            guard let name = trip["name"] as? String, let km = measure(trip["totalDistance"]) else { return nil }
+            // "TripA" → "A"
+            return TripMeter(name: name.replacingOccurrences(of: "Trip", with: ""), km: km)
+        }
+        status.tripMeters = meters.isEmpty ? nil : meters
         // Temperatures: not seen on a 500e yet, so look for any key that names one.
         let temps = Self.temperatures(in: json)
         let isSetting = { (k: String) in ["target", "setpoint", "settemp", "set_temp", "desired", "requested"].contains { k.contains($0) } }

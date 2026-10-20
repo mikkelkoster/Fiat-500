@@ -14,6 +14,13 @@ struct TripsSheet: View {
             VSheetHeader(eyebrow: "Trips", title: model.carName) { dismiss() }
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 12) {
+                    if let meters = model.status?.tripMeters {
+                        HStack(spacing: 10) {
+                            ForEach(meters, id: \.name) { meter in
+                                stat("Trip \(meter.name)", value: distanceText(meter.km), unit: nil)
+                            }
+                        }
+                    }
                     if let trips, !trips.isEmpty {
                         if trips.contains(where: { $0.distanceKm != nil }) { summary(trips) }
                         VStack(spacing: 0) {
@@ -123,7 +130,7 @@ struct TripsSheet: View {
 
     private func distanceText(_ km: Double) -> String {
         let value = model.useMiles ? km / 1.609 : km
-        return String(format: value < 10 ? "%.1f %@" : "%.0f %@", value, model.useMiles ? "mi" : "km")
+        return "\(value.formatted(.number.precision(.fractionLength(value < 10 ? 1 : 0)))) \(model.useMiles ? "mi" : "km")"
     }
 
     private static func explain(_ error: Error) -> String {

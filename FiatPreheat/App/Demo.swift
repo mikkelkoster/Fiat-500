@@ -10,6 +10,7 @@ import Foundation
 ///   -demoUnlocked YES              the car reports unlocked
 ///   -demoLoading YES               no numbers yet: the gauge shows it's loading
 ///   -demoFuel 64                   a tank too (a plug-in hybrid); with -demoPetrol YES, no battery at all
+///   -demoVolts 11.7                the 12 V battery reading
 enum Demo {
     static var isActive: Bool { launchedAsDemo || UserDefaults.standard.bool(forKey: sampleKey) }
     /// The sample car was chosen on the welcome screen; it lasts until "Leave sample car".
@@ -49,6 +50,11 @@ enum Demo {
                                    range: petrol ? nil : soc.map { $0 * 2.6 } ?? (charging ? 198 : 260), rangeUnit: "km",
                                    isCharging: petrol ? nil : charging, isPluggedIn: petrol ? nil : true, updatedAt: Date(),
                                    isLocked: !UserDefaults.standard.bool(forKey: "demoUnlocked"))
+        status.odometerKm = 23_486
+        status.serviceDays = 185
+        status.serviceKm = 9_123
+        status.auxBatteryVolts = UserDefaults.standard.string(forKey: "demoVolts").flatMap(Double.init) ?? 12.6
+        status.tripMeters = [TripMeter(name: "A", km: 1_869), TripMeter(name: "B", km: 42)]
         if let fuel = UserDefaults.standard.string(forKey: "demoFuel").flatMap(Double.init) {
             status.fuelLevel = fuel
             status.fuelRange = fuel * 7.5

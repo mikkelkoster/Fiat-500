@@ -23,6 +23,10 @@ struct SettingsSheet: View {
                     }
                     .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
 
+                    if let status = model.status, status.odometerKm != nil || status.serviceDays != nil || status.auxBatteryVolts != nil {
+                        carCard(status)
+                    }
+
                     VMenuRow(title: "Distance", options: [(false, "Kilometres"), (true, "Miles")], selection: $model.useMiles)
                         .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
 
@@ -154,6 +158,37 @@ struct SettingsSheet: View {
         .confirmationDialog(Demo.isSample ? "Leave the sample car?" : "Sign out of \(model.account?.brand.name ?? "the account")?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button(Demo.isSample ? "Leave" : "Sign out", role: .destructive) { Task { await model.signOut() }; dismiss() }
         }
+    }
+
+    /// The odometer, the next service and the 12 V battery, as the car last reported them.
+    private func carCard(_ status: VehicleStatus) -> some View {
+        let rows: [(String, String, Color)] = [
+            status.odometerKm.map { ("Odometer", distance($0), V.text) },
+            (status.serviceDays != nil || status.serviceKm != nil) ? ("Next service",
+                [status.serviceDays.map { "\(Int($0)) days" }, status.serviceKm.map { distance($0) }].compactMap { $0 }.joined(separator: " or "),
+                CarAlerts.serviceSoon(status) ? V.amber : V.text) : nil,
+            status.auxBatteryVolts.map { v in
+                ("12 V battery", String(format: "%.1f V", v) + (v < CarAlerts.lowVolts ? " · Low" : v >= 13.5 ? " · Charging" : " · Good"),
+                 v < CarAlerts.lowVolts ? V.danger : V.text)
+            },
+        ].compactMap { $0 }
+        return VStack(spacing: 0) {
+            ForEach(rows.indices, id: \.self) { i in
+                if i > 0 { Divider().overlay(V.outline).padding(.leading, 18) }
+                HStack {
+                    Text(rows[i].0).font(V.body).foregroundStyle(V.textMuted)
+                    Spacer()
+                    Text(rows[i].1).font(V.body).foregroundStyle(rows[i].2)
+                }
+                .padding(.horizontal, 18).frame(minHeight: 56)
+            }
+        }
+        .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
+    }
+
+    private func distance(_ km: Double) -> String {
+        let value = model.useMiles ? km / 1.609 : km
+        return "\(value.formatted(.number.precision(.fractionLength(0)))) \(model.useMiles ? "mi" : "km")"
     }
 
     private func alertBinding(_ kind: CarAlerts.Kind) -> Binding<Bool> {

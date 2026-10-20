@@ -97,7 +97,7 @@ struct WatchHome: View {
                     Text(model.sending == "preheat" ? "Connecting…" : "Climate").font(V.sora(16, .semibold))
                         .lineLimit(1).minimumScaleFactor(0.8)
                 }
-                // The phone's Climate green, so the two read as one app.
+                // The phone's white Climate button, so the two read as one app.
                 .foregroundStyle(V.ground)
                 .frame(maxWidth: .infinity).frame(height: 52)
                 .background(Capsule().fill(V.climate))
