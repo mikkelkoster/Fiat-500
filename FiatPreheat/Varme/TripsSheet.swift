@@ -100,7 +100,7 @@ struct TripsSheet: View {
     /// When Fiat words a trip in a way the app can't read yet: copy the reply to send to the developer.
     private func copyReply(_ reply: String) -> some View {
         VStack(spacing: 8) {
-            Text("Some trip details didn't come through. Copy what Fiat sent and email it to hello@mikkelkoster.com, so Varme can learn to read it.")
+            Text("Some trip details didn't come through. Copy what Fiat sent and email it to hello@mikkelkoster.com, so Luft can learn to read it.")
                 .font(V.label).foregroundStyle(V.textMuted).multilineTextAlignment(.center)
             Button {
                 UIPasteboard.general.string = reply

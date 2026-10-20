@@ -3,7 +3,7 @@ import AppIntents
 /// Exposed to Siri, Spotlight and Shortcuts. A Shortcuts "Time of Day" automation set to
 /// "Run Immediately" running this intent is the most reliable way to preheat on a schedule.
 struct StartPreheatIntent: AppIntent {
-    static let title: LocalizedStringResource = "Heat Car"
+    static let title: LocalizedStringResource = "Start Car Climate"
     static let description = IntentDescription("Starts climate preconditioning on your Fiat 500e.")
 
     @MainActor
@@ -13,12 +13,12 @@ struct StartPreheatIntent: AppIntent {
         if case .failed(let message) = state {
             throw IntentError(message)
         }
-        return .result(dialog: "Heating \(model.carName).")
+        return .result(dialog: "Starting the climate in \(model.carName).")
     }
 }
 
 struct StopPreheatIntent: AppIntent {
-    static let title: LocalizedStringResource = "Stop Preheating Car"
+    static let title: LocalizedStringResource = "Stop Car Climate"
     static let description = IntentDescription("Stops climate preconditioning on your Fiat 500e.")
 
     @MainActor
@@ -91,14 +91,14 @@ struct PreheatShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: StartPreheatIntent(),
-            phrases: ["Heat my car with \(.applicationName)", "Preheat my car with \(.applicationName)", "\(.applicationName) preheat", "Warm up my car with \(.applicationName)"],
-            shortTitle: "Heat cabin",
+            phrases: ["Start the climate in my car with \(.applicationName)", "Warm up my car with \(.applicationName)", "Cool down my car with \(.applicationName)", "Heat my car with \(.applicationName)", "\(.applicationName) climate"],
+            shortTitle: "Climate",
             systemImageName: "thermometer.sun.fill"
         )
         AppShortcut(
             intent: StopPreheatIntent(),
-            phrases: ["Stop preheating with \(.applicationName)"],
-            shortTitle: "Stop Preheat",
+            phrases: ["Stop pre-conditioning with \(.applicationName)", "Stop the climate with \(.applicationName)"],
+            shortTitle: "Stop Climate",
             systemImageName: "thermometer.snowflake"
         )
         AppShortcut(

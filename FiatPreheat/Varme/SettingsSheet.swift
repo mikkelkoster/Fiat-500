@@ -1,4 +1,5 @@
 import SwiftUI
+import WeatherKit
 
 /// The car's name, plate and colour, units, the owner's name, and the account.
 struct SettingsSheet: View {
@@ -6,6 +7,7 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var confirmSignOut = false
     @State private var showTrips = false
+    @State private var reportState: String?
     @State private var alerts: [CarAlerts.Kind: Bool] = Dictionary(uniqueKeysWithValues: CarAlerts.Kind.allCases.map { ($0, CarAlerts.isOn($0)) })
 
     var body: some View {
@@ -106,8 +108,40 @@ struct SettingsSheet: View {
                     Button { confirmSignOut = true } label: {
                         Text(Demo.isSample ? "Leave sample car" : "Sign out").font(V.label).foregroundStyle(V.danger).frame(height: 44)
                     }
-                    Text("Varme is an independent app, not affiliated with Stellantis or its brands.")
+                    if !Demo.isActive {
+                        // Everything Fiat says about the car, to paste into an email when something's missing.
+                        Button {
+                            reportState = "Reading…"
+                            Task {
+                                if let report = await model.carReport() {
+                                    UIPasteboard.general.string = report
+                                    Haptics.notify(.success)
+                                    reportState = "Copied. Paste it into an email to hello@mikkelkoster.com."
+                                } else {
+                                    reportState = "Couldn't read the car just now."
+                                }
+                            }
+                        } label: {
+                            VStack(spacing: 4) {
+                                Text("Copy car report").font(V.label).foregroundStyle(V.text)
+                                if let reportState { Text(reportState).font(V.label).foregroundStyle(V.textMuted).multilineTextAlignment(.center) }
+                            }
+                            .frame(minHeight: 44)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Text("Luft is an independent app, not affiliated with Stellantis or its brands.")
                         .font(V.label).foregroundStyle(V.textFaint).multilineTextAlignment(.center)
+                    if let attribution = model.weatherAttribution, model.status?.outsideTemperature == nil {
+                        // Apple asks for its mark and a legal link wherever its weather shows.
+                        Link(destination: attribution.legalPageURL) {
+                            AsyncImage(url: attribution.combinedMarkDarkURL) { image in
+                                image.resizable().scaledToFit()
+                            } placeholder: { Text("Apple Weather").font(V.label) }
+                            .frame(height: 12)
+                            .foregroundStyle(V.textFaint)
+                        }
+                    }
                 }
                 .padding(.horizontal, V.gutter)
                 .padding(.top, 20)

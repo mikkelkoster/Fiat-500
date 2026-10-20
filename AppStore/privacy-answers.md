@@ -10,6 +10,7 @@ that you or a third-party partner can access beyond what's needed to serve the r
 | Brand account email, password, PIN | Keychain on the iPhone; sent only to the car brand's sign-in and API servers, which the owner already uses, to perform their request | No |
 | Car status, position, trips | Read from the brand's servers; shown and kept on the device | No |
 | iPhone location | Used on the device for distance and directions; never sent | No |
+| Car position for the weather | Sent to Apple Weather (WeatherKit) to look up the temperature; Apple's service, the developer never receives it | No |
 | Notifications, schedules, settings | On the device | No |
 | Analytics, crash reporting, ads, tracking | None in the app | No |
 

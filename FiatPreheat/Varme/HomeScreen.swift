@@ -32,6 +32,8 @@ struct HomeScreen: View {
                     hero(height: min(640, max(380, geo.size.height + geo.safeAreaInsets.top - Self.belowHero)))
                     // Free on the page, reaching up over the car's wheels.
                     gauges.padding(.top, -Self.gaugeOverlap)
+                        .overlay(alignment: .bottomLeading) { temperatureHint.padding(.leading, V.gutter) }
+                        .overlay(alignment: .bottomTrailing) { settingHint.padding(.trailing, V.gutter) }
                     HStack(spacing: 10) {
                         if offers(.preconditionOn) { preheatButton }
                         if canChargeNow { chargeButton.transition(.scale.combined(with: .opacity)) }
@@ -96,6 +98,7 @@ struct HomeScreen: View {
                 case "trips": sheet = .trips
                 default: break
                 }
+                await model.loadWeather()
             }
         }
         // Read Fiat again whenever the app comes to the front, then every minute while it's open,
@@ -106,6 +109,7 @@ struct HomeScreen: View {
             async let location: () = model.loadLocation()
             await model.refreshStatus()
             await location
+            await model.loadWeather()
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(model.status?.isCharging == true ? 30 : 60))
                 guard !Task.isCancelled, !refreshing else { continue }
@@ -124,7 +128,6 @@ struct HomeScreen: View {
             carColor: V.surface,
             image: model.carImage,
             imageKey: model.carImageKey,
-            heating: model.isPreheating,
             ground: model.carGround,
             updated: updatedText,
             height: height,
@@ -212,6 +215,43 @@ struct HomeScreen: View {
         // VoiceOver hears both, without swiping.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(gaugeSummary)
+    }
+
+    // MARK: Temperature
+
+    /// Inside the car where it says, else outside it: blue when it's cold enough to want warming,
+    /// orange when it's hot enough to want cooling.
+    @ViewBuilder private var temperatureHint: some View {
+        let inside = model.status?.cabinTemperature
+        if let c = inside ?? model.outsideTemperature {
+            HStack(spacing: 5) {
+                PhIcon(name: "thermometer", size: 14)
+                Text(inside != nil ? "Inside \(Self.degrees(c))" : "\(Self.degrees(c)) outside").font(V.label)
+            }
+            .foregroundStyle(c < 5 ? V.cool : c > 25 ? V.heat : V.textMuted)
+            .padding(.bottom, 26)
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    /// What the climate is set to, on cars that report it.
+    @ViewBuilder private var settingHint: some View {
+        if let t = model.status?.targetTemperature {
+            HStack(spacing: 5) {
+                PhIcon(name: "wind", size: 14)
+                Text("Set to \(Self.degrees(t))").font(V.label)
+            }
+            .foregroundStyle(V.textMuted)
+            .padding(.bottom, 26)
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    /// "4°" in the phone's own unit (°F in the US).
+    static func degrees(_ celsius: Double) -> String {
+        let fahrenheit = Locale.current.measurementSystem == .us
+        let value = fahrenheit ? celsius * 9 / 5 + 32 : celsius
+        return "\(Int(value.rounded()))°"
     }
 
     private enum GaugePage { case battery, fuel, range }
@@ -373,6 +413,7 @@ struct HomeScreen: View {
         async let minimum: () = { try? await Task.sleep(for: .seconds(1)) }()
         _ = await (status, location, minimum)
         refreshing = false
+        await model.loadWeather()
         // The numbers are only as new as the car's last report; if that's old, ask the car itself.
         // That takes a minute or so, quietly; the numbers update when it answers.
         if !Demo.isActive, model.isStale, !model.isBusy {
@@ -726,15 +767,15 @@ struct HeatControl: View {
         ZStack {
             // Resting: frosted glass with an orange cast.
             Color.clear
-                .glassCapsule(tint: V.heat.opacity(0.7))
+                .glassCapsule(tint: V.climate.opacity(0.85))
                 .overlay(GlassSheen())
                 .opacity(active ? 0 : 1)
             // Working: the dark capsule with an orange edge; a light band drifts through while heating.
             ZStack {
                 Capsule().fill(V.ground)
-                Capsule().fill(V.activeFill(V.heat))
+                Capsule().fill(V.activeFill(V.climate))
                 GeometryReader { g in
-                    LinearGradient(colors: [V.heat.opacity(0), V.heat.opacity(0.07), Color(hex: 0xfed7aa).opacity(0.12), V.heat.opacity(0.07), V.heat.opacity(0)],
+                    LinearGradient(colors: [V.climate.opacity(0), V.climate.opacity(0.07), V.climateLight.opacity(0.12), V.climate.opacity(0.07), V.climate.opacity(0)],
                                    startPoint: .leading, endPoint: .trailing)
                         .frame(width: g.size.width * 0.55)
                         .offset(x: sweep ? g.size.width * 1.1 : -g.size.width * 0.6)
@@ -742,7 +783,7 @@ struct HeatControl: View {
                 }
                 .clipShape(Capsule())
                 .opacity(phase == .running ? 1 : 0)
-                Capsule().strokeBorder(V.heat, lineWidth: 1.5)
+                Capsule().strokeBorder(V.climate, lineWidth: 1.5)
             }
             .opacity(active ? 1 : 0)
             .scaleEffect(active ? 1 : 0.97)
@@ -751,7 +792,8 @@ struct HeatControl: View {
                 indicator.frame(width: 20, height: 20)
                 label
             }
-            .foregroundStyle(active ? V.heat : .white)
+            // Dark on the bright green, green on the dark capsule.
+            .foregroundStyle(active ? V.climate : V.ground)
             .frame(maxWidth: .infinity, alignment: active ? .leading : .center)
             .padding(.leading, active ? 22 : 0)
             // Room for Stop, so a long line shrinks rather than running under it.
@@ -765,11 +807,11 @@ struct HeatControl: View {
     @ViewBuilder private var indicator: some View {
         switch phase {
         case .idle:
-            PhIcon(name: "flame", size: 20).transition(.blurReplace.combined(with: .scale(0.6)))
+            PhIcon(name: "wind", size: 20).transition(.blurReplace.combined(with: .scale(0.6)))
         case .connecting, .starting, .stopping:
-            ProgressView().controlSize(.small).tint(V.heat).transition(.blurReplace.combined(with: .scale(0.6)))
+            ProgressView().controlSize(.small).tint(V.climate).transition(.blurReplace.combined(with: .scale(0.6)))
         case .running:
-            Circle().fill(V.heat).frame(width: 10, height: 10)
+            Circle().fill(V.climate).frame(width: 10, height: 10)
                 .scaleEffect(pulse ? 1.08 : 0.92).opacity(pulse ? 1 : 0.55)
                 .transition(.blurReplace.combined(with: .scale(0.2)))
         }
@@ -778,11 +820,11 @@ struct HeatControl: View {
     private var label: some View {
         Group {
             switch phase {
-            case .idle: Text("Heat cabin")
+            case .idle: Text("Climate")
             // Same words while sending and while the car answers, so nothing flickers in between.
             case .connecting, .starting: Text("Connecting to the car…")
             case .running:
-                Text("Heating · \(minutesLeft) min left")
+                Text("Climate on · \(minutesLeft) min")
                     .contentTransition(.numericText(countsDown: true))
                     .animation(.snappy, value: minutesLeft)
             case .stopping: Text("Stopping…")
@@ -807,7 +849,7 @@ struct HeatControl: View {
         Button(action: stop) {
             Text("Stop").font(V.body).foregroundStyle(V.ground)
                 .padding(.horizontal, 16).frame(height: 44)
-                .background(Capsule().fill(V.heat))
+                .background(Capsule().fill(V.climate))
         }
         .buttonStyle(PressStyle())
         // Nothing to stop until the start command is with the car.
@@ -1025,7 +1067,7 @@ struct ToastItem: Equatable {
             title = "Couldn't reach the car"; detail = message; isError = true
         case .done(.preconditionOn, .failed, _)
             where status?.isPluggedIn != true && (status?.stateOfCharge ?? 100) < Self.lowForHeating:
-            title = "Battery may be too low to heat"; detail = "Plug in and try again."; isError = true
+            title = "Battery may be too low"; detail = "Plug in and try again."; isError = true
         case .done(let command, .failed, _):
             title = "The car didn't accept it"; isError = true
             detail = command == .preconditionOn ? "Check it's parked with enough charge." : "It may be asleep or out of coverage. Try again in a minute."
@@ -1037,13 +1079,13 @@ struct ToastItem: Equatable {
     }
 
     private static let confirmed: [RemoteCommand: String] = [
-        .preconditionOn: "Heating", .preconditionOff: "Climate off", .lock: "Locked", .unlock: "Unlocked",
+        .preconditionOn: "Climate on", .preconditionOff: "Climate off", .lock: "Locked", .unlock: "Unlocked",
         .lights: "Lights flashed", .trunkUnlock: "Boot unlocked", .trunkLock: "Boot locked",
         .liftgateUnlock: "Liftgate unlocked", .liftgateLock: "Liftgate locked", .hornLights: "Horn and lights", .chargeNow: "Charging started",
         .deepRefresh: "Updated from the car", .locate: "Location updated",
     ]
     private static let sent: [RemoteCommand: String] = [
-        .preconditionOn: "Heat sent", .preconditionOff: "Stop sent", .lock: "Lock sent", .unlock: "Unlock sent",
+        .preconditionOn: "Climate sent", .preconditionOff: "Stop sent", .lock: "Lock sent", .unlock: "Unlock sent",
         .lights: "Lights sent", .trunkUnlock: "Boot unlock sent", .trunkLock: "Boot lock sent",
         .liftgateUnlock: "Liftgate unlock sent", .liftgateLock: "Liftgate lock sent", .hornLights: "Horn sent", .chargeNow: "Charge now sent",
         .deepRefresh: "Update requested", .locate: "Location requested",

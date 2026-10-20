@@ -46,7 +46,7 @@ final class WatchModel: NSObject, ObservableObject, WCSessionDelegate {
 
     func send(_ command: String) {
         if Self.isDemo { pretend(command); return }
-        guard WCSession.default.activationState == .activated else { show("Open Varme on your iPhone once.", error: true); return }
+        guard WCSession.default.activationState == .activated else { show("Open Luft on your iPhone once.", error: true); return }
         sending = command
         WKInterfaceDeviceHaptic.start()
         WCSession.default.sendMessage(["command": command], replyHandler: { reply in
@@ -82,7 +82,7 @@ final class WatchModel: NSObject, ObservableObject, WCSessionDelegate {
             default: break
             }
             sending = nil
-            show(["preheat": "Heating", "stop": "Climate off", "lock": "Locked", "unlock": "Unlocked", "lights": "Lights flashed"][command] ?? "Done", error: false)
+            show(["preheat": "Climate on", "stop": "Climate off", "lock": "Locked", "unlock": "Unlocked", "lights": "Lights flashed"][command] ?? "Done", error: false)
             WKInterfaceDeviceHaptic.result(true)
         }
     }

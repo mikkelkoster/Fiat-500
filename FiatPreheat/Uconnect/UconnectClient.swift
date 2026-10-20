@@ -42,6 +42,11 @@ struct VehicleStatus: Sendable, Equatable, Codable {
     var fuelLevel: Double? = nil
     var fuelRange: Double? = nil
     var fuelRangeUnit: String? = nil
+    /// Inside and outside the car, in °C, on cars that report them.
+    var cabinTemperature: Double? = nil
+    var outsideTemperature: Double? = nil
+    /// The climate's own setting, where a car reports it: what pre-conditioning heats or cools to.
+    var targetTemperature: Double? = nil
 
     /// Reads the doors and boot out of `/remote/status`.
     mutating func applyRemoteStatus(_ json: [String: Any]) {
@@ -183,6 +188,28 @@ actor UconnectClient {
         return text.contains("CHARGING") || text.contains("IN_PROGRESS")
     }
 
+    /// Every number under a key with "temp" in it, as (lower-cased path, °C). A value next to a
+    /// Fahrenheit unit is converted; {"value": 4, "unit": "C"} counts under its parent's name.
+    static func temperatures(in value: Any, path: String = "") -> [(String, Double)] {
+        var out: [(String, Double)] = []
+        if let d = value as? [String: Any] {
+            for (key, inner) in d {
+                let p = path.isEmpty ? key.lowercased() : path + "." + key.lowercased()
+                if p.contains("temp"), !p.contains("unit") {
+                    if let v = (inner as? NSNumber)?.doubleValue ?? (inner as? String).flatMap(Double.init) {
+                        let unit = ((d["unit"] ?? d["temperatureUnit"]) as? String ?? "C").uppercased()
+                        out.append((p, unit.hasPrefix("F") ? (v - 32) * 5 / 9 : v))
+                        continue
+                    }
+                }
+                out += temperatures(in: inner, path: p)
+            }
+        } else if let a = value as? [Any] {
+            for item in a { out += temperatures(in: item, path: path) }
+        }
+        return out
+    }
+
     /// Both status replies as Fiat sends them, for the command-line tool.
     func rawStatus(vin: String) async throws -> [String: Any] {
         let uid = try await authenticatedUID()
@@ -211,6 +238,12 @@ actor UconnectClient {
         let fuelRange = fuel?["distanceToEmpty"] as? [String: Any]
         status.fuelRange = number(fuelRange?["value"])
         status.fuelRangeUnit = fuelRange?["unit"] as? String
+        // Temperatures: not seen on a 500e yet, so look for any key that names one.
+        let temps = Self.temperatures(in: json)
+        let isSetting = { (k: String) in ["target", "setpoint", "settemp", "set_temp", "desired", "requested"].contains { k.contains($0) } }
+        status.targetTemperature = temps.first { k, _ in isSetting(k) }?.1
+        status.cabinTemperature = temps.first { k, _ in !isSetting(k) && ["cabin", "inside", "interior", "internal", "incar"].contains { k.contains($0) } }?.1
+        status.outsideTemperature = temps.first { k, _ in !isSetting(k) && ["outside", "outdoor", "exterior", "external", "ambient"].contains { k.contains($0) } }?.1
         // Some cars send -1 for the levels they can't charge at.
         status.minutesToFull = ["timeToFullyChargeL2", "timeToFullyChargeL3", "timeToFullyChargeL1"]
             .compactMap { number(battery?[$0]) }.first { $0 > 0 }

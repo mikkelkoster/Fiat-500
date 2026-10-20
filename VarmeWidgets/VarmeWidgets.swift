@@ -138,8 +138,8 @@ struct PreheatWidget: Widget {
         StaticConfiguration(kind: "dk.koster.varme.preheat", provider: CarProvider()) { entry in
             PreheatWidgetView(car: entry.car)
         }
-        .configurationDisplayName("Heat")
-        .description("One tap to warm the cabin.")
+        .configurationDisplayName("Climate")
+        .description("One tap to warm or cool the cabin.")
         .supportedFamilies([.systemSmall])
     }
 }
@@ -149,10 +149,10 @@ struct PreheatWidgetView: View {
     var body: some View {
         let heating = car.isPreheating
         VStack(alignment: .leading, spacing: 0) {
-            Circle().fill(heating ? V.heat : V.text).frame(width: 52, height: 52)
-                .overlay(WidgetIcon(name: "flame", size: 26).foregroundStyle(V.ground))
+            Circle().fill(heating ? V.climate : V.text).frame(width: 52, height: 52)
+                .overlay(WidgetIcon(name: "wind", size: 26).foregroundStyle(V.ground))
             Spacer()
-            Text(heating ? "Heating" : "Heat").font(V.sora(16, .semibold)).foregroundStyle(V.text)
+            Text(heating ? "On" : "Climate").font(V.sora(16, .semibold)).foregroundStyle(V.text)
             Text(heating ? car.carName : (car.nextSchedule.map { "Next: \($0)" } ?? car.carName)).font(V.sora(12)).foregroundStyle(V.textMuted).lineLimit(1)
         }
         .varmeWidgetBackground()
@@ -168,7 +168,7 @@ struct CarWidget: Widget {
             CarWidgetView(car: entry.car)
         }
         .configurationDisplayName("Your car")
-        .description("The car, its charge, and Preheat, Unlock and Find.")
+        .description("The car, its charge, and Climate, Unlock and Find.")
         .supportedFamilies([.systemMedium])
     }
 }
@@ -197,8 +197,8 @@ struct CarWidgetView: View {
                 .frame(height: 4)
                 HStack(spacing: 8) {
                     Link(destination: car.isPreheating ? VarmeLink.open : VarmeLink.preheat) {
-                        Circle().fill(car.isPreheating ? V.heat : V.text).frame(width: 40, height: 40)
-                            .overlay(WidgetIcon(name: "flame", size: 18).foregroundStyle(V.ground))
+                        Circle().fill(car.isPreheating ? V.climate : V.text).frame(width: 40, height: 40)
+                            .overlay(WidgetIcon(name: "wind", size: 18).foregroundStyle(V.ground))
                     }
                     Link(destination: car.isLocked == false ? VarmeLink.lock : VarmeLink.unlock) {
                         Circle().fill(V.raised).frame(width: 40, height: 40)
@@ -232,14 +232,14 @@ struct PreheatLiveActivity: Widget {
                     if CarSnapshot.load()?.hasCarImage ?? true {
                         (CarSnapshot.load() ?? .placeholder).carPicture.resizable().aspectRatio(contentMode: .fit).frame(width: 92)
                     } else {
-                        WidgetIcon(name: "flame", size: 28).foregroundStyle(V.heat).padding(.top, 8)
+                        WidgetIcon(name: "wind", size: 28).foregroundStyle(V.climate).padding(.top, 8)
                     }
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("Heating").font(V.sora(13)).foregroundStyle(V.textMuted)
+                        Text("Climate on").font(V.sora(13)).foregroundStyle(V.textMuted)
                         Text(timerInterval: Date()...context.state.endDate, countsDown: true)
-                            .font(V.sora(34, .ultraLight)).tracking(-1).foregroundStyle(V.heat).monospacedDigit()
+                            .font(V.sora(34, .ultraLight)).tracking(-1).foregroundStyle(V.climate).monospacedDigit()
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -251,19 +251,19 @@ struct PreheatLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     ProgressView(timerInterval: Date()...context.state.endDate, countsDown: false, label: { EmptyView() }, currentValueLabel: { EmptyView() })
-                        .tint(V.heat)
+                        .tint(V.climate)
                         .padding(.top, 4)
                 }
             } compactLeading: {
-                WidgetIcon(name: "flame", size: 18).foregroundStyle(V.heat)
+                WidgetIcon(name: "wind", size: 18).foregroundStyle(V.climate)
             } compactTrailing: {
                 Text(timerInterval: Date()...context.state.endDate, countsDown: true, showsHours: false)
-                    .font(V.sora(14, .semibold)).foregroundStyle(V.heat).monospacedDigit().frame(width: 44)
+                    .font(V.sora(14, .semibold)).foregroundStyle(V.climate).monospacedDigit().frame(width: 44)
             } minimal: {
                 ProgressView(timerInterval: Date()...context.state.endDate, countsDown: false, label: { EmptyView() }, currentValueLabel: { EmptyView() })
-                    .progressViewStyle(.circular).tint(V.heat)
+                    .progressViewStyle(.circular).tint(V.climate)
             }
-            .keylineTint(V.heat)
+            .keylineTint(V.climate)
         }
     }
 }
@@ -274,9 +274,9 @@ private struct LockScreenActivity: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 HStack(spacing: 10) {
-                    Circle().fill(V.heat.opacity(0.18)).frame(width: 32, height: 32)
-                        .overlay(WidgetIcon(name: "flame", size: 18).foregroundStyle(V.heat))
-                    Text("Heating \(context.attributes.carName)").font(V.sora(14, .semibold)).foregroundStyle(V.text)
+                    Circle().fill(V.climate.opacity(0.18)).frame(width: 32, height: 32)
+                        .overlay(WidgetIcon(name: "wind", size: 18).foregroundStyle(V.climate))
+                    Text("Climate on in \(context.attributes.carName)").font(V.sora(14, .semibold)).foregroundStyle(V.text)
                 }
                 Spacer()
                 Text(context.attributes.plate).font(V.sora(12)).foregroundStyle(V.textMuted)
@@ -284,8 +284,8 @@ private struct LockScreenActivity: View {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(timerInterval: Date()...context.state.endDate, countsDown: true)
-                        .font(V.sora(44, .ultraLight)).tracking(-2).foregroundStyle(V.heat).monospacedDigit()
-                    Text([context.state.warmBy.map { "Warm by \($0)" }, context.state.stateOfCharge.map { "\($0) %" }, context.state.rangeText]
+                        .font(V.sora(44, .ultraLight)).tracking(-2).foregroundStyle(V.climate).monospacedDigit()
+                    Text([context.state.warmBy.map { "Ready by \($0)" }, context.state.stateOfCharge.map { "\($0) %" }, context.state.rangeText]
                         .compactMap { $0 }.joined(separator: " · "))
                         .font(V.sora(13)).foregroundStyle(V.textMuted)
                 }
@@ -296,7 +296,7 @@ private struct LockScreenActivity: View {
                 }
             }
             ProgressView(timerInterval: Date()...context.state.endDate, countsDown: false, label: { EmptyView() }, currentValueLabel: { EmptyView() })
-                .tint(V.heat)
+                .tint(V.climate)
         }
         .padding(16)
     }
@@ -309,11 +309,11 @@ struct PreheatControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "dk.koster.varme.control.preheat") {
             ControlWidgetButton(action: OpenVarmeIntent(link: "preheat")) {
-                Label("Heat cabin", systemImage: "flame")
+                Label("Climate", systemImage: "wind")
             }
         }
-        .displayName("Heat cabin")
-        .description("Warm the cabin.")
+        .displayName("Climate")
+        .description("Warm or cool the cabin to the car's own setting.")
     }
 }
 

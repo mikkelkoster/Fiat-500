@@ -1,5 +1,7 @@
 import ActivityKit
 import Foundation
+import CoreLocation
+import WeatherKit
 import Observation
 import SwiftUI
 import WidgetKit
@@ -523,6 +525,45 @@ final class CarModel {
         lastTripsReply = (try? JSONSerialization.data(withJSONObject: reply, options: [.prettyPrinted, .sortedKeys]))
             .map { String(decoding: $0, as: UTF8.self) }
         return Trip.list(from: reply)
+    }
+
+    // MARK: Temperature
+
+    /// Outside at the car from Apple Weather, for cars that don't report it themselves.
+    private(set) var weatherTemperature: Double?
+    private var weatherFetchedAt: Date?
+    /// Apple's mark and legal link, shown in Settings whenever Apple Weather supplied the number.
+    private(set) var weatherAttribution: WeatherAttribution?
+
+    /// Outside the car in °C: the car's own reading, else Apple Weather at its last position.
+    var outsideTemperature: Double? { status?.outsideTemperature ?? weatherTemperature }
+
+    /// Looks up the weather where the car is parked, at most every 15 minutes.
+    func loadWeather() async {
+        if Demo.isActive {
+            weatherTemperature = UserDefaults.standard.string(forKey: "demoOutside").flatMap(Double.init) ?? 3
+            return
+        }
+        guard status?.outsideTemperature == nil, let location,
+              Date().timeIntervalSince(weatherFetchedAt ?? .distantPast) > 15 * 60 else { return }
+        do {
+            let current = try await WeatherService.shared.weather(
+                for: CLLocation(latitude: location.latitude, longitude: location.longitude), including: .current)
+            weatherTemperature = current.temperature.converted(to: .celsius).value
+            weatherFetchedAt = Date()
+            if weatherAttribution == nil { weatherAttribution = try? await WeatherService.shared.attribution }
+        } catch {
+            // No weather (offline, or the service not switched on): the hint just doesn't show.
+        }
+    }
+
+    /// Everything Fiat says about the car, for the owner to copy and share when something's missing.
+    func carReport() async -> String? {
+        guard hasAccount, !Demo.isActive, let vin = selectedVIN else { return nil }
+        await client.setAccount(account)
+        guard let raw = try? await client.rawStatus(vin: vin),
+              let data = try? JSONSerialization.data(withJSONObject: raw, options: [.prettyPrinted, .sortedKeys]) else { return nil }
+        return String(decoding: data, as: UTF8.self)
     }
 
     /// Fiat's trips reply as it came, for the owner to copy when the app can't read part of it.

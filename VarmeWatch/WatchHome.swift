@@ -21,7 +21,7 @@ struct WatchHome: View {
                     } else {
                         VStack(spacing: 8) {
                             PhIcon(name: "car", size: 28).foregroundStyle(V.textMuted)
-                            Text("Open Varme on your iPhone to connect your car.")
+                            Text("Open Luft on your iPhone to connect your car.")
                                 .font(V.sora(14)).foregroundStyle(V.textMuted).multilineTextAlignment(.center)
                         }
                         .padding(.top, 20)
@@ -30,7 +30,7 @@ struct WatchHome: View {
                 .padding(.horizontal, 4)
             }
             .navigationTitle {
-                Text(model.car?.carName ?? "Varme").font(V.sora(15, .semibold)).foregroundStyle(V.text)
+                Text(model.car?.carName ?? "Luft").font(V.sora(15, .semibold)).foregroundStyle(V.text)
             }
             .containerBackground(V.ground.gradient, for: .navigation)
             .overlay(alignment: .bottom) {
@@ -80,27 +80,27 @@ struct WatchHome: View {
             Button { model.send("stop") } label: {
                 VStack(spacing: 2) {
                     Text(timerInterval: Date()...started.addingTimeInterval(30 * 60), countsDown: true)
-                        .font(V.sora(24, .ultraLight)).foregroundStyle(V.heat).monospacedDigit()
+                        .font(V.sora(24, .ultraLight)).foregroundStyle(V.climate).monospacedDigit()
                     Text(model.sending == "stop" ? "Stopping…" : "Tap to stop").font(V.sora(11)).foregroundStyle(V.textMuted)
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 10)
-                .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(V.heat.opacity(0.12)))
-                .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(V.heat, lineWidth: 1.5))
+                .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(V.climate.opacity(0.12)))
+                .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(V.climate, lineWidth: 1.5))
             }
             .buttonStyle(.plain)
             .disabled(model.sending != nil)
         } else {
             Button { model.send("preheat") } label: {
                 HStack(spacing: 8) {
-                    if model.sending == "preheat" { ProgressView().tint(.white).frame(width: 18, height: 18) }
-                    else { PhIcon(name: "flame", size: 18) }
-                    Text(model.sending == "preheat" ? "Connecting…" : "Heat cabin").font(V.sora(16, .semibold))
+                    if model.sending == "preheat" { ProgressView().tint(V.ground).frame(width: 18, height: 18) }
+                    else { PhIcon(name: "wind", size: 18) }
+                    Text(model.sending == "preheat" ? "Connecting…" : "Climate").font(V.sora(16, .semibold))
                         .lineLimit(1).minimumScaleFactor(0.8)
                 }
-                // The phone's Heat cabin orange, so the two read as one app.
-                .foregroundStyle(.white)
+                // The phone's Climate green, so the two read as one app.
+                .foregroundStyle(V.ground)
                 .frame(maxWidth: .infinity).frame(height: 52)
-                .background(Capsule().fill(V.heat))
+                .background(Capsule().fill(V.climate))
             }
             .buttonStyle(.plain)
             .disabled(model.sending != nil)

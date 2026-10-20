@@ -74,8 +74,8 @@ struct BatteryComplicationView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(car.carName).font(.headline).widgetAccentable()
                 Text("\(car.stateOfCharge.map { "\(Int($0)) %" } ?? "–") · \(car.rangeText)")
-                Text(car.isPreheating ? "Heating" : car.isLocked == true ? "Locked" : car.isLocked == false ? "Unlocked" : (car.isCharging ? "Charging" : ""))
-                    .foregroundStyle(car.isPreheating ? V.heat : .secondary)
+                Text(car.isPreheating ? "Climate on" : car.isLocked == true ? "Locked" : car.isLocked == false ? "Unlocked" : (car.isCharging ? "Charging" : ""))
+                    .foregroundStyle(car.isPreheating ? V.climate : .secondary)
             }
         }
     }
@@ -88,13 +88,13 @@ struct PreheatComplication: Widget {
             ZStack {
                 AccessoryWidgetBackground()
                 Image("ph-flame").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).padding(12)
-                    .foregroundStyle(entry.car.isPreheating ? V.heat : .white)
+                    .foregroundStyle(entry.car.isPreheating ? V.climate : .white)
                     .widgetAccentable()
             }
             .containerBackground(.clear, for: .widget)
         }
-        .configurationDisplayName("Heat")
-        .description("Open Varme to heat the cabin.")
+        .configurationDisplayName("Climate")
+        .description("Open Luft to warm or cool the cabin.")
         .supportedFamilies([.accessoryCircular])
     }
 }

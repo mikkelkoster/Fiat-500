@@ -35,7 +35,7 @@ struct OnboardingFlow: View {
             V.ground.ignoresSafeArea()
             // VARME, then the covered car in its own studio light, edges faded into the page.
             VStack(spacing: 0) {
-                Text("Varme").eyebrowStyle().padding(.top, 28)
+                Text("Luft").eyebrowStyle().padding(.top, 28)
                 Image("intro-covered").resizable().aspectRatio(contentMode: .fit)
                     .padding(.top, -4)
                 Spacer()
@@ -44,7 +44,7 @@ struct OnboardingFlow: View {
             VStack(spacing: 10) {
                 Spacer()
                 Text("Your EV.\nIn your hands.").font(V.sora(34, .light)).tracking(-1).multilineTextAlignment(.center).foregroundStyle(V.text)
-                Text("Heat it, lock it, find it and charge it from your phone, by Siri and on a schedule.")
+                Text("Warm it, cool it, lock it, find it and charge it from your phone, by Siri and on a schedule.")
                     .font(V.body).foregroundStyle(V.textMuted).multilineTextAlignment(.center).padding(.bottom, 8)
                 VButton(title: "Get started") { step = 1 }
                 // No car on hand (or App Review): the whole app on a made-up 500e.
@@ -64,7 +64,7 @@ struct OnboardingFlow: View {
                     .opacity(0.8)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Brand.allCases.map(\.name).joined(separator: ", "))
-                    Text("Brand names belong to their owners. Varme is an independent app, not affiliated with Stellantis.")
+                    Text("Brand names belong to their owners. Luft is an independent app, not affiliated with Stellantis.")
                         .font(V.sora(11)).foregroundStyle(V.textFaint).multilineTextAlignment(.center)
                 }
                 .padding(.top, 14)
@@ -76,7 +76,7 @@ struct OnboardingFlow: View {
     // MARK: Brand
 
     private var brandStep: some View {
-        StepPage(step: 1, eyebrow: "Step 1 of 5", title: "Which car do you drive?", body: "Varme signs in with the account you already use in your car brand's app.") {
+        StepPage(step: 1, eyebrow: "Step 1 of 5", title: "Which car do you drive?", body: "Luft signs in with the account you already use in your car brand's app.") {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 ForEach(Brand.allCases) { b in
                     Button {
@@ -149,7 +149,7 @@ struct OnboardingFlow: View {
         let active = model.availability(of: .preconditionOn) == .available
         let package = brand.remotePackageName
         return StepPage(step: 3, eyebrow: "Step 3 of 5", title: active ? "You're all set with \(brand.name)" : "One thing from \(brand.name)",
-                        body: active ? "Your account has \(package), so Varme can heat, lock and find the car." : "Reading your battery is free. Doing things to the car from a distance is a \(brand.name) subscription called \(package). Varme can't work around it; nobody can.") {
+                        body: active ? "Your account has \(package), so Luft can warm or cool, lock and find the car." : "Reading your battery is free. Doing things to the car from a distance is a \(brand.name) subscription called \(package). Luft can't work around it; nobody can.") {
             VStack(spacing: 0) {
                 PackageRow(ok: true, title: "Battery, range, plugged in", detail: "Included with the car")
                 PackageRow(ok: active, title: "Heat and cool", detail: active ? "Active" : "Needs \(package)")
@@ -162,7 +162,7 @@ struct OnboardingFlow: View {
             if !active {
                 HStack(alignment: .top, spacing: 10) {
                     Circle().fill(V.amber).frame(width: 8, height: 8).padding(.top, 6)
-                    Text("We checked your car: \(package) isn't active. It's bought in the \(brand.name) app, usually by the year. Varme itself is free.")
+                    Text("We checked your car: \(package) isn't active. It's bought in the \(brand.name) app, usually by the year. Luft itself is free.")
                         .font(V.body).foregroundStyle(V.text)
                 }
                 .padding(16)
@@ -229,15 +229,15 @@ struct OnboardingFlow: View {
     private var readyStep: some View {
         StepPage(step: 5, eyebrow: "Step 5 of 5", title: "You're set", body: "Three things worth doing now. All optional.") {
             VStack(spacing: 0) {
-                TipRow(icon: "clock", title: "Set a morning schedule", detail: "Warm by 07:30 on weekdays")
-                TipRow(icon: "flame", title: "Allow Siri", detail: "\"Hey Siri, warm up my car with Varme\"")
-                TipRow(icon: "car", title: "Add the widget", detail: "Battery and Heat on your home screen", last: true)
+                TipRow(icon: "clock", title: "Set a morning schedule", detail: "Ready by 07:30 on weekdays")
+                TipRow(icon: "wind", title: "Allow Siri", detail: "\"Hey Siri, start the climate in my car with Luft\"")
+                TipRow(icon: "car", title: "Add the widget", detail: "Battery and Climate on your home screen", last: true)
             }
             .padding(.horizontal, 16)
             .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
             .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.raised, lineWidth: 1))
         } footer: {
-            VButton(title: "Open Varme") { model.finishOnboarding() }
+            VButton(title: "Open Luft") { model.finishOnboarding() }
         }
     }
 }

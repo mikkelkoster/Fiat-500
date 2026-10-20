@@ -30,7 +30,7 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
 
     func configure() {
         center.delegate = self
-        let start = UNNotificationAction(identifier: Self.startActionID, title: "Heat now", options: [])
+        let start = UNNotificationAction(identifier: Self.startActionID, title: "Start now", options: [])
         let lock = UNNotificationAction(identifier: CarAlerts.lockActionID, title: "Lock", options: [])
         center.setNotificationCategories([
             UNNotificationCategory(identifier: Self.categoryID, actions: [start], intentIdentifiers: []),
@@ -55,8 +55,8 @@ final class ScheduleCoordinator: NSObject, UNUserNotificationCenterDelegate, @un
             for schedule in schedules where schedule.isEnabled {
                 for weekday in schedule.weekdays {
                     let content = UNMutableNotificationContent()
-                    content.title = "Warm by \(schedule.readyTimeText)"
-                    content.body = "Long-press and choose Heat now. Skipped if it already started."
+                    content.title = "Ready by \(schedule.readyTimeText)"
+                    content.body = "Long-press and choose Start now. Skipped if it already started."
                     content.sound = .default
                     content.categoryIdentifier = Self.categoryID
                     content.userInfo = ["scheduleID": schedule.id.uuidString]

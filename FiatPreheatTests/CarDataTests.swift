@@ -135,3 +135,15 @@ final class ChargingWordsTests: XCTestCase {
         XCTAssertNil(UconnectClient.charging(nil))
     }
 }
+
+final class TemperatureTests: XCTestCase {
+    func testFindsTemperaturesAnywhere() {
+        let reply: [String: Any] = ["vehicleInfo": ["cabinTemperature": ["value": 41, "unit": "F"],
+                                                    "outsideTemp": 3.5],
+                                    "climate": ["targetTemperature": 21]]
+        let temps = Dictionary(UconnectClient.temperatures(in: reply), uniquingKeysWith: { a, _ in a })
+        XCTAssertEqual(temps["vehicleinfo.cabintemperature.value"] ?? 0, 5, accuracy: 0.01, "°F to °C")
+        XCTAssertEqual(temps["vehicleinfo.outsidetemp"], 3.5)
+        XCTAssertEqual(temps["climate.targettemperature"], 21)
+    }
+}

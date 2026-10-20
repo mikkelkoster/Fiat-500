@@ -9,7 +9,6 @@ struct CarHero: View {
     let image: Image?
     /// Changes with the picture: the cover fades into the car's own picture when it arrives.
     var imageKey = ""
-    let heating: Bool
     /// The picture is one of the 500e renders, whose tyre positions are known.
     var lampsKnown = false
     /// Where any other picture meets the ground, worked out from its silhouette.
@@ -22,8 +21,6 @@ struct CarHero: View {
     var cars: [(vin: String, name: String)] = []
     var onSwitchCar: ((String) -> Void)? = nil
 
-    @State private var breathe = false
-    @State private var shimmer = false
 
     var body: some View {
         GeometryReader { geo in
@@ -41,36 +38,9 @@ struct CarHero: View {
                         CarGround(knownWheels: lampsKnown, shape: ground)
                             .frame(width: imageWidth, height: imageHeight)
                             .position(x: w / 2, y: imageTop + imageHeight / 2)
-                        if heating {
-                            // A blurred warm copy of the car itself breathes under it.
-                            image.resizable().aspectRatio(contentMode: .fit)
-                                .frame(width: imageWidth)
-                                .colorMultiply(V.heat).brightness(0.2).blur(radius: 22)
-                                .blendMode(.screen)
-                                .scaleEffect(breathe ? 1.03 : 1, anchor: .center)
-                                .opacity(breathe ? 1 : 0.55)
-                                .position(x: w / 2, y: imageTop + imageHeight / 2)
-                            warmEllipse(w: imageWidth * 0.44, h: imageHeight * 0.18)
-                                .position(x: w / 2, y: imageTop + imageHeight * 0.9)
-                        }
                         image.resizable().aspectRatio(contentMode: .fit)
                             .frame(width: imageWidth)
                             .position(x: w / 2, y: imageTop + imageHeight / 2)
-                        if heating {
-                            warmEllipse(w: imageWidth * 0.38, h: imageHeight * 0.25, bright: true)
-                                .position(x: w / 2 - imageWidth * 0.02, y: imageTop + imageHeight * 0.36)
-                            ForEach(0..<3, id: \.self) { i in
-                                let x = w / 2 + CGFloat(i - 1) * imageWidth * 0.1
-                                Ellipse().fill(RadialGradient(colors: [Color(hex: 0xfed7aa).opacity(0.55), V.heat.opacity(0)], center: .center, startRadius: 0, endRadius: 30))
-                                    .frame(width: 46, height: 74)
-                                    .blur(radius: 7)
-                                    .blendMode(.screen)
-                                    .offset(y: shimmer ? -46 : 26)
-                                    .opacity(shimmer ? 0 : 0.75)
-                                    .animation(.timingCurve(0.3, 0.1, 0.2, 1, duration: 3.6).repeatForever(autoreverses: false).delay(Double(i) * 1.2), value: shimmer)
-                                    .position(x: x, y: imageTop + imageHeight * 0.14)
-                            }
-                        }
                     }
                     .id(imageKey)
                     // Carries its own animation, so the swap cross-fades whatever triggered it.
@@ -142,35 +112,11 @@ struct CarHero: View {
         }
         .frame(height: height)
         .clipped()
-        .onAppear { startAnimations() }
-        .onChange(of: heating) { _, _ in startAnimations() }
-    }
-
-    private func startAnimations() {
-        breathe = false; shimmer = false
-        guard heating else { return }
-        withAnimation(.timingCurve(0.45, 0, 0.55, 1, duration: 4.2).repeatForever(autoreverses: true)) { breathe = true }
-        shimmer = true
     }
 
     private var spotlight: some View {
         let tint: Color = carColor.luminance < 0.15 ? V.outline : carColor.opacity(0.24)
-        let centre = heating ? Color(hex: 0x431407) : tint
-        let mid = heating ? Color(hex: 0x1c1917) : V.surface
-        return RadialGradient(colors: [centre, mid, V.ground], center: UnitPoint(x: 0.5, y: 0.7), startRadius: 0, endRadius: 320)
-            .animation(.easeInOut(duration: 1.2), value: heating)
-    }
-
-    private func warmEllipse(w: CGFloat, h: CGFloat, bright: Bool = false) -> some View {
-        Ellipse()
-            .fill(RadialGradient(colors: bright
-                ? [Color(hex: 0xfed7aa).opacity(0.85), V.heat.opacity(0.5), V.heat.opacity(0)]
-                : [V.heat.opacity(0.34), V.heat.opacity(0)], center: .center, startRadius: 0, endRadius: max(w, h) / 2))
-            .frame(width: w, height: h)
-            .blur(radius: 6)
-            .blendMode(.screen)
-            .opacity(breathe ? 0.95 : 0.45)
-            .scaleEffect(x: breathe ? 1.06 : 1)
+        return RadialGradient(colors: [tint, V.surface, V.ground], center: UnitPoint(x: 0.5, y: 0.7), startRadius: 0, endRadius: 320)
     }
 
     private var plateChipText: some View {

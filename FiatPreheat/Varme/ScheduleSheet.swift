@@ -56,7 +56,7 @@ struct ScheduleSheet: View {
 
     private var list: some View {
         VStack(spacing: 0) {
-            VSheetHeader(eyebrow: "Schedule", title: "Warm when you leave") { dismiss() }
+            VSheetHeader(eyebrow: "Schedule", title: "Ready when you leave") { dismiss() }
             VStack(spacing: 10) {
                 ForEach(model.schedules) { schedule in
                     ScheduleRow(schedule: schedule,
@@ -269,7 +269,7 @@ private struct CarTimerRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            PhIcon(name: timer.kind == .charge ? "lightning" : "flame", size: 18)
+            PhIcon(name: timer.kind == .charge ? "lightning" : "wind", size: 18)
                 .foregroundStyle(isOn ? V.text : V.textFaint)
             VStack(alignment: .leading, spacing: 2) {
                 Text(timer.timeText).font(V.sora(22, .light)).foregroundStyle(isOn ? V.text : V.textFaint).monospacedDigit()
