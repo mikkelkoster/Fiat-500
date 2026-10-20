@@ -55,8 +55,8 @@ Luft is an independent app. It is not made by, affiliated with or endorsed by an
 `precondition,preheat,cool,ev,electric car,remote,climate,heater,lock,unlock,charge,battery,winter` (95)
 
 ## URLs
-- Support URL: `https://varme-app.vercel.app/support.html`
-- Privacy Policy URL: `https://varme-app.vercel.app/privacy.html`
+- Support URL: `https://luft-app.vercel.app/support.html`
+- Privacy Policy URL: `https://luft-app.vercel.app/privacy.html`
 - Marketing URL: leave empty
 
 ## Copyright
