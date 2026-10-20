@@ -55,8 +55,8 @@ Varme is an independent app. It is not made by, affiliated with or endorsed by a
 `preheat,precondition,ev,electric car,remote,climate,heater,lock,unlock,charge,battery,range,winter` (98)
 
 ## URLs
-- Support URL: `https://mikkelkoster.github.io/Fiat-500/support.html` (after GitHub Pages is on)
-- Privacy Policy URL: `https://mikkelkoster.github.io/Fiat-500/privacy.html`
+- Support URL: `https://varme-app.vercel.app/support.html`
+- Privacy Policy URL: `https://varme-app.vercel.app/privacy.html`
 - Marketing URL: leave empty
 
 ## Copyright
