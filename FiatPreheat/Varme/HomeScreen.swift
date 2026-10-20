@@ -20,10 +20,10 @@ struct HomeScreen: View {
     /// the gaps and a little air above the home indicator.
     private static let aroundGauge: CGFloat = heroHeight + 20 + 60 + 78 + 60 + V.cardGap * 6 + 8
 
-    /// The gauge grows into the room the screen has, up to a third larger; smaller iPhones get it
+    /// The gauge grows into the room the screen has, up to 45 % larger; smaller iPhones get it
     /// a little smaller than natural rather than pushing the slider off the screen.
     private static func gaugeScale(screenHeight: CGFloat) -> CGFloat {
-        min(1.32, max(0.85, (screenHeight - aroundGauge - 16) / (gaugeHeight + 5)))
+        min(1.45, max(0.85, (screenHeight - aroundGauge - 16) / (gaugeHeight + 5)))
     }
 
     /// How far to pull before letting go refreshes.

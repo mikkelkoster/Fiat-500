@@ -26,13 +26,6 @@ enum Demo {
     static let petrolServices = ["RDL", "RDU", "HBLF", "ROLIFTGATEUNLOCK", "ROLIFTGATELOCK", "VF"]
     /// A second car, to show switching.
     static let vehicles = [vehicle, Vehicle(vin: "ZARNAAG00R0000000", nickname: nil, model: "Alfa Romeo Junior Elettrica", services: RemoteCommand.allCases.map(\.rawValue))]
-    /// The car's own timers, in the shape Fiat sends them.
-    static let carTimers: [String: Any] = ["schedules": [
-        ["scheduleType": "CHARGE", "startTime": "00:30", "endTime": "06:00", "enableScheduleType": true, "repeatSchedule": true,
-         "scheduledDays": ["monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": false, "sunday": false]],
-        ["scheduleType": "CLIMATE", "startTime": "07:10", "enableScheduleType": false, "repeatSchedule": true,
-         "scheduledDays": ["monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": false, "sunday": false]],
-    ]]
     static var trips: [Trip] {
         let day: TimeInterval = 86_400
         return [

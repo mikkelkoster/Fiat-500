@@ -29,7 +29,7 @@ CLIMATE
 One tap warms or cools the car to the temperature last set inside it, and a live countdown shows on the Lock Screen and in the Dynamic Island. The temperature outside the car is right there to help you decide. Stop it any time, even while the car is still answering.
 
 SCHEDULES
-Set "ready by 07:30 on weekdays" and Luft starts the climate in time. Make as many as you need, for weekdays and weekends, and switch the car's own charging and climate timers on or off.
+Set "ready by 07:30 on weekdays" and Luft starts the climate in time. Make as many as you need, for weekdays and weekends.
 
 BATTERY AND RANGE
 A clear gauge shows charge and range, coloured by how much is left. Swipe between them; pull down to refresh.

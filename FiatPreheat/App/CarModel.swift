@@ -76,9 +76,6 @@ final class CarModel {
         let full = max(bestFullRangeKm ?? 0, km * 100 / soc)
         return full > 0 ? min(1, km / full) : soc / 100
     }
-    /// The car's own timers, once read.
-    private(set) var carTimers: CarTimers?
-    private(set) var carTimersError: String?
     var ownerName: String? {
         didSet { defaults.set(ownerName, forKey: Keys.ownerName) }
     }
@@ -180,7 +177,6 @@ final class CarModel {
     private func loadCarSettings() {
         plate = defaults.string(forKey: carKey(Keys.plate)) ?? ""
         carName = defaults.string(forKey: carKey(Keys.carName)) ?? vehicle.map { $0.nickname ?? $0.model ?? "My car" } ?? "My car"
-        carTimers = nil
         location = nil
         status = Self.savedStatus(selectedVIN, defaults)
     }
@@ -402,39 +398,6 @@ final class CarModel {
         if Demo.isActive { status = Demo.status; return }
         await refreshStatus()
         await loadLocation()
-    }
-
-    // MARK: The car's own timers
-
-    func loadCarTimers() async {
-        guard hasAccount, let vin = selectedVIN else { return }
-        if Demo.isActive { carTimers = CarTimers(reply: Demo.carTimers); return }
-        await client.setAccount(account)
-        do {
-            carTimers = CarTimers(reply: try await client.carSchedules(vin: vin))
-            carTimersError = carTimers == nil ? "This car has no timers to show." : nil
-        } catch {
-            carTimersError = error.localizedDescription
-        }
-    }
-
-    /// Writes one changed timer to the car and waits for it to confirm.
-    func saveCarTimer(_ timer: CarTimer) async -> CommandState {
-        guard var timers = carTimers, let vin = selectedVIN else { return .failed("Timers not loaded.") }
-        timers.update(timer)
-        let before = carTimers
-        carTimers = timers
-        if Demo.isActive { return .done(.preconditionOn, .succeeded, Date()) }
-        await client.setAccount(account)
-        do {
-            let id = try await client.setCarSchedules(vin: vin, body: timers.body)
-            let result = await client.waitForResult(vin: vin, correlationId: id)
-            if result == .failed { carTimers = before }
-            return .done(.preconditionOn, result, Date())
-        } catch {
-            carTimers = before
-            return .failed(error.localizedDescription)
-        }
     }
 
     // MARK: Trips
