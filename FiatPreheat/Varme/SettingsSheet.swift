@@ -21,19 +21,6 @@ struct SettingsSheet: View {
                     }
                     .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Colour").font(V.label).foregroundStyle(V.textMuted)
-                            Spacer()
-                            if !model.paints.isEmpty {
-                                Text(CarPaint.fiat500e(matching: model.carColorHex).name).font(V.label).foregroundStyle(V.text)
-                            }
-                        }
-                        CarColorPicker(hex: $model.carColorHex, paints: model.paints)
-                    }
-                    .padding(16)
-                    .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
-
                     VMenuRow(title: "Distance", options: [(false, "Kilometres"), (true, "Miles")], selection: $model.useMiles)
                         .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.raised))
 
@@ -135,39 +122,3 @@ struct SettingsSheet: View {
     }
 }
 
-/// Twelve swatches and a free colour. The choice tints the light around the car.
-struct CarColorPicker: View {
-    @Binding var hex: String
-    /// The car's factory paints, when we have pictures of them; the picture follows the choice.
-    var paints: [CarPaint] = []
-
-    static let swatches: [(String, String)] = [
-        ("Black", "#18181b"), ("White", "#f4f4f5"), ("Grey", "#71717a"), ("Silver", "#d4d4d8"), ("Red", "#dc2626"), ("Orange", "#f97316"),
-        ("Yellow", "#facc15"), ("Green", "#15803d"), ("Teal", "#0d9488"), ("Light blue", "#7dd3fc"), ("Blue", "#1d4ed8"), ("Rose", "#fda4af"),
-    ]
-
-    var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 6), spacing: 6) {
-            ForEach(paints.isEmpty ? Self.swatches : paints.map { ($0.name, $0.hex) }, id: \.1) { name, value in
-                Button {
-                    Haptics.select()
-                    hex = value
-                } label: {
-                    Circle().fill(Color(hexString: value))
-                        .overlay(Circle().strokeBorder(V.outline, lineWidth: 1))
-                        .frame(width: 32, height: 32)
-                        .frame(width: 44, height: 44)
-                        .overlay(Circle().strokeBorder(hex.lowercased() == value ? V.text : .clear, lineWidth: 2))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(name)
-            }
-            if paints.isEmpty {
-                ColorPicker("", selection: Binding(get: { Color(hexString: hex) }, set: { hex = $0.hexString }), supportsOpacity: false)
-                    .labelsHidden()
-                    .frame(width: 44, height: 44)
-                    .accessibilityLabel("Any colour")
-            }
-        }
-    }
-}

@@ -120,10 +120,10 @@ struct HomeScreen: View {
         CarHero(
             carName: model.carName,
             plate: model.plate,
-            carColor: Color(hexString: model.carColorHex),
+            // The picture carries the car's own paint; the light around it stays neutral.
+            carColor: V.surface,
             image: model.carImage,
             heating: model.isPreheating,
-            lampsKnown: !model.paints.isEmpty,
             ground: model.carGround,
             updated: updatedText,
             loading: model.carImageLoading,

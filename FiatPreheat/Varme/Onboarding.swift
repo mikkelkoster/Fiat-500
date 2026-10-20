@@ -219,10 +219,6 @@ struct OnboardingFlow: View {
                 VTextRow(title: "Plate", text: $model.plate, caps: true)
             }
             .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Colour").font(V.label).foregroundStyle(V.textMuted)
-                CarColorPicker(hex: $model.carColorHex, paints: model.paints)
-            }
         } footer: {
             VButton(title: "Continue") { step = 5 }
         }

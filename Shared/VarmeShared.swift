@@ -32,7 +32,7 @@ struct CarSnapshot: Codable, Equatable {
     /// Which picture of the car, in the asset catalog; follows the paint chosen in the app.
     var carImageName: String? = nil
 
-    var carImage: String { carImageName ?? "car-fiat-500e-601" }
+    var carImage: String { carImageName ?? "car-covered" }
 
     /// Marks a picture made on the phone and left in the App Group, not one in the asset catalog.
     static let sharedPictureName = "group:car.png"
@@ -87,7 +87,7 @@ extension CarSnapshot {
         if carImage == Self.sharedPictureName, let url = Self.sharedPictureURL, let image = UIImage(contentsOfFile: url.path) {
             return Image(uiImage: image)
         }
-        return Image(carImage == Self.sharedPictureName ? "car-fiat-500e-601" : carImage)
+        return Image(carImage == Self.sharedPictureName ? "car-covered" : carImage)
     }
 }
 #endif

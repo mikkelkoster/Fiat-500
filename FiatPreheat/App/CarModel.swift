@@ -67,8 +67,8 @@ final class CarModel {
     /// Where each of those pictures meets the ground, for its shadow.
     private(set) var grounds: [String: GroundShape] = [:]
     var carGround: GroundShape? {
-        if Demo.isSample { return Self.coveredGround }
-        return selectedVIN.flatMap { grounds[$0] }
+        if let vin = selectedVIN, !Demo.isActive, pictures[vin] != nil { return grounds[vin] }
+        return carImage == nil ? nil : Self.coveredGround
     }
     private static let coveredGround = UIImage(named: "car-covered").flatMap(CarPicture.ground(of:))
 
@@ -145,20 +145,14 @@ final class CarModel {
         .min { $0.1 < $1.1 }
     }
 
-    /// The picture of the car. For now the one render we have; other cars get a silhouette.
+    /// The picture of the car: the one the brand's own servers have for this car (its real model
+    /// and paint), cut out on the phone. No carmaker artwork ships in the app. Until it arrives
+    /// there's a spinner; a car without one, the sample car and the demo get a car under a cover.
     var carImage: Image? {
-        // The sample car is a prototype under a cover: no real car's picture or paint.
-        if Demo.isSample { return Image("car-covered") }
-        if !paints.isEmpty { return Image(CarPaint.fiat500e(matching: carColorHex).imageName) }
-        return selectedVIN.flatMap { pictures[$0] }.map { Image(uiImage: $0) }
-    }
-
-    /// The factory paints we have pictures of for this car; empty when we only have a silhouette.
-    var paints: [CarPaint] {
-        if Demo.isSample { return [] }
-        guard let vehicle else { return Demo.isActive ? CarPaint.fiat500e : [] }
-        let isNew500 = vehicle.vin.hasPrefix("ZFAEFAC") || (vehicle.model ?? "").localizedCaseInsensitiveContains("500")
-        return isNew500 ? CarPaint.fiat500e : []
+        if Demo.isActive { return Image("car-covered") }
+        guard let vin = selectedVIN else { return nil }
+        if let picture = pictures[vin] { return Image(uiImage: picture) }
+        return picturesTried.contains(vin) && !pictureLoading ? Image("car-covered") : nil
     }
 
     /// From the car's service list. A car that lists nothing gets every command, so an older or
@@ -427,7 +421,7 @@ final class CarModel {
 
     /// For cars without a bundled picture: the brand's picture, cut out on the phone, once.
     private func loadPictureIfNeeded() async {
-        guard paints.isEmpty, let vin = selectedVIN, pictures[vin] == nil, !picturesTried.contains(vin) else { return }
+        guard let vin = selectedVIN, pictures[vin] == nil, !picturesTried.contains(vin) else { return }
         picturesTried.insert(vin)
         if let cached = CarPicture.cached(vin: vin) { pictures[vin] = cached; return }
         pictureLoading = true
@@ -623,11 +617,12 @@ final class CarModel {
         var rangeKm = status?.range
         if let r = rangeKm, status?.rangeUnit?.lowercased().hasPrefix("mi") == true { rangeKm = r * 1.609 }
         let next = nextSchedule?.ready.formatted(.dateTime.weekday(.abbreviated).hour().minute())
-        if let vin = selectedVIN, paints.isEmpty, let picture = pictures[vin] { CarPicture.shareWithWidgets(picture) }
+        let picture = selectedVIN.flatMap { pictures[$0] }
+        if let picture { CarPicture.shareWithWidgets(picture) }
         CarSnapshot(carName: carName, plate: plate, stateOfCharge: status?.stateOfCharge, rangeKm: rangeKm, useMiles: useMiles,
                     isCharging: status?.isCharging == true, isPluggedIn: status?.isPluggedIn == true, isLocked: status?.isLocked,
                     preheatStartedAt: isPreheating ? lastPreheatStart : nil, nextSchedule: next, hasCarImage: carImage != nil,
-                    updatedAt: Date(), carImageName: paints.isEmpty ? (carImage == nil ? nil : CarSnapshot.sharedPictureName) : CarPaint.fiat500e(matching: carColorHex).imageName).save()
+                    updatedAt: Date(), carImageName: picture != nil ? CarSnapshot.sharedPictureName : carImage == nil ? nil : "car-covered").save()
         if let snapshot = CarSnapshot.load() { WatchLink.shared.publish(snapshot) }
         WidgetCenter.shared.reloadAllTimelines()
         if #available(iOS 18.0, *) { ControlCenter.shared.reloadAllControls() }
