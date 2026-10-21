@@ -31,28 +31,59 @@ struct OnboardingFlow: View {
     // MARK: Welcome
 
     private var welcome: some View {
-        // Calm and short: the name, the covered car small in its own light, one line, two buttons.
-        // (That Luft is independent of the brands is said in Settings.)
+        // What it is, what it does, who it's for: the name and one line, the covered car small in
+        // its own light, six things it does, two buttons, and the brands it works with.
         VStack(spacing: 0) {
             Text("Luft").eyebrowStyle().padding(.top, 28)
-            Spacer(minLength: 12)
+            Text("Your EV.\nIn your hands.").font(V.sora(34, .light)).tracking(-1).multilineTextAlignment(.center)
+                .foregroundStyle(V.text).padding(.top, 14)
+            Spacer(minLength: 8)
             Image("intro-covered").resizable().aspectRatio(contentMode: .fit)
-                .frame(maxWidth: 300)
+                .frame(maxWidth: 250)
                 // The photo's studio backdrop fades into the page, so no edge of it shows.
-                .mask(RadialGradient(colors: [.black, .black, .clear], center: .center, startRadius: 0, endRadius: 150))
+                .mask(RadialGradient(colors: [.black, .black, .clear], center: .center, startRadius: 0, endRadius: 125))
                 .accessibilityHidden(true)
-            Spacer(minLength: 12)
-            Text("Your EV.\nIn your hands.").font(V.sora(34, .light)).tracking(-1).multilineTextAlignment(.center).foregroundStyle(V.text)
-            Spacer(minLength: 24)
+            Spacer(minLength: 8)
+            features
+            Spacer(minLength: 20)
             VStack(spacing: 10) {
                 VButton(title: "Get started") { step = 1 }
                 // No car on hand (or App Review): the whole app on a made-up car.
                 VButton(title: "Try with a sample car", prominent: false) { model.startSampleCar() }
             }
+            VStack(spacing: 10) {
+                Text("Works with").eyebrowStyle()
+                VStack(spacing: 10) {
+                    HStack(spacing: 16) { ForEach([Brand.fiat, .jeep, .alfaRomeo, .maserati]) { BrandMark(brand: $0, scale: 0.6) } }
+                    HStack(spacing: 16) { ForEach([Brand.chrysler, .dodge, .ram]) { BrandMark(brand: $0, scale: 0.6) } }
+                }
+                .foregroundStyle(V.text)
+                .opacity(0.6)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Works with " + Brand.allCases.map(\.name).joined(separator: ", "))
+            }
+            .padding(.top, 22)
         }
-        .padding(.horizontal, V.gutter).padding(.bottom, 24)
+        .padding(.horizontal, V.gutter).padding(.bottom, 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(V.ground.ignoresSafeArea())
+    }
+
+    /// The six things the app does, an icon and two or three words each.
+    private var features: some View {
+        let items: [(icon: String, title: String)] = [
+            ("battery", "Charge"), ("road", "Range"), ("wind", "Climate"),
+            ("lock", "Lock & unlock"), ("map-pin", "Find on map"), ("sun", "Flash lights"),
+        ]
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 16) {
+            ForEach(items, id: \.title) { item in
+                VStack(spacing: 6) {
+                    PhIcon(name: item.icon, size: 22).foregroundStyle(V.text)
+                    Text(item.title).font(V.label).foregroundStyle(V.textMuted).lineLimit(1).minimumScaleFactor(0.85)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
     }
 
     // MARK: Brand
