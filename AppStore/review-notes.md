@@ -20,5 +20,4 @@ Luft has no servers. The owner's login is stored in the iPhone's keychain and se
 the car brand's own servers to sign in. Location is used on the device to show the distance
 to the car and is not sent anywhere.
 
-Luft is an independent app and is not affiliated with any car maker; the welcome screen
-says so.
+Luft is an independent app and is not affiliated with any car maker; Settings says so.

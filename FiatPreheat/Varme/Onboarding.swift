@@ -31,46 +31,28 @@ struct OnboardingFlow: View {
     // MARK: Welcome
 
     private var welcome: some View {
-        ZStack(alignment: .top) {
-            V.ground.ignoresSafeArea()
-            // VARME, then the covered car in its own studio light, edges faded into the page.
-            VStack(spacing: 0) {
-                Text("Luft").eyebrowStyle().padding(.top, 28)
-                Image("intro-covered").resizable().aspectRatio(contentMode: .fit)
-                    .padding(.top, -4)
-                Spacer()
-            }
-            .ignoresSafeArea(edges: .horizontal)
+        // Calm and short: the name, the covered car small in its own light, one line, two buttons.
+        // (That Luft is independent of the brands is said in Settings.)
+        VStack(spacing: 0) {
+            Text("Luft").eyebrowStyle().padding(.top, 28)
+            Spacer(minLength: 12)
+            Image("intro-covered").resizable().aspectRatio(contentMode: .fit)
+                .frame(maxWidth: 300)
+                // The photo's studio backdrop fades into the page, so no edge of it shows.
+                .mask(RadialGradient(colors: [.black, .black, .clear], center: .center, startRadius: 0, endRadius: 150))
+                .accessibilityHidden(true)
+            Spacer(minLength: 12)
+            Text("Your EV.\nIn your hands.").font(V.sora(34, .light)).tracking(-1).multilineTextAlignment(.center).foregroundStyle(V.text)
+            Spacer(minLength: 24)
             VStack(spacing: 10) {
-                Spacer()
-                Text("Your EV.\nIn your hands.").font(V.sora(34, .light)).tracking(-1).multilineTextAlignment(.center).foregroundStyle(V.text)
-                Text("Warm it, cool it, lock it, find it and charge it from your phone, by Siri and on a schedule.")
-                    .font(V.body).foregroundStyle(V.textMuted).multilineTextAlignment(.center).padding(.bottom, 8)
                 VButton(title: "Get started") { step = 1 }
-                // No car on hand (or App Review): the whole app on a made-up 500e.
-                Button { Haptics.select(); model.startSampleCar() } label: {
-                    Text("Try with a sample car").font(V.body).foregroundStyle(V.textMuted)
-                        .frame(maxWidth: .infinity).frame(height: 44)
-                }
-                .buttonStyle(.plain)
-                VStack(spacing: 10) {
-                    Text("Works with").eyebrowStyle()
-                    // Two rows of marks, quiet, as in the design.
-                    VStack(spacing: 12) {
-                        HStack(spacing: 18) { ForEach([Brand.fiat, .jeep, .alfaRomeo, .maserati]) { BrandMark(brand: $0, scale: 0.72) } }
-                        HStack(spacing: 18) { ForEach([Brand.chrysler, .dodge, .ram]) { BrandMark(brand: $0, scale: 0.72) } }
-                    }
-                    .foregroundStyle(V.text)
-                    .opacity(0.8)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(Brand.allCases.map(\.name).joined(separator: ", "))
-                    Text("Brand names belong to their owners. Luft is an independent app, not affiliated with Stellantis.")
-                        .font(V.sora(11)).foregroundStyle(V.textFaint).multilineTextAlignment(.center)
-                }
-                .padding(.top, 14)
+                // No car on hand (or App Review): the whole app on a made-up car.
+                VButton(title: "Try with a sample car", prominent: false) { model.startSampleCar() }
             }
-            .padding(.horizontal, V.gutter).padding(.bottom, 24)
         }
+        .padding(.horizontal, V.gutter).padding(.bottom, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(V.ground.ignoresSafeArea())
     }
 
     // MARK: Brand
