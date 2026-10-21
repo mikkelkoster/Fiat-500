@@ -113,7 +113,21 @@ struct OnboardingFlow: View {
     // MARK: Sign in
 
     private var signInStep: some View {
-        StepPage(step: 2, eyebrow: "Step 2 of 2", title: "Sign in to \(brand.name)", body: nil) {
+        StepPage(step: 2, eyebrow: "Step 2 of 2", title: "Sign in to \(brand.name)",
+                 body: "Luft reaches your car through your \(brand.name) account. Use the same login and PIN as the \(brand.name) app.") {
+            // What it needs, said before anyone signs in: the brand's own remote subscription.
+            HStack(alignment: .top, spacing: 12) {
+                PhIcon(name: "lock-open", size: 18).foregroundStyle(V.text).padding(.top, 2)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Needs \(brand.remotePackageName)").font(V.body).foregroundStyle(V.text)
+                    Text("\(brand.name)'s subscription for controlling the car from your phone. Without it, Luft shows the battery and range only.")
+                        .font(V.label).foregroundStyle(V.textMuted).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
+            .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.raised, lineWidth: 1))
             VStack(spacing: 10) {
                 FormField(placeholder: "Email", text: $email).textContentType(.username).keyboardType(.emailAddress)
                 FormField(placeholder: "Password", text: $password, secure: true).textContentType(.password)
@@ -123,7 +137,7 @@ struct OnboardingFlow: View {
             VButton(title: signingIn ? "Signing in…" : "Sign in") { Task { await signIn() } }
                 .disabled(signingIn || email.isEmpty || password.isEmpty || pin.count < 4)
                 .padding(.top, 4)
-            Text("Same login and PIN as the \(brand.name) app. They stay in this iPhone's keychain and go only to \(brand.name).")
+            Text("Your login stays on this iPhone and goes only to \(brand.name).")
                 .font(V.label).foregroundStyle(V.textMuted).frame(maxWidth: .infinity, alignment: .center).multilineTextAlignment(.center)
         } footer: { EmptyView() }
     }
@@ -147,28 +161,18 @@ struct OnboardingFlow: View {
 
     private var packageStep: some View {
         let package = brand.remotePackageName
-        return StepPage(step: 2, eyebrow: "One more thing", title: "One thing from \(brand.name)",
-                        body: "Reading your battery is free. Doing things to the car from a distance is a \(brand.name) subscription called \(package). Luft can't work around it; nobody can.") {
+        return StepPage(step: 2, eyebrow: "Signed in", title: "\(package) isn't active",
+                        body: "You can see the battery and range now. Add \(package) in the \(brand.name) app to do the rest.") {
             VStack(spacing: 0) {
-                PackageRow(ok: true, title: "Battery, range, plugged in", detail: "Included with the car")
-                PackageRow(ok: false, title: "Climate", detail: "Needs \(package)")
-                PackageRow(ok: false, title: "Lock, unlock, lights, boot", detail: "Needs \(package)")
-                PackageRow(ok: false, title: "Find the car, charge now", detail: "Needs \(package)", last: true)
+                PackageRow(ok: true, title: "Battery and range", detail: "Ready now")
+                PackageRow(ok: false, title: "Climate, lock, find the car", detail: "With \(package)", last: true)
             }
             .padding(.horizontal, 16)
             .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
             .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.raised, lineWidth: 1))
-            HStack(alignment: .top, spacing: 10) {
-                Circle().fill(V.amber).frame(width: 8, height: 8).padding(.top, 6)
-                Text("We checked your car: \(package) isn't active. It's bought in the \(brand.name) app, usually by the year. Luft itself is free.")
-                    .font(V.body).foregroundStyle(V.text)
-            }
-            .padding(16)
-            .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.activeFill(V.amber)))
-            .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.amber.opacity(0.35), lineWidth: 1))
         } footer: {
-            VButton(title: "Continue with battery only") { model.finishOnboarding() }
-            Text("Once you've bought \(package), pull down on the home screen and the buttons light up.")
+            VButton(title: "Continue") { model.finishOnboarding() }
+            Text("Added it? Pull down on the home screen to refresh.")
                 .font(V.label).foregroundStyle(V.textMuted).multilineTextAlignment(.center)
         }
     }
