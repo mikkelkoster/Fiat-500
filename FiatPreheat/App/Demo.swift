@@ -11,6 +11,7 @@ import Foundation
 ///   -demoLoading YES               no numbers yet: the gauge shows it's loading
 ///   -demoFuel 64                   a tank too (a plug-in hybrid); with -demoPetrol YES, no battery at all
 ///   -demoVolts 11.7                the 12 V battery reading
+///   -onboardingStep 0…5            with -demoScreen onboarding, which step to open on
 enum Demo {
     static var isActive: Bool { launchedAsDemo || UserDefaults.standard.bool(forKey: sampleKey) }
     /// The sample car was chosen on the welcome screen; it lasts until "Leave sample car".

@@ -3,7 +3,8 @@ import SwiftUI
 /// First run: welcome, brand and region, sign in, the remote package, the car and its colour, done.
 struct OnboardingFlow: View {
     @Environment(CarModel.self) private var model
-    @State private var step = 0
+    /// Opens on a later step in the demo, for screenshots: -onboardingStep 3
+    @State private var step = Demo.isActive ? UserDefaults.standard.integer(forKey: "onboardingStep") : 0
     @State private var brand: Brand = .fiat
     @State private var region: Brand.Region = .europe
     @State private var email = ""
