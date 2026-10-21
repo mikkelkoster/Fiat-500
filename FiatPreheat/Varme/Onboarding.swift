@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// First run: welcome, brand and region, sign in, the remote package, the car and its colour, done.
+/// First run, in as few steps as it takes: welcome, the brand, sign in (the region is found by
+/// trying), and into the app. Only an account without the remote package sees one more screen,
+/// saying what it needs. The car's name and plate come from the brand and can be edited in Settings.
 struct OnboardingFlow: View {
     @Environment(CarModel.self) private var model
     /// Opens on a later step in the demo, for screenshots: -onboardingStep 3
     @State private var step = Demo.isActive ? UserDefaults.standard.integer(forKey: "onboardingStep") : 0
     @State private var brand: Brand = .fiat
-    @State private var region: Brand.Region = .europe
     @State private var email = ""
     @State private var password = ""
     @State private var pin = ""
@@ -20,9 +21,7 @@ struct OnboardingFlow: View {
             case 0: welcome
             case 1: brandStep
             case 2: signInStep
-            case 3: packageStep
-            case 4: carStep
-            default: readyStep
+            default: packageStep
             }
         }
         .preferredColorScheme(.dark)
@@ -77,12 +76,11 @@ struct OnboardingFlow: View {
     // MARK: Brand
 
     private var brandStep: some View {
-        StepPage(step: 1, eyebrow: "Step 1 of 5", title: "Which car do you drive?", body: "Luft signs in with the account you already use in your car brand's app.") {
+        StepPage(step: 1, eyebrow: "Step 1 of 2", title: "Which car do you drive?", body: "Luft signs in with the account you already use in your car brand's app.") {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 ForEach(Brand.allCases) { b in
                     Button {
                         Haptics.select(); brand = b
-                        if !b.regions.contains(region) { region = b.regions[0] }
                     } label: {
                         BrandMark(brand: b)
                             .foregroundStyle(V.text)
@@ -94,20 +92,6 @@ struct OnboardingFlow: View {
                     .buttonStyle(PressStyle())
                 }
             }
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Where was it sold?").font(V.label).foregroundStyle(V.textMuted)
-                HStack(spacing: 8) {
-                    ForEach(brand.regions) { r in
-                        Button { Haptics.select(); region = r } label: {
-                            Text(r.name).font(V.label).foregroundStyle(region == r ? V.ground : V.text)
-                                .padding(.horizontal, 14).frame(height: 40)
-                                .background(Capsule().fill(region == r ? V.text : V.raised))
-                        }
-                        .buttonStyle(PressStyle())
-                    }
-                }
-            }
-            .padding(.top, 10)
         } footer: {
             VButton(title: "Continue") { step = 2 }
         }
@@ -116,7 +100,7 @@ struct OnboardingFlow: View {
     // MARK: Sign in
 
     private var signInStep: some View {
-        StepPage(step: 2, eyebrow: "Step 2 of 5", title: "Sign in to \(brand.name)", body: nil) {
+        StepPage(step: 2, eyebrow: "Step 2 of 2", title: "Sign in to \(brand.name)", body: nil) {
             VStack(spacing: 10) {
                 FormField(placeholder: "Email", text: $email).textContentType(.username).keyboardType(.emailAddress)
                 FormField(placeholder: "Password", text: $password, secure: true).textContentType(.password)
@@ -135,9 +119,11 @@ struct OnboardingFlow: View {
         signingIn = true; error = nil
         defer { signingIn = false }
         do {
-            try await model.signIn(UconnectAccount(email: email.trimmingCharacters(in: .whitespaces), password: password, pin: pin, brand: brand, region: region))
+            // Where the car was sold is worked out by trying the brand's regions, the phone's first.
+            try await model.signIn(email: email.trimmingCharacters(in: .whitespaces), password: password, pin: pin, brand: brand)
             Haptics.notify(.success)
-            step = 3
+            // Everything works: straight in. Something needs the remote package: say so first.
+            if model.availability(of: .preconditionOn) == .needsSubscription { step = 3 } else { model.finishOnboarding() }
         } catch {
             Haptics.notify(.error)
             self.error = error.localizedDescription
@@ -147,98 +133,30 @@ struct OnboardingFlow: View {
     // MARK: Remote package
 
     private var packageStep: some View {
-        let active = model.availability(of: .preconditionOn) == .available
         let package = brand.remotePackageName
-        return StepPage(step: 3, eyebrow: "Step 3 of 5", title: active ? "You're all set with \(brand.name)" : "One thing from \(brand.name)",
-                        body: active ? "Your account has \(package), so Luft can warm or cool, lock and find the car." : "Reading your battery is free. Doing things to the car from a distance is a \(brand.name) subscription called \(package). Luft can't work around it; nobody can.") {
+        return StepPage(step: 2, eyebrow: "One more thing", title: "One thing from \(brand.name)",
+                        body: "Reading your battery is free. Doing things to the car from a distance is a \(brand.name) subscription called \(package). Luft can't work around it; nobody can.") {
             VStack(spacing: 0) {
                 PackageRow(ok: true, title: "Battery, range, plugged in", detail: "Included with the car")
-                PackageRow(ok: active, title: "Heat and cool", detail: active ? "Active" : "Needs \(package)")
-                PackageRow(ok: active, title: "Lock, unlock, lights, boot", detail: active ? "Active" : "Needs \(package)")
-                PackageRow(ok: active, title: "Find the car, charge now", detail: active ? "Active" : "Needs \(package)", last: true)
+                PackageRow(ok: false, title: "Climate", detail: "Needs \(package)")
+                PackageRow(ok: false, title: "Lock, unlock, lights, boot", detail: "Needs \(package)")
+                PackageRow(ok: false, title: "Find the car, charge now", detail: "Needs \(package)", last: true)
             }
             .padding(.horizontal, 16)
             .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
             .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.raised, lineWidth: 1))
-            if !active {
-                HStack(alignment: .top, spacing: 10) {
-                    Circle().fill(V.amber).frame(width: 8, height: 8).padding(.top, 6)
-                    Text("We checked your car: \(package) isn't active. It's bought in the \(brand.name) app, usually by the year. Luft itself is free.")
-                        .font(V.body).foregroundStyle(V.text)
-                }
-                .padding(16)
-                .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.activeFill(V.amber)))
-                .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.amber.opacity(0.35), lineWidth: 1))
+            HStack(alignment: .top, spacing: 10) {
+                Circle().fill(V.amber).frame(width: 8, height: 8).padding(.top, 6)
+                Text("We checked your car: \(package) isn't active. It's bought in the \(brand.name) app, usually by the year. Luft itself is free.")
+                    .font(V.body).foregroundStyle(V.text)
             }
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.activeFill(V.amber)))
+            .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.amber.opacity(0.35), lineWidth: 1))
         } footer: {
-            if active {
-                VButton(title: "Continue") { step = 4 }
-            } else {
-                VButton(title: "Continue with battery only") { step = 4 }
-                Text("Once you've bought \(package), pull down on the home screen and the buttons light up.")
-                    .font(V.label).foregroundStyle(V.textMuted).multilineTextAlignment(.center)
-            }
-        }
-    }
-
-    // MARK: Car
-
-    private var carStep: some View {
-        @Bindable var model = model
-        return StepPage(step: 4, eyebrow: "Step 4 of 5", title: "Your car", body: model.vehicles.count == 1 ? "We found one car on your account." : "We found \(model.vehicles.count) cars on your account.") {
-            if model.vehicles.count > 1 {
-                VStack(spacing: 0) {
-                    ForEach(model.vehicles) { v in
-                        Button { model.selectedVIN = v.vin } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(v.nickname ?? v.model ?? "Car").font(V.body).foregroundStyle(V.text)
-                                    Text(v.vin).font(V.label).foregroundStyle(V.textFaint)
-                                }
-                                Spacer()
-                                if v.vin == model.selectedVIN { PhIcon(name: "check", size: 16).foregroundStyle(V.positive) }
-                            }
-                            .padding(.horizontal, 18).frame(minHeight: 56)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
-            } else if let v = model.vehicle {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(brand.name).font(V.label).foregroundStyle(V.textMuted)
-                    Text(v.model ?? v.nickname ?? "Car").font(V.title).foregroundStyle(V.text)
-                    Text(v.vin).font(V.label).foregroundStyle(V.textFaint)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(16)
-                .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
-            }
-            VStack(spacing: 0) {
-                VTextRow(title: "Vehicle name", text: $model.carName)
-                Divider().overlay(V.outline).padding(.leading, 18)
-                VTextRow(title: "Plate", text: $model.plate, caps: true)
-            }
-            .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
-        } footer: {
-            VButton(title: "Continue") { step = 5 }
-        }
-    }
-
-    // MARK: Ready
-
-    private var readyStep: some View {
-        StepPage(step: 5, eyebrow: "Step 5 of 5", title: "You're set", body: "Three things worth doing now. All optional.") {
-            VStack(spacing: 0) {
-                TipRow(icon: "clock", title: "Set a morning schedule", detail: "Ready by 07:30 on weekdays")
-                TipRow(icon: "wind", title: "Allow Siri", detail: "\"Hey Siri, start the climate in my car with Luft\"")
-                TipRow(icon: "car", title: "Add the widget", detail: "Battery and Climate on your home screen", last: true)
-            }
-            .padding(.horizontal, 16)
-            .background(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).fill(V.surface))
-            .overlay(RoundedRectangle(cornerRadius: V.radiusCard, style: .continuous).strokeBorder(V.raised, lineWidth: 1))
-        } footer: {
-            VButton(title: "Open Luft") { model.finishOnboarding() }
+            VButton(title: "Continue with battery only") { model.finishOnboarding() }
+            Text("Once you've bought \(package), pull down on the home screen and the buttons light up.")
+                .font(V.label).foregroundStyle(V.textMuted).multilineTextAlignment(.center)
         }
     }
 }
@@ -261,7 +179,7 @@ private struct StepPage<Content: View, Footer: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
-                ForEach(1...5, id: \.self) { i in Capsule().fill(i <= step ? V.text : V.raised).frame(height: 4) }
+                ForEach(1...2, id: \.self) { i in Capsule().fill(i <= step ? V.text : V.raised).frame(height: 4) }
             }
             .padding(.bottom, 22)
             Text(eyebrow).eyebrowStyle()
@@ -317,57 +235,6 @@ private struct PackageRow: View {
         }
         .padding(.vertical, 14)
         .overlay(alignment: .bottom) { if !last { Divider().overlay(V.outline).padding(.leading, 18) } }
-    }
-}
-
-private struct TipRow: View {
-    let icon: String
-    let title: String
-    let detail: String
-    var last = false
-    var body: some View {
-        HStack(spacing: 12) {
-            Circle().fill(V.raised).frame(width: 36, height: 36).overlay(PhIcon(name: icon, size: 18).foregroundStyle(V.text))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(V.body).foregroundStyle(V.text)
-                Text(detail).font(V.label).foregroundStyle(V.textMuted)
-            }
-            Spacer()
-        }
-        .padding(.vertical, 14)
-        .overlay(alignment: .bottom) { if !last { Divider().overlay(V.outline).padding(.leading, 18) } }
-    }
-}
-
-/// Four side-view silhouettes, back to front, in zinc: our own artwork, so it suits every brand.
-struct CarLineup: View {
-    // Body path, its box, where it sits (at 390 wide), scale, fill, stroke, and the two wheel centres with their radius.
-    private static let cars: [(String, CGSize, CGPoint, CGFloat, UInt32, UInt32, [CGPoint], CGFloat)] = [
-        ("M4 82 L4 60 Q4 54 10 54 L52 54 L68 24 Q72 18 80 18 L116 18 Q124 18 126 26 L128 54 L172 54 Q178 54 178 60 L178 82 Z", CGSize(width: 182, height: 98), CGPoint(x: 205, y: 118), 1.02, 0x1f1f23, 0x3f3f46, [CGPoint(x: 40, y: 82), CGPoint(x: 144, y: 82)], 16),
-        ("M4 80 L4 56 Q4 48 12 46 L34 42 L50 18 Q54 12 62 12 L124 12 Q132 12 136 18 L154 42 L174 46 Q182 48 182 56 L182 80 Z", CGSize(width: 186, height: 97), CGPoint(x: 20, y: 132), 1, 0x232327, 0x52525b, [CGPoint(x: 42, y: 80), CGPoint(x: 146, y: 80)], 17),
-        ("M4 76 L4 58 Q4 50 14 48 L44 42 L72 18 Q78 14 86 14 L124 14 Q134 14 142 20 L172 40 L196 46 Q204 48 204 56 L204 76 Z", CGSize(width: 208, height: 92), CGPoint(x: 176, y: 150), 1, 0x27272a, 0x71717a, [CGPoint(x: 46, y: 76), CGPoint(x: 160, y: 76)], 16),
-        ("M4 70 L4 50 Q4 40 14 38 L24 36 L38 14 Q44 6 56 6 L92 6 Q104 6 110 14 L124 36 L134 38 Q140 40 140 50 L140 70 Z", CGSize(width: 144, height: 85), CGPoint(x: 48, y: 158), 1, 0x2c2c30, 0xa1a1aa, [CGPoint(x: 34, y: 70), CGPoint(x: 110, y: 70)], 15),
-    ]
-
-    var body: some View {
-        Canvas { ctx, size in
-            let s = size.width / 390
-            ctx.fill(Path(ellipseIn: CGRect(x: 25 * s, y: 228 * s, width: 340 * s, height: 16 * s)), with: .color(.black.opacity(0.5)))
-            for (d, box, origin, scale, fill, stroke, wheels, r) in Self.cars {
-                let k = s * scale
-                let rect = CGRect(x: origin.x * s, y: origin.y * s, width: box.width * k, height: box.height * k)
-                let path = SVGPath.path(d, in: rect, viewBox: box)
-                ctx.fill(path, with: .color(Color(hex: fill)))
-                ctx.stroke(path, with: .color(Color(hex: stroke)), lineWidth: 1.5)
-                for w in wheels {
-                    let c = CGPoint(x: rect.minX + w.x * k, y: rect.minY + w.y * k)
-                    ctx.fill(Path(ellipseIn: CGRect(x: c.x - r * k, y: c.y - r * k, width: 2 * r * k, height: 2 * r * k)), with: .color(Color(hex: 0x0c0c0e)))
-                    ctx.fill(Path(ellipseIn: CGRect(x: c.x - 7 * k, y: c.y - 7 * k, width: 14 * k, height: 14 * k)), with: .color(Color(hex: stroke)))
-                }
-            }
-        }
-        .frame(height: 300)
-        .accessibilityLabel("A city car, a saloon, an SUV and a pickup, side by side")
     }
 }
 

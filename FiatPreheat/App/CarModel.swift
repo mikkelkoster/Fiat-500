@@ -242,10 +242,38 @@ final class CarModel {
 
     var account: UconnectAccount? { Demo.isActive ? Demo.account : AccountStore.load() }
 
-    /// Saves the account and verifies it by fetching the vehicle list.
-    func signIn(_ account: UconnectAccount) async throws {
-        await client.setAccount(account)
-        let found = try await client.vehicles()
+    /// Signs in without asking where the car was sold: each brand keeps a separate account system
+    /// for Europe, North America and Asia, so this tries the phone's likely region first and the
+    /// others only if the account isn't there (a failed login). A region where the account exists
+    /// but has no cars is kept as a fallback in case none has any. Other failures (no network)
+    /// stop at once rather than being repeated in every region.
+    func signIn(email: String, password: String, pin: String, brand: Brand) async throws {
+        var firstFailure: Error?
+        var emptyAccount: UconnectAccount?
+        let regions = brand.regionsToTry()
+        for region in regions {
+            let account = UconnectAccount(email: email, password: password, pin: pin, brand: brand, region: region)
+            await client.setAccount(account)
+            do {
+                let found = try await client.vehicles()
+                if found.isEmpty, region != regions.last { emptyAccount = emptyAccount ?? account; continue }
+                try await signIn(account, found: found)
+                return
+            } catch let error as UconnectError {
+                guard case .loginFailed = error else { throw error }
+                firstFailure = firstFailure ?? error
+            }
+        }
+        if let emptyAccount {
+            await client.setAccount(emptyAccount)
+            try await signIn(emptyAccount, found: try await client.vehicles())
+            return
+        }
+        throw firstFailure ?? UconnectError.loginFailed("no account")
+    }
+
+    /// Saves the account with the cars it found.
+    private func signIn(_ account: UconnectAccount, found: [Vehicle]) async throws {
         AccountStore.save(account)
         hasAccount = true
         vehicles = found

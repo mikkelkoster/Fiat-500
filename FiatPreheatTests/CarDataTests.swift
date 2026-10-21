@@ -170,3 +170,13 @@ final class TemperatureTests: XCTestCase {
         XCTAssertEqual(temps["climate.targettemperature"], 21)
     }
 }
+
+final class RegionTests: XCTestCase {
+    func testTriesThePhonesRegionFirst() {
+        XCTAssertEqual(Brand.fiat.regionsToTry(countryCode: "DK"), [.europe, .northAmerica, .asia])
+        XCTAssertEqual(Brand.jeep.regionsToTry(countryCode: "US"), [.northAmerica, .europe, .asia])
+        XCTAssertEqual(Brand.alfaRomeo.regionsToTry(countryCode: "AU"), [.asia, .europe, .northAmerica])
+        XCTAssertEqual(Brand.ram.regionsToTry(countryCode: "DK"), [.northAmerica], "Ram is only sold in North America")
+        XCTAssertEqual(Brand.fiat.regionsToTry(countryCode: nil).first, .europe)
+    }
+}

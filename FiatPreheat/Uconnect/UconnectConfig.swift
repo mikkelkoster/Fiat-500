@@ -70,6 +70,22 @@ enum Brand: String, CaseIterable, Codable, Sendable, Identifiable {
             case .asia: "Asia and Pacific"
             }
         }
+
+        /// Where an iPhone set to this country most likely bought its car.
+        static func likely(for countryCode: String?) -> Region {
+            let northAmerica: Set<String> = ["US", "CA", "PR", "MX"]
+            let asiaPacific: Set<String> = ["JP", "KR", "CN", "TW", "HK", "SG", "MY", "TH", "ID", "PH", "VN", "IN", "AU", "NZ"]
+            guard let code = countryCode?.uppercased() else { return .europe }
+            if northAmerica.contains(code) { return .northAmerica }
+            if asiaPacific.contains(code) { return .asia }
+            return .europe
+        }
+    }
+
+    /// The brand's regions, the phone's likely one first: the order sign-in tries them in.
+    func regionsToTry(countryCode: String? = Locale.current.region?.identifier) -> [Region] {
+        let first = Region.likely(for: countryCode)
+        return regions.contains(first) ? [first] + regions.filter { $0 != first } : regions
     }
 
     func config(in region: Region) -> UconnectConfig {

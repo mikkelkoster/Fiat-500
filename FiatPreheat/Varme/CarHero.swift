@@ -88,31 +88,3 @@ struct CarHero: View {
         Text(plate.isEmpty ? carName : plate).font(V.sora(12, .medium)).tracking(0.5).foregroundStyle(V.text).lineLimit(1)
     }
 }
-
-/// Just enough of SVG path syntax (M L H V Q C Z, absolute) to carry the design's shapes into Swift.
-enum SVGPath {
-    static func path(_ d: String, in rect: CGRect, viewBox: CGSize) -> Path {
-        var path = Path()
-        let scale = min(rect.width / viewBox.width, rect.height / viewBox.height)
-        let ox = rect.midX - viewBox.width * scale / 2, oy = rect.midY - viewBox.height * scale / 2
-        func pt(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: ox + x * scale, y: oy + y * scale) }
-        let tokens = d.replacingOccurrences(of: ",", with: " ")
-            .replacingOccurrences(of: "([MLHVQCZmlhvqcz])", with: " $1 ", options: .regularExpression)
-            .split(separator: " ").map(String.init)
-        var i = 0, cmd = "M", current = CGPoint.zero
-        func num() -> Double { defer { i += 1 }; return Double(tokens[i]) ?? 0 }
-        while i < tokens.count {
-            if let c = tokens[i].first, c.isLetter { cmd = tokens[i]; i += 1; if cmd == "Z" { path.closeSubpath(); continue } }
-            switch cmd {
-            case "M": current = pt(num(), num()); path.move(to: current); cmd = "L"
-            case "L": current = pt(num(), num()); path.addLine(to: current)
-            case "H": current = CGPoint(x: pt(num(), 0).x, y: current.y); path.addLine(to: current)
-            case "V": current = CGPoint(x: current.x, y: pt(0, num()).y); path.addLine(to: current)
-            case "Q": let c = pt(num(), num()); current = pt(num(), num()); path.addQuadCurve(to: current, control: c)
-            case "C": let c1 = pt(num(), num()), c2 = pt(num(), num()); current = pt(num(), num()); path.addCurve(to: current, control1: c1, control2: c2)
-            default: i += 1
-            }
-        }
-        return path
-    }
-}
