@@ -914,11 +914,10 @@ struct ActionTile: View {
 
 // MARK: - Unlock slider
 
-/// A 60 pt track with a white knob; drag it to the far end to unlock (or lock). The knob is
-/// white whatever the state; the state reads in the status line.
-/// A switch you slide: the knob rests left while the car is locked (white) and right while it's
-/// unlocked (red), so where it sits is the car's state. Slide it across to change it; the colour
-/// follows the knob, and a finished slide holds there until the car answers.
+/// A switch you slide: the knob rests left while the car is locked and right while it's unlocked,
+/// so where it sits is the car's state. Slide it across to change it; a finished slide holds there
+/// until the car answers. It turns red only once the car has said it's unlocked (never while
+/// sliding or waiting, where red would read as an error), and back to white once it's locked.
 struct UnlockSlider: View {
     let locked: Bool
     /// While a command is on its way to the car: true when unlocking, false when locking.
@@ -941,7 +940,9 @@ struct UnlockSlider: View {
             let unlockedSide = heading ?? pending ?? !locked
             let rest: CGFloat = unlockedSide ? travel : 0
             let position = min(travel, max(0, rest + drag))
-            let red = travel > 0 ? position / travel : 0
+            // How far across the knob is (its icon swaps halfway), and red for the car's real state.
+            let along = travel > 0 ? position / travel : 0
+            let red: CGFloat = !locked && pending == nil && heading == nil ? 1 : 0
             let away = travel > 0 ? abs(position - rest) / travel : 0
             ZStack(alignment: .leading) {
                 Color.clear.glassCapsule(tint: nil)
@@ -951,7 +952,7 @@ struct UnlockSlider: View {
                 ZStack {
                     if let pending {
                         // Waiting for the car: what it's doing, with a light running through it.
-                        ShimmerText(text: pending ? "UNLOCKING" : "LOCKING", color: pending ? V.danger : V.text)
+                        ShimmerText(text: pending ? "UNLOCKING" : "LOCKING", color: V.text)
                             .transition(.blurReplace)
                     } else {
                         ZStack {
@@ -972,14 +973,14 @@ struct UnlockSlider: View {
                             .transition(.blurReplace.combined(with: .scale(0.6)))
                     } else {
                         ZStack {
-                            PhIcon(name: "lock", size: 20).opacity(red < 0.5 ? 1 : 0)
-                            PhIcon(name: "lock-open", size: 20).opacity(red < 0.5 ? 0 : 1)
+                            PhIcon(name: "lock", size: 20).opacity(along < 0.5 ? 1 : 0)
+                            PhIcon(name: "lock-open", size: 20).opacity(along < 0.5 ? 0 : 1)
                         }
                         .transition(.blurReplace.combined(with: .scale(0.6)))
                     }
                 }
                 .foregroundStyle(V.ground)
-                .animation(.easeOut(duration: 0.15), value: red < 0.5)
+                .animation(.easeOut(duration: 0.15), value: along < 0.5)
                 .frame(width: 50, height: 50)
                 // The same frosted treatment as Heat cabin, its colour mixed white→red with the knob.
                 .glassCapsule(tint: Self.mix(red))
@@ -1021,6 +1022,8 @@ struct UnlockSlider: View {
         .opacity(busy && pending == nil ? 0.75 : 1)
         .disabled(busy)
         .animation(.spring(duration: 0.45, bounce: 0.1), value: pending)
+        // The red fades in once the car confirms it's unlocked, and out once it's locked.
+        .animation(.easeInOut(duration: 0.6), value: !locked && pending == nil && heading == nil)
         .onChange(of: holding || pending != nil, initial: true) { _, now in waiting = now }
         .onChange(of: locked) { _, _ in withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) { heading = nil } }
         .onChange(of: busy) { _, isBusy in
