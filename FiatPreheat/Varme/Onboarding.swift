@@ -34,7 +34,7 @@ struct OnboardingFlow: View {
         // What it is, what it does, who it's for: the name and one line, the covered car small in
         // its own light, six things it does, two buttons, and the brands it works with.
         VStack(spacing: 0) {
-            Text("Luft").eyebrowStyle().padding(.top, 28)
+            Text("Klar").eyebrowStyle().padding(.top, 28)
             Text("Your EV.\nIn your hands.").font(V.sora(34, .light)).tracking(-1).multilineTextAlignment(.center)
                 .foregroundStyle(V.text).padding(.top, 14)
             Spacer(minLength: 8)
@@ -89,7 +89,7 @@ struct OnboardingFlow: View {
     // MARK: Brand
 
     private var brandStep: some View {
-        StepPage(step: 1, eyebrow: "Step 1 of 2", title: "Which car do you drive?", body: "Luft signs in with the account you already use in your car brand's app.") {
+        StepPage(step: 1, eyebrow: "Step 1 of 2", title: "Which car do you drive?", body: "Klar signs in with the account you already use in your car brand's app.") {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 ForEach(Brand.allCases) { b in
                     Button {
@@ -114,13 +114,13 @@ struct OnboardingFlow: View {
 
     private var signInStep: some View {
         StepPage(step: 2, eyebrow: "Step 2 of 2", title: "Sign in to \(brand.name)",
-                 body: "Luft reaches your car through your \(brand.name) account. Use the same login and PIN as the \(brand.name) app.") {
+                 body: "Klar reaches your car through your \(brand.name) account. Use the same login and PIN as the \(brand.name) app.") {
             // What it needs, said before anyone signs in: the brand's own remote subscription.
             HStack(alignment: .top, spacing: 12) {
                 PhIcon(name: "lock-open", size: 18).foregroundStyle(V.text).padding(.top, 2)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Needs \(brand.remotePackageName)").font(V.body).foregroundStyle(V.text)
-                    Text("\(brand.name)'s subscription for controlling the car from your phone. Without it, Luft shows the battery and range only.")
+                    Text("\(brand.name)'s subscription for controlling the car from your phone. Without it, Klar shows the battery and range only.")
                         .font(V.label).foregroundStyle(V.textMuted).fixedSize(horizontal: false, vertical: true)
                 }
             }

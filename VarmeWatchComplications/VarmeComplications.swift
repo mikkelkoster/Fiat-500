@@ -94,7 +94,7 @@ struct PreheatComplication: Widget {
             .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("Climate")
-        .description("Open Luft to warm or cool the cabin.")
+        .description("Open Klar to warm or cool the cabin.")
         .supportedFamilies([.accessoryCircular])
     }
 }

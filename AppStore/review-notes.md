@@ -5,7 +5,7 @@ Paste into App Store Connect → App Review Information → Notes. Leave "Sign-i
 
 ---
 
-Luft works with cars connected to the car maker's remote services, using the account the
+Klar works with cars connected to the car maker's remote services, using the account the
 owner already has in the brand's own app. A reviewer will not have such a car, so the app
 includes a complete sample car:
 
@@ -16,8 +16,8 @@ includes a complete sample car:
    Settings, Trips and Alerts.
 3. Settings → **Leave sample car** returns to the first screen.
 
-Luft has no servers. The owner's login is stored in the iPhone's keychain and sent only to
+Klar has no servers. The owner's login is stored in the iPhone's keychain and sent only to
 the car brand's own servers to sign in. Location is used on the device to show the distance
 to the car and is not sent anywhere.
 
-Luft is an independent app and is not affiliated with any car maker; Settings says so.
+Klar is an independent app and is not affiliated with any car maker; Settings says so.

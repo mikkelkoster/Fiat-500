@@ -46,7 +46,7 @@ final class WatchModel: NSObject, ObservableObject, WCSessionDelegate {
 
     func send(_ command: String) {
         if Self.isDemo { pretend(command); return }
-        guard WCSession.default.activationState == .activated else { show("Open Luft on your iPhone once.", error: true); return }
+        guard WCSession.default.activationState == .activated else { show("Open Klar on your iPhone once.", error: true); return }
         sending = command
         WKInterfaceDeviceHaptic.start()
         WCSession.default.sendMessage(["command": command], replyHandler: { reply in

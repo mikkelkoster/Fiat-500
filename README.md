@@ -1,6 +1,6 @@
 # Varme
 
-Luft (formerly Varme) warms or cools your car from your phone, by Siri, and on a schedule. It started as an app for one Fiat 500e (registration **ED35079**) and is being opened up to every car on Stellantis' Uconnect service: Fiat, Jeep, Alfa Romeo, Maserati and more.
+Klar (formerly Luft and Varme) warms or cools your car from your phone, by Siri, and on a schedule. It started as an app for one Fiat 500e (registration **ED35079**) and is being opened up to every car on Stellantis' Uconnect service: Fiat, Jeep, Alfa Romeo, Maserati and more.
 
 It talks to the same Stellantis Uconnect cloud service as the official Fiat app, so the car needs an active Uconnect Services subscription and you need your Fiat account email, password and 4-digit Uconnect PIN.
 

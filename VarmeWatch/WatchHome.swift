@@ -21,7 +21,7 @@ struct WatchHome: View {
                     } else {
                         VStack(spacing: 8) {
                             PhIcon(name: "car", size: 28).foregroundStyle(V.textMuted)
-                            Text("Open Luft on your iPhone to connect your car.")
+                            Text("Open Klar on your iPhone to connect your car.")
                                 .font(V.sora(14)).foregroundStyle(V.textMuted).multilineTextAlignment(.center)
                         }
                         .padding(.top, 20)
@@ -30,7 +30,7 @@ struct WatchHome: View {
                 .padding(.horizontal, 4)
             }
             .navigationTitle {
-                Text(model.car?.carName ?? "Luft").font(V.sora(15, .semibold)).foregroundStyle(V.text)
+                Text(model.car?.carName ?? "Klar").font(V.sora(15, .semibold)).foregroundStyle(V.text)
             }
             .containerBackground(V.ground.gradient, for: .navigation)
             .overlay(alignment: .bottom) {

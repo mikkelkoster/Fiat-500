@@ -5,8 +5,8 @@ import Foundation
 /// the app, where the account lives, so nothing is sent from the extension.
 @available(iOS 18.0, *)
 struct OpenVarmeIntent: AppIntent {
-    static let title: LocalizedStringResource = "Open Luft"
-    static let description = IntentDescription("Opens Luft and sends the command.")
+    static let title: LocalizedStringResource = "Open Klar"
+    static let description = IntentDescription("Opens Klar and sends the command.")
     static let openAppWhenRun = true
     static let isDiscoverable = false
 

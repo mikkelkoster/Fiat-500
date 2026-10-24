@@ -115,7 +115,7 @@ struct SettingsSheet: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    Text("Luft is an independent app, not affiliated with Stellantis or its brands.")
+                    Text("Klar is an independent app, not affiliated with Stellantis or its brands.")
                         .font(V.label).foregroundStyle(V.textFaint).multilineTextAlignment(.center)
                     if let attribution = model.weatherAttribution, model.status?.outsideTemperature == nil {
                         // Apple asks for its mark and a legal link wherever its weather shows.
