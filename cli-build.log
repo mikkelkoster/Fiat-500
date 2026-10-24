@@ -1,0 +1,89 @@
+warning: 'fiat-500': found 74 file(s) which are unhandled; explicitly declare them as resources or exclude from the target
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Varme/CarHero.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Varme/TripsSheet.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Intents/PreheatIntents.swift
+    /Users/runner/work/Fiat-500/Fiat-500/VarmeWatchComplications/VarmeWatchComplications.entitlements
+    /Users/runner/work/Fiat-500/Fiat-500/Tools/icon/klar_icon.py
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/overview-6.3.png
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Support/Keychain.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Design/Components.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Scheduling/ScheduleCoordinator.swift
+    /Users/runner/work/Fiat-500/Fiat-500/Tools/car-renders/place.py
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheatTests/CarDataTests.swift
+    /Users/runner/work/Fiat-500/Fiat-500/docs/support.html
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/6.3/1-home.png
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Support/Varme.entitlements
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/6.3/2-climate.png
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-Regular.ttf
+    /Users/runner/work/Fiat-500/Fiat-500/Shared/VarmeShared.swift
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/6.3/4-schedule.png
+    /Users/runner/work/Fiat-500/Fiat-500/project.yml
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/App/CarModel.swift
+    /Users/runner/work/Fiat-500/Fiat-500/VarmeWidgets/VarmeWidgets.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/App/Demo.swift
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/6.9/1-home.png
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Varme/ScheduleSheet.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Support/WatchLink.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Varme/Onboarding.swift
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/6.9/4-schedule.png
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Varme/FindCarSheet.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Varme/VarmeComponents.swift
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/6.9/2-heating.png
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheatTests/FiatPreheatTests.swift
+    /Users/runner/work/Fiat-500/Fiat-500/Shared/ColorHex.swift
+    /Users/runner/work/Fiat-500/Fiat-500/Shared/OpenVarmeIntent.swift
+    /Users/runner/work/Fiat-500/Fiat-500/VarmeWatch/VarmeWatch.entitlements
+    /Users/runner/work/Fiat-500/Fiat-500/VarmeWatch/WatchAssets.xcassets
+    /Users/runner/work/Fiat-500/Fiat-500/VarmeWidgets/VarmeWidgets.entitlements
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/6.9/3-range.png
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Varme/HomeScreen.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-LICENSE.txt
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/listing.md
+    /Users/runner/work/Fiat-500/Fiat-500/VarmeWatchComplications/ComplicationAssets.xcassets
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-SemiBold.ttf
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Sora-LICENSE.txt
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/privacy-answers.md
+    /Users/runner/work/Fiat-500/Fiat-500/README.md
+    /Users/runner/work/Fiat-500/Fiat-500/Tools/car-renders/lift.swift
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/6.3/5-find.png
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/watch-overview.png
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Support/Info.plist
+    /Users/runner/work/Fiat-500/Fiat-500/VarmeWidgets/Info.plist
+    /Users/runner/work/Fiat-500/Fiat-500/VarmeWatch/WatchHome.swift
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/overview.png
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Design/Tokens.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Scheduling/CarAlerts.swift
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/watch/home.png
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/review-notes.md
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/App/FiatPreheatApp.swift
+    /Users/runner/work/Fiat-500/Fiat-500/cli-build.log
+    /Users/runner/work/Fiat-500/Fiat-500/VarmeWatch/Info.plist
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/watch/preheating.png
+    /Users/runner/work/Fiat-500/Fiat-500/docs/index.html
+    /Users/runner/work/Fiat-500/Fiat-500/docs/privacy.html
+    /Users/runner/work/Fiat-500/Fiat-500/VarmeWatchComplications/VarmeComplications.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Scheduling/PreheatSchedule.swift
+    /Users/runner/work/Fiat-500/Fiat-500/VarmeWatch/VarmeWatchApp.swift
+    /Users/runner/work/Fiat-500/Fiat-500/scripts/build-and-capture.sh
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Varme/Theme.swift
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/6.9/5-find.png
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Sora.ttf
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Varme/SettingsSheet.swift
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Assets.xcassets
+    /Users/runner/work/Fiat-500/Fiat-500/FiatPreheat/Resources/Fonts/Geist-Medium.ttf
+    /Users/runner/work/Fiat-500/Fiat-500/AppStore/screenshots/6.3/3-range.png
+    /Users/runner/work/Fiat-500/Fiat-500/VarmeWatchComplications/Info.plist
+Building for debugging...
+[0/6] Write fiat-cli-entitlement.plist
+[0/6] Write sources
+[2/6] Write swift-version-7974D3F7F03D5E95.txt
+[4/11] Compiling fiat_cli CarData.swift
+[5/11] Compiling fiat_cli SigV4.swift
+[6/11] Emitting module fiat_cli
+[7/11] Compiling fiat_cli UconnectClient.swift
+[8/11] Compiling fiat_cli UconnectConfig.swift
+[9/12] Compiling fiat_cli main.swift
+[9/12] Write Objects.LinkFileList
+[10/12] Linking fiat-cli
+[11/12] Applying fiat-cli
+Build of product 'fiat-cli' complete! (6.23s)
